@@ -1,0 +1,534 @@
+/* Google Fonts (Geist, JetBrains Mono) are loaded via <link> in index.html */
+@import "tailwindcss";
+
+/* ── Namdhinggo display serif ─────────────────────────────────────────── */
+@font-face {
+  font-family: "Namdhinggo";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/Namdhinggo-Regular.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Namdhinggo";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/fonts/Namdhinggo-Medium.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Namdhinggo";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/Namdhinggo-SemiBold.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Namdhinggo";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/Namdhinggo-Bold.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Namdhinggo";
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("/fonts/Namdhinggo-ExtraBold.ttf") format("truetype");
+}
+
+/* ── Design system CSS variables ──────────────────────────────────────── */
+:root {
+  /* Brand palette */
+  --xn-clay-900: #6e4f3a;
+  --xn-clay-800: #8f6f56;
+  --xn-clay-700: #A98B76;
+  --xn-clay-600: #BFA28C;
+  --xn-clay-500: #d6bfa9;
+  --xn-clay-400: #e6d4c1;
+  --xn-clay-300: #f1e3d1;
+  --xn-clay-200: #F3E4C9;
+  --xn-clay-100: #faf1e0;
+  --xn-clay-050: #fdf8ef;
+
+  --xn-sage-700: #8f9670;
+  --xn-sage-600: #a7ad83;
+  --xn-sage-500: #BABF94;
+  --xn-sage-400: #cdd1ab;
+  --xn-sage-300: #dfe2c3;
+  --xn-sage-200: #edefdc;
+  --xn-sage-100: #f5f6e8;
+
+  --xn-ink-900: #3a2a1e;
+  --xn-ink-800: #4e3a2b;
+  --xn-ink-700: #6b5645;
+  --xn-ink-600: #8a7864;
+  --xn-ink-500: #a99884;
+  --xn-ink-400: #c7baa6;
+  --xn-ink-300: #ded3c0;
+  --xn-ink-200: #ece3d1;
+  --xn-ink-100: #f8f3e8;
+  --xn-ink-050: #fcf9f1;
+
+  --xn-paper:     #FFFDF8;
+  --xn-paper-alt: #F8EED9;
+
+  /* Semantic */
+  --xn-success:    #8b9665;
+  --xn-success-bg: #edefdc;
+  --xn-warning:    #d39a52;
+  --xn-warning-bg: #faeccf;
+  --xn-danger:     #c26452;
+  --xn-danger-bg:  #f7ddd4;
+  --xn-info:       #8292a0;
+  --xn-info-bg:    #e6ebef;
+
+  /* Semantic tokens */
+  --fg-1: var(--xn-ink-900);
+  --fg-2: var(--xn-ink-700);
+  --fg-3: var(--xn-ink-500);
+  --fg-4: var(--xn-ink-400);
+  --fg-on-clay: #fefbf4;
+
+  --bg-1: var(--xn-paper);
+  --bg-2: #ffffff;
+  --bg-3: var(--xn-ink-050);
+  --bg-4: var(--xn-paper-alt);
+  --bg-inverse: var(--xn-ink-900);
+
+  --border-1: var(--xn-ink-200);
+  --border-2: var(--xn-ink-300);
+
+  --accent:       var(--xn-clay-700);
+  --accent-hover: var(--xn-clay-800);
+  --accent-press: var(--xn-clay-900);
+  --accent-soft:  var(--xn-clay-200);
+  --accent-on:    var(--fg-on-clay);
+
+  --accent-2:      var(--xn-sage-500);
+  --accent-2-soft: var(--xn-sage-200);
+
+  /* Fonts */
+  --font-display: "Namdhinggo", "Playfair Display", Georgia, serif;
+  --font-sans:    "Geist", "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono:    "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* Shadows — warm-tinted */
+  --sh-xs: 0 1px 2px rgba(110, 79, 58, 0.06);
+  --sh-sm: 0 1px 2px rgba(110, 79, 58, 0.06), 0 1px 4px rgba(110, 79, 58, 0.04);
+  --sh-md: 0 4px 12px -4px rgba(110, 79, 58, 0.10), 0 2px 4px rgba(110, 79, 58, 0.04);
+  --sh-lg: 0 20px 40px -16px rgba(110, 79, 58, 0.14), 0 4px 10px rgba(110, 79, 58, 0.05);
+  --sh-xl: 0 36px 64px -24px rgba(110, 79, 58, 0.18), 0 10px 20px rgba(110, 79, 58, 0.07);
+  --sh-inset: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+
+  /* Motion */
+  --ease-out:    cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast: 120ms;
+  --dur-med:  220ms;
+  --dur-slow: 420ms;
+}
+
+/* ── Tailwind theme mapping ────────────────────────────────────────────── */
+@theme {
+  /* Core semantic tokens → Tailwind utilities */
+  --color-primary:    #A98B76;    /* clay-700 */
+  --color-surface:    #ffffff;    /* raised card surface */
+  --color-background: #FFFDF8;   /* paper canvas */
+  --color-text:       #3a2a1e;   /* ink-900 */
+  --color-muted:      #a99884;   /* ink-500 */
+  --color-border:     #ece3d1;   /* ink-200 */
+  --color-panel:      #fcf9f1;   /* ink-050 */
+  --color-sand:       #F3E4C9;   /* clay-200 */
+  --color-sage:       #BABF94;   /* sage-500 */
+  --color-success:    #8b9665;
+  --color-danger:     #c26452;
+  --color-warning:    #d39a52;
+
+  /* Font families available as Tailwind utilities */
+  --font-display: "Namdhinggo", Georgia, serif;
+  --font-sans:    "Geist", system-ui, sans-serif;
+  --font-mono:    "JetBrains Mono", monospace;
+}
+
+/* ── Base resets ──────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  color-scheme: light;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background-color: var(--xn-paper);
+  color: var(--xn-ink-900);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+::selection {
+  background: var(--xn-clay-300);
+  color: var(--xn-ink-900);
+}
+
+/* ── Scrollbar ────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--xn-ink-300); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--xn-ink-400); }
+
+/* ── Remap dark-mode "white/N" Tailwind utilities to warm equivalents ─── */
+/* These classes were written for a dark background and are now overridden  */
+.border-white\/4,.border-white\/5,
+.border-white\/6,.border-white\/8,
+.border-white\/10,.border-white\/12 {
+  border-color: var(--xn-ink-200) !important;
+}
+
+.bg-white\/3,.bg-white\/4,
+.bg-white\/5,.bg-white\/6 {
+  background-color: var(--xn-ink-050) !important;
+}
+
+.bg-white\/8,.bg-white\/10 {
+  background-color: var(--xn-ink-100) !important;
+}
+
+/* backdrop overlay — use warm dark */
+.bg-black\/60 { background-color: rgba(58, 42, 30, 0.65) !important; }
+
+/* ── xn-* design system classes ───────────────────────────────────────── */
+
+/* Shell */
+.xn-shell { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; background: var(--bg-1); }
+.xn-main  { display: flex; flex-direction: column; min-width: 0; }
+
+/* Sidebar */
+.xn-sidebar {
+  background: var(--bg-2);
+  border-right: 1px solid var(--border-1);
+  padding: 18px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+.xn-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 8px 12px;
+  border-bottom: 1px solid var(--border-1);
+}
+.xn-brand-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: -0.01em;
+  color: var(--xn-clay-700);
+}
+.xn-nav { display: flex; flex-direction: column; gap: 2px; }
+.xn-nav-section {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg-3);
+  margin: 10px 10px 4px;
+}
+.xn-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--fg-2);
+  text-decoration: none;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+.xn-nav-item:hover { background: var(--bg-3); color: var(--fg-1); }
+.xn-nav-item.active { background: var(--xn-clay-200); color: var(--xn-clay-900); }
+
+/* Top bar */
+.xn-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 28px;
+  border-bottom: 1px solid var(--border-1);
+  background: color-mix(in oklch, var(--xn-paper) 85%, transparent);
+  backdrop-filter: blur(14px);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+/* Cards */
+.xn-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border-1);
+  border-radius: 14px;
+  padding: 18px 20px;
+  box-shadow: var(--sh-xs);
+}
+.xn-card.sand { background: var(--xn-clay-200); border-color: var(--xn-clay-300); }
+
+/* Buttons */
+.xn-btn {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 14px;
+  padding: 9px 18px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  line-height: 1;
+  transition: all var(--dur-fast) var(--ease-out);
+  white-space: nowrap;
+  text-decoration: none;
+}
+.xn-btn.primary {
+  background: var(--accent);
+  color: var(--fg-on-clay);
+  box-shadow: var(--sh-sm), var(--sh-inset);
+}
+.xn-btn.primary:hover { background: var(--accent-hover); }
+.xn-btn.secondary {
+  background: var(--bg-2);
+  color: var(--fg-1);
+  border-color: var(--border-1);
+}
+.xn-btn.secondary:hover { background: var(--bg-3); }
+.xn-btn.ghost { background: transparent; color: var(--fg-1); }
+.xn-btn.ghost:hover { background: var(--bg-3); }
+.xn-btn.danger { background: var(--xn-danger); color: #fbf6ea; }
+.xn-btn.sm { font-size: 13px; padding: 6px 13px; }
+
+/* Chip/badge */
+.xn-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 12px;
+  background: var(--bg-3);
+  color: var(--fg-1);
+}
+.xn-chip.accent  { background: var(--xn-clay-200); color: var(--xn-clay-900); }
+.xn-chip.sage    { background: var(--xn-sage-200); color: #3d5226; }
+.xn-chip.warn    { background: var(--xn-warning-bg); color: #7a4e10; }
+.xn-chip.danger  { background: var(--xn-danger-bg); color: #7a2b1f; }
+.xn-chip.outline { background: transparent; border: 1px solid var(--border-2); color: var(--fg-2); }
+
+/* Plan card */
+.xn-plan {
+  padding: 20px 22px;
+  border: 1px solid var(--border-1);
+  border-radius: 14px;
+  background: var(--bg-2);
+  box-shadow: var(--sh-xs);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.xn-plan .plan-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: -0.01em;
+  color: var(--fg-1);
+}
+.xn-plan .plan-dates {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--fg-3);
+}
+.xn-plan .plan-bar {
+  height: 5px;
+  background: var(--bg-3);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.xn-plan .plan-bar > div {
+  height: 100%;
+  background: var(--xn-sage-500);
+  border-radius: 999px;
+}
+
+/* Hero today card */
+.xn-hero {
+  padding: 26px 28px;
+  background: linear-gradient(135deg, var(--xn-clay-200) 0%, var(--xn-clay-300) 100%);
+  border-radius: 20px;
+  border: 1px solid var(--xn-clay-300);
+  position: relative;
+  overflow: hidden;
+}
+.xn-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("/assets/grain.svg");
+  background-size: 300px;
+  opacity: 0.06;
+  pointer-events: none;
+}
+
+/* Exercise card */
+.xn-ex {
+  background: var(--bg-2);
+  border: 1px solid var(--border-1);
+  border-radius: 14px;
+  padding: 16px 18px;
+  box-shadow: var(--sh-xs);
+}
+.xn-ex.complete {
+  border-color: var(--xn-sage-400);
+  background: var(--xn-sage-200);
+}
+.xn-ex .ex-name {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 20px;
+  color: var(--fg-1);
+  letter-spacing: -0.01em;
+}
+.xn-ex .ex-setline {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--fg-1);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Exercise set row */
+.xn-set {
+  flex: 1;
+  padding: 9px 12px;
+  border: 1px solid var(--border-1);
+  border-radius: 10px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--fg-2);
+  background: var(--bg-1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+.xn-set.done { background: var(--xn-sage-200); border-color: var(--xn-sage-400); color: #3d4a1e; }
+
+/* Week day strip */
+.xn-day {
+  background: var(--bg-2);
+  border: 1px solid var(--border-1);
+  border-radius: 12px;
+  padding: 10px 8px;
+  text-align: center;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+.xn-day:hover { transform: translateY(-1px); box-shadow: var(--sh-sm); }
+.xn-day.done { background: var(--xn-sage-200); border-color: var(--xn-sage-400); }
+.xn-day.active { background: var(--xn-clay-700); border-color: var(--xn-clay-800); }
+
+/* Stat tile */
+.xn-stat .stat-label {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--fg-3);
+}
+.xn-stat .stat-value {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 42px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--fg-1);
+  font-variant-numeric: tabular-nums;
+  margin-top: 8px;
+}
+
+/* Client row */
+.xn-clientrow {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: var(--bg-2);
+  border: 1px solid var(--border-1);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+.xn-clientrow:hover { box-shadow: var(--sh-sm); }
+
+/* Avatar */
+.xn-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: var(--xn-clay-300);
+  color: var(--xn-clay-900);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.xn-avatar.sage { background: var(--xn-sage-300); color: #3d5226; }
+
+/* Focus ring */
+:focus-visible {
+  outline: 3px solid color-mix(in oklch, var(--xn-clay-700) 40%, transparent);
+  outline-offset: 2px;
+}
+
+/* Inputs — light design */
+.xn-input {
+  width: 100%;
+  border: 1px solid var(--border-1);
+  border-radius: 8px;
+  background: var(--bg-2);
+  padding: 8px 12px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--fg-1);
+  transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+  outline: none;
+}
+.xn-input::placeholder { color: var(--fg-4); }
+.xn-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--xn-clay-700) 20%, transparent);
+}
+.xn-input.error { border-color: var(--xn-danger); }
+.xn-input.error:focus { box-shadow: 0 0 0 3px color-mix(in oklch, var(--xn-danger) 20%, transparent); }

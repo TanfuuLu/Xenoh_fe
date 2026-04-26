@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(npx tsc *)",
+      "Bash(npx eslint *)",
+      "Bash(dir \"E:\\\\\\\\Xenoh\" /b)",
+      "Bash(xargs grep *)",
+      "Bash(dotnet build *)",
+      "PowerShell(Get-ChildItem E:\\\\Xenoh -Recurse -Depth 3 -Force -ErrorAction SilentlyContinue | Where-Object { $_.Name -eq \".git\" } | Select-Object FullName)",
+      "PowerShell(git -C E:\\\\Xenoh\\\\Xenoh_fe rev-parse --show-toplevel 2>&1)",
+      "PowerShell([System.IO.Directory]::GetDirectories\\(\"E:\\\\Xenoh\"\\))"
+    ]
+  }
+}

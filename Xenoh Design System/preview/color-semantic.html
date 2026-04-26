@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Xenoh — Semantic colors</title>
+<link rel="stylesheet" href="../colors_and_type.css"/>
+<style>
+  html,body{margin:0;background:var(--bg-1);}
+  .card{padding:22px; display:flex; flex-direction:column; gap:14px;}
+  .grid{display:grid; grid-template-columns:repeat(4,1fr); gap:10px;}
+  .tile{border:1px solid var(--border-1); border-radius:12px; padding:12px; background:var(--bg-2);
+        display:flex; flex-direction:column; gap:8px;}
+  .chip{display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px;
+        font-family:var(--font-sans); font-weight:600; font-size:12px;}
+  .dot{width:8px; height:8px; border-radius:999px;}
+  .lbl{font-family:var(--font-sans); font-weight:600; font-size:13px; color:var(--fg-1);}
+  .meta{font-family:var(--font-mono); font-size:11px; color:var(--fg-3);}
+  h3{font-family:var(--font-display); font-weight:600; font-size:17px; margin:0;}
+</style>
+</head>
+<body>
+<div class="card">
+  <h3>Semantic colors</h3>
+  <div class="grid">
+    <div class="tile">
+      <span class="chip" style="background:var(--xn-success-bg); color:#5d6635">
+        <span class="dot" style="background:var(--xn-success)"></span> Logged
+      </span>
+      <div class="lbl">Success</div>
+      <div class="meta">--xn-success · #7D8A4F</div>
+    </div>
+    <div class="tile">
+      <span class="chip" style="background:var(--xn-warning-bg); color:#8a5a1f">
+        <span class="dot" style="background:var(--xn-warning)"></span> Pending
+      </span>
+      <div class="lbl">Warning</div>
+      <div class="meta">--xn-warning · #C78A3C</div>
+    </div>
+    <div class="tile">
+      <span class="chip" style="background:var(--xn-danger-bg); color:#7a2b1f">
+        <span class="dot" style="background:var(--xn-danger)"></span> Missed
+      </span>
+      <div class="lbl">Danger</div>
+      <div class="meta">--xn-danger · #B04A3A</div>
+    </div>
+    <div class="tile">
+      <span class="chip" style="background:var(--xn-info-bg); color:#44525a">
+        <span class="dot" style="background:var(--xn-info)"></span> Scheduled
+      </span>
+      <div class="lbl">Info</div>
+      <div class="meta">--xn-info · #6B7A85</div>
+    </div>
+  </div>
+</div>
+</body></html>

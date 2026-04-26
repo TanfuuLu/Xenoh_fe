@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Xenoh — Inputs</title>
+<link rel="stylesheet" href="../colors_and_type.css"/>
+<style>
+  html,body{margin:0;background:var(--bg-1);}
+  .card{padding:22px 26px; display:grid; grid-template-columns:1fr 1fr; gap:14px 20px;}
+  label{display:flex; flex-direction:column; gap:6px; font-family:var(--font-sans); font-size:12px;
+        font-weight:600; color:var(--fg-2); letter-spacing:0.02em;}
+  input, select{font-family:var(--font-sans); font-size:14px; padding:10px 12px;
+       border-radius:10px; border:1px solid var(--border-1); background:var(--bg-2);
+       color:var(--fg-1); outline:none; transition:all var(--dur-fast) var(--ease-out);}
+  input:focus{border-color:var(--accent); box-shadow:var(--focus-ring); background:var(--xn-paper);}
+  input::placeholder{color:var(--fg-4);}
+  .hint{font-family:var(--font-sans); font-weight:400; font-size:11.5px; color:var(--fg-3);}
+  .err input{border-color:var(--xn-danger);}
+  .err .hint{color:var(--xn-danger);}
+</style>
+</head>
+<body>
+<div class="card">
+  <label>Email<input placeholder="you@xenoh.app"/></label>
+  <label>Password<input type="password" value="••••••••••"/></label>
+  <label>Working weight<input value="80 kg"/></label>
+  <label class="err">Plan name<input value="Push / Pull / Legs wk 1"/><span class="hint">Name already used in this plan</span></label>
+</div>
+</body></html>

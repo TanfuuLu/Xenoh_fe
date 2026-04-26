@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Xenoh — Week strip</title>
+<link rel="stylesheet" href="../colors_and_type.css"/>
+<style>
+  html,body{margin:0;background:var(--bg-1);}
+  .wrap{padding:22px 26px;}
+  h4{font-family:var(--font-sans); font-size:12px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:var(--fg-3); margin:0 0 14px;}
+  .week{display:grid; grid-template-columns:repeat(7,1fr); gap:8px;}
+  .day{background:var(--xn-paper); border:1px solid var(--border-1); border-radius:12px;
+       padding:10px 8px; text-align:center; font-family:var(--font-sans); cursor:pointer;
+       display:flex; flex-direction:column; gap:4px; transition:all var(--dur-fast) var(--ease-out);}
+  .day .d{font-size:10.5px; color:var(--fg-3); text-transform:uppercase; letter-spacing:0.1em; font-weight:600;}
+  .day .n{font-family:var(--font-display); font-size:22px; font-weight:600; color:var(--fg-1); line-height:1;}
+  .day .l{font-size:10.5px; color:var(--fg-2); margin-top:2px;}
+  .day.done{background:var(--xn-sage-200); border-color:var(--xn-sage-400);}
+  .day.done .l{color:#5d6635; font-weight:600;}
+  .day.today{background:var(--xn-clay-700); border-color:var(--xn-clay-800);}
+  .day.today .d, .day.today .n, .day.today .l{color:var(--fg-on-clay);}
+  .day.rest{background:var(--bg-3); color:var(--fg-3);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h4>Week 3 · push / pull / legs</h4>
+  <div class="week">
+    <div class="day done"><span class="d">Mon</span><span class="n">14</span><span class="l">Push</span></div>
+    <div class="day done"><span class="d">Tue</span><span class="n">15</span><span class="l">Pull</span></div>
+    <div class="day done"><span class="d">Wed</span><span class="n">16</span><span class="l">Legs</span></div>
+    <div class="day today"><span class="d">Thu</span><span class="n">17</span><span class="l">Push</span></div>
+    <div class="day"><span class="d">Fri</span><span class="n">18</span><span class="l">Pull</span></div>
+    <div class="day"><span class="d">Sat</span><span class="n">19</span><span class="l">Legs</span></div>
+    <div class="day rest"><span class="d">Sun</span><span class="n">20</span><span class="l">Rest</span></div>
+  </div>
+</div>
+</body></html>

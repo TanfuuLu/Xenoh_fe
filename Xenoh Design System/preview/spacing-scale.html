@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Xenoh — Spacing</title>
+<link rel="stylesheet" href="../colors_and_type.css"/>
+<style>
+  html,body{margin:0;background:var(--bg-1);}
+  .card{padding:22px 26px;}
+  h4{font-family:var(--font-sans); font-size:12px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:var(--fg-3); margin:0 0 14px;}
+  .row{display:flex; align-items:flex-end; gap:14px;}
+  .unit{display:flex; flex-direction:column; align-items:center; gap:6px;}
+  .bar{background:var(--xn-clay-700); border-radius:3px;}
+  .lbl{font-family:var(--font-mono); font-size:11px; color:var(--fg-3);}
+  .name{font-family:var(--font-sans); font-size:11.5px; color:var(--fg-2); font-weight:600;}
+</style>
+</head>
+<body>
+<div class="card">
+  <h4>Spacing scale · 4px base</h4>
+  <div class="row">
+    <div class="unit"><div class="bar" style="width:8px;height:4px"></div><div class="name">sp-1</div><div class="lbl">4</div></div>
+    <div class="unit"><div class="bar" style="width:16px;height:8px"></div><div class="name">sp-2</div><div class="lbl">8</div></div>
+    <div class="unit"><div class="bar" style="width:20px;height:12px"></div><div class="name">sp-3</div><div class="lbl">12</div></div>
+    <div class="unit"><div class="bar" style="width:24px;height:16px"></div><div class="name">sp-4</div><div class="lbl">16</div></div>
+    <div class="unit"><div class="bar" style="width:28px;height:20px"></div><div class="name">sp-5</div><div class="lbl">20</div></div>
+    <div class="unit"><div class="bar" style="width:32px;height:24px"></div><div class="name">sp-6</div><div class="lbl">24</div></div>
+    <div class="unit"><div class="bar" style="width:40px;height:32px"></div><div class="name">sp-8</div><div class="lbl">32</div></div>
+    <div class="unit"><div class="bar" style="width:48px;height:40px"></div><div class="name">sp-10</div><div class="lbl">40</div></div>
+    <div class="unit"><div class="bar" style="width:56px;height:48px"></div><div class="name">sp-12</div><div class="lbl">48</div></div>
+    <div class="unit"><div class="bar" style="width:72px;height:64px"></div><div class="name">sp-16</div><div class="lbl">64</div></div>
+  </div>
+</div>
+</body></html>

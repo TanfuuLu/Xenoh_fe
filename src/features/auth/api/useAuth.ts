@@ -1,0 +1,46 @@
+import { useMutation } from '@tanstack/react-query'
+import { api } from '@/shared/api/axios'
+import { ENDPOINTS } from '@/shared/api/endpoints'
+import { useAuthStore } from '../store/authStore'
+import type { AuthResponse, LoginRequest, RegisterRequest } from '../types'
+
+export function useLogin() {
+  const setAuth = useAuthStore((s) => s.setAuth)
+
+  return useMutation({
+    mutationFn: (data: LoginRequest) =>
+      api.post<AuthResponse>(ENDPOINTS.auth.login, data).then((r) => r.data),
+    onSuccess: (data) => {
+      setAuth(data.accessToken, data.refreshToken, {
+        email: data.email,
+        fullName: data.fullName,
+        roles: data.roles,
+      })
+    },
+  })
+}
+
+export function useRegister() {
+  const setAuth = useAuthStore((s) => s.setAuth)
+
+  return useMutation({
+    mutationFn: (data: RegisterRequest) =>
+      api.post<AuthResponse>(ENDPOINTS.auth.register, data).then((r) => r.data),
+    onSuccess: (data) => {
+      setAuth(data.accessToken, data.refreshToken, {
+        email: data.email,
+        fullName: data.fullName,
+        roles: data.roles,
+      })
+    },
+  })
+}
+
+export function useLogout() {
+  const clear = useAuthStore((s) => s.clear)
+
+  return useMutation({
+    mutationFn: () => api.post(ENDPOINTS.auth.logout).then(() => undefined),
+    onSettled: () => clear(),
+  })
+}

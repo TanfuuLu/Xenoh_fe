@@ -1,0 +1,335 @@
+/* ==========================================================================
+   Xenoh Design System — Colors & Type Foundations
+   ==========================================================================
+   Brand: Xenoh — a fitness web application for workout planning and
+   coach↔client management.
+
+   Palette is earthy and warm — sandstone, clay, sage — inspired by the
+   discipline of training and the calm of recovery. Namdhinggo is the
+   display serif; Geist is the neutral UI sans.
+   ========================================================================== */
+
+/* -------- Fonts -------- */
+@font-face {
+  font-family: "Namdhinggo";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/Namdhinggo-Regular.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Namdhinggo";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("./fonts/Namdhinggo-Medium.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Namdhinggo";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("./fonts/Namdhinggo-SemiBold.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Namdhinggo";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./fonts/Namdhinggo-Bold.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Namdhinggo";
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("./fonts/Namdhinggo-ExtraBold.ttf") format("truetype");
+}
+
+/* Geist + JetBrains Mono are loaded via Google Fonts @import where consumed,
+   or via the convenience import below. */
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
+
+:root {
+  /* ------------------------------------------------------------------
+     Brand palette — airy clay / cream / sage
+     Lighter, lifted version. Paper is nearly-white, Clay stays warm
+     but used sparingly, ink tops out at a soft espresso — not black.
+     ------------------------------------------------------------------ */
+  --xn-clay-900: #6e4f3a;       /* deepest — label text on clay */
+  --xn-clay-800: #8f6f56;
+  --xn-clay-700: #A98B76;       /* PRIMARY — warm clay */
+  --xn-clay-600: #BFA28C;       /* hover / secondary warm */
+  --xn-clay-500: #d6bfa9;
+  --xn-clay-400: #e6d4c1;
+  --xn-clay-300: #f1e3d1;
+  --xn-clay-200: #F3E4C9;       /* SAND — hero surface */
+  --xn-clay-100: #faf1e0;
+  --xn-clay-050: #fdf8ef;
+
+  --xn-sage-700: #8f9670;
+  --xn-sage-600: #a7ad83;
+  --xn-sage-500: #BABF94;       /* SAGE — success / accent */
+  --xn-sage-400: #cdd1ab;
+  --xn-sage-300: #dfe2c3;
+  --xn-sage-200: #edefdc;
+  --xn-sage-100: #f5f6e8;
+
+  /* Warm neutrals — lighter, no near-blacks. */
+  --xn-ink-900: #3a2a1e;        /* espresso — deepest text */
+  --xn-ink-800: #4e3a2b;
+  --xn-ink-700: #6b5645;
+  --xn-ink-600: #8a7864;
+  --xn-ink-500: #a99884;
+  --xn-ink-400: #c7baa6;
+  --xn-ink-300: #ded3c0;
+  --xn-ink-200: #ece3d1;
+  --xn-ink-100: #f8f3e8;
+  --xn-ink-050: #fcf9f1;
+
+  --xn-paper: #FFFDF8;          /* near-white, barely-warm */
+  --xn-paper-alt: #F8EED9;      /* sand accent surface — lighter */
+  --xn-pure-white: #ffffff;
+  --xn-pure-black: #1a1208;
+
+  /* Semantic */
+  --xn-success: #8b9665;
+  --xn-success-bg: #edefdc;
+  --xn-warning: #d39a52;
+  --xn-warning-bg: #faeccf;
+  --xn-danger:  #c26452;
+  --xn-danger-bg: #f7ddd4;
+  --xn-info:    #8292a0;
+  --xn-info-bg:  #e6ebef;
+
+  /* ------------------------------------------------------------------
+     Semantic color tokens
+     ------------------------------------------------------------------ */
+  --fg-1: var(--xn-ink-900);          /* primary text */
+  --fg-2: var(--xn-ink-700);          /* secondary text */
+  --fg-3: var(--xn-ink-500);          /* tertiary / meta */
+  --fg-4: var(--xn-ink-400);          /* disabled / hint */
+  --fg-on-clay: #fefbf4;              /* text on clay-700 */
+  --fg-on-sage: var(--xn-ink-900);
+
+  --bg-1: var(--xn-paper);            /* canvas — near-white */
+  --bg-2: #ffffff;                    /* raised surface — pure white */
+  --bg-3: var(--xn-ink-050);          /* subtle panel */
+  --bg-4: var(--xn-paper-alt);        /* sand accent surface */
+  --bg-inverse: var(--xn-ink-900);
+
+  --border-1: var(--xn-ink-200);      /* default border */
+  --border-2: var(--xn-ink-300);      /* stronger */
+  --border-strong: var(--xn-ink-700);
+
+  --accent:        var(--xn-clay-700);
+  --accent-hover:  var(--xn-clay-800);
+  --accent-press:  var(--xn-clay-900);
+  --accent-soft:   var(--xn-clay-200);
+  --accent-on:     var(--fg-on-clay);
+
+  --accent-2:      var(--xn-sage-500);
+  --accent-2-soft: var(--xn-sage-200);
+
+  /* ------------------------------------------------------------------
+     Type — families
+     ------------------------------------------------------------------ */
+  --font-display: "Namdhinggo", "Playfair Display", Georgia, serif;
+  --font-sans: "Geist", "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* Type — sizes (mostly UI; display overrides below) */
+  --fs-xs: 12px;
+  --fs-sm: 13px;
+  --fs-md: 15px;
+  --fs-lg: 17px;
+  --fs-xl: 20px;
+  --fs-2xl: 24px;
+  --fs-3xl: 32px;
+  --fs-4xl: 44px;
+  --fs-5xl: 60px;
+  --fs-6xl: 84px;
+
+  --lh-tight: 1.05;
+  --lh-snug:  1.2;
+  --lh-body:  1.5;
+  --lh-loose: 1.7;
+
+  --tracking-tight: -0.02em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.04em;
+  --tracking-caps: 0.14em;
+
+  /* ------------------------------------------------------------------
+     Spacing — 4px base
+     ------------------------------------------------------------------ */
+  --sp-0:  0;
+  --sp-1:  4px;
+  --sp-2:  8px;
+  --sp-3:  12px;
+  --sp-4:  16px;
+  --sp-5:  20px;
+  --sp-6:  24px;
+  --sp-8:  32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+  --sp-16: 64px;
+  --sp-20: 80px;
+  --sp-24: 96px;
+
+  /* Radii — restrained. Capsules for buttons/chips, soft rectangles for cards. */
+  --r-xs: 4px;
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 20px;
+  --r-2xl: 28px;
+  --r-pill: 999px;
+
+  /* Shadows — soft, warm-tinted. Never cool/blue. Lighter than before. */
+  --sh-xs: 0 1px 2px rgba(110, 79, 58, 0.05);
+  --sh-sm: 0 1px 2px rgba(110, 79, 58, 0.05), 0 1px 3px rgba(110, 79, 58, 0.04);
+  --sh-md: 0 4px 12px -4px rgba(110, 79, 58, 0.08), 0 2px 4px rgba(110, 79, 58, 0.04);
+  --sh-lg: 0 20px 40px -16px rgba(110, 79, 58, 0.12), 0 4px 10px rgba(110, 79, 58, 0.05);
+  --sh-xl: 0 36px 64px -24px rgba(110, 79, 58, 0.16), 0 10px 20px rgba(110, 79, 58, 0.07);
+  --sh-inset: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast: 120ms;
+  --dur-med: 220ms;
+  --dur-slow: 420ms;
+
+  /* Focus */
+  --focus-ring: 0 0 0 3px color-mix(in oklch, var(--xn-clay-700) 35%, transparent);
+}
+
+/* ==========================================================================
+   Semantic element styles — drop colors_and_type.css on a page to get
+   sensible defaults for headings, body, code, etc.
+   ========================================================================== */
+
+html, body {
+  background: var(--bg-1);
+  color: var(--fg-1);
+  font-family: var(--font-sans);
+  font-size: var(--fs-md);
+  line-height: var(--lh-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.xn-display, h1.xn-display {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--lh-tight);
+  font-size: var(--fs-6xl);
+  color: var(--fg-1);
+}
+
+h1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-4xl);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tracking-tight);
+  color: var(--fg-1);
+  margin: 0 0 var(--sp-4);
+}
+
+h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-3xl);
+  line-height: var(--lh-snug);
+  letter-spacing: var(--tracking-tight);
+  color: var(--fg-1);
+  margin: 0 0 var(--sp-3);
+}
+
+h3 {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: var(--fs-xl);
+  line-height: var(--lh-snug);  letter-spacing: -0.005em;
+  color: var(--fg-1);
+  margin: 0 0 var(--sp-2);
+}
+
+h4 {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: var(--fs-lg);
+  line-height: var(--lh-snug);
+  color: var(--fg-1);
+  margin: 0 0 var(--sp-2);
+}
+
+p {
+  font-family: var(--font-sans);
+  font-size: var(--fs-md);
+  line-height: var(--lh-body);
+  color: var(--fg-2);
+  margin: 0 0 var(--sp-3);
+}
+
+.xn-eyebrow {
+  font-family: var(--font-sans);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-caps);
+  color: var(--fg-3);
+}
+
+.xn-meta {
+  font-family: var(--font-sans);
+  font-size: var(--fs-sm);
+  color: var(--fg-3);
+}
+
+.xn-lede {
+  font-family: var(--font-sans);
+  font-size: var(--fs-xl);
+  line-height: 1.4;
+  color: var(--fg-2);
+  font-weight: 400;
+}
+
+.xn-stat {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-5xl);
+  line-height: 1;
+  letter-spacing: var(--tracking-tight);
+  color: var(--fg-1);
+  font-variant-numeric: tabular-nums;
+}
+
+code, .xn-code, .xn-mono {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  color: var(--fg-1);
+  background: var(--bg-3);
+  padding: 2px 6px;
+  border-radius: var(--r-xs);
+}
+
+a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+a:hover { color: var(--accent-hover); }
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--border-1);
+  margin: var(--sp-6) 0;
+}
+
+::selection { background: var(--xn-clay-300); color: var(--fg-1); }

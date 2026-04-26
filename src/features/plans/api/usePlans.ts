@@ -1,0 +1,98 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { api } from '@/shared/api/axios'
+import { ENDPOINTS } from '@/shared/api/endpoints'
+import type {
+  CoachPlanResponse,
+  CreatePlanForUserRequest,
+  CreatePlanRequest,
+  PlanResponse,
+  UpdatePlanRequest,
+} from '../types'
+
+export const planKeys = {
+  all: ['plans'] as const,
+  byId: (id: string) => ['plans', id] as const,
+  coachOverview: ['plans', 'coach-overview'] as const,
+}
+
+export function usePlans() {
+  return useQuery({
+    queryKey: planKeys.all,
+    queryFn: () => api.get<PlanResponse[]>(ENDPOINTS.plans.list).then((r) => r.data),
+  })
+}
+
+export function usePlan(id: string) {
+  return useQuery({
+    queryKey: planKeys.byId(id),
+    queryFn: () => api.get<PlanResponse>(ENDPOINTS.plans.byId(id)).then((r) => r.data),
+    enabled: !!id,
+  })
+}
+
+export function useCreatePlan() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: CreatePlanRequest) =>
+      api.post<PlanResponse>(ENDPOINTS.plans.create, data).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: planKeys.all }),
+  })
+}
+
+export function useUpdatePlan() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdatePlanRequest }) =>
+      api.put<PlanResponse>(ENDPOINTS.plans.update(id), data).then((r) => r.data),
+    onSuccess: (data) => {
+      qc.setQueryData(planKeys.byId(data.id), data)
+      void qc.invalidateQueries({ queryKey: planKeys.all })
+    },
+  })
+}
+
+export function useDeletePlan() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => api.delete(ENDPOINTS.plans.delete(id)),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: planKeys.all })
+      void qc.invalidateQueries({ queryKey: planKeys.coachOverview })
+    },
+  })
+}
+
+export function useActivatePlan() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) =>
+      api.patch<PlanResponse>(ENDPOINTS.plans.activate(id)).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: planKeys.all }),
+  })
+}
+
+export function useDeactivatePlan() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) =>
+      api.patch<PlanResponse>(ENDPOINTS.plans.deactivate(id)).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: planKeys.all }),
+  })
+}
+
+export function useCoachPlanOverview() {
+  return useQuery({
+    queryKey: planKeys.coachOverview,
+    queryFn: () =>
+      api.get<CoachPlanResponse[]>(ENDPOINTS.plans.coachOverview).then((r) => r.data),
+  })
+}
+
+export function useCreatePlanForUser() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: CreatePlanForUserRequest) =>
+      api.post<PlanResponse>(ENDPOINTS.plans.forUser, data).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: planKeys.coachOverview }),
+  })
+}

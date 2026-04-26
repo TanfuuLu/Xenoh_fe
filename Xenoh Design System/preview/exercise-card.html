@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Xenoh — Exercise card</title>
+<link rel="stylesheet" href="../colors_and_type.css"/>
+<style>
+  html,body{margin:0;background:var(--bg-1);}
+  .wrap{padding:22px 26px;}
+  .ex{background:var(--xn-paper); border:1px solid var(--border-1); border-radius:14px;
+      padding:16px 18px; box-shadow:var(--sh-sm); display:grid;
+      grid-template-columns:1fr auto; gap:10px 16px; align-items:center;}
+  .name{font-family:var(--font-display); font-weight:600; font-size:20px; color:var(--fg-1); letter-spacing:-0.01em;}
+  .meta{font-family:var(--font-sans); font-size:12.5px; color:var(--fg-3); display:flex; gap:10px; align-items:center;}
+  .chip{display:inline-flex; align-items:center; gap:6px; padding:3px 10px; border-radius:999px;
+        font-family:var(--font-sans); font-weight:500; font-size:11.5px;
+        background:var(--xn-clay-200); color:var(--xn-clay-900);}
+  .sets{grid-column:1/-1; display:flex; gap:6px; margin-top:4px;}
+  .set{flex:1; padding:8px 10px; border:1px solid var(--border-1); border-radius:10px;
+       font-family:var(--font-mono); font-size:12.5px; color:var(--fg-2); background:var(--bg-2);
+       display:flex; justify-content:space-between; align-items:center;}
+  .set.done{background:var(--xn-sage-200); border-color:var(--xn-sage-400); color:#3d4a1e;}
+  .set .tick{width:14px; height:14px; border-radius:999px; background:var(--xn-success);
+             display:inline-block; position:relative;}
+  .set .tick::after{content:""; position:absolute; left:3.5px; top:5.5px; width:6px; height:3px;
+                    border-left:2px solid #fbf6ea; border-bottom:2px solid #fbf6ea; transform:rotate(-45deg);}
+  .setline{font-family:var(--font-mono); font-size:14.5px; color:var(--fg-1); font-variant-numeric:tabular-nums;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="ex">
+    <div>
+      <div class="name">Bench press</div>
+      <div class="meta"><span class="chip">Chest</span><span>· Triceps · Shoulders</span></div>
+    </div>
+    <div class="setline">5 × 5 <span style="color:var(--fg-3)">@</span> 80 kg</div>
+    <div class="sets">
+      <div class="set done"><span>5 × 80</span><span class="tick"></span></div>
+      <div class="set done"><span>5 × 80</span><span class="tick"></span></div>
+      <div class="set done"><span>5 × 80</span><span class="tick"></span></div>
+      <div class="set"><span>– × 80</span><span style="color:var(--fg-4)">4</span></div>
+      <div class="set"><span>– × 80</span><span style="color:var(--fg-4)">5</span></div>
+    </div>
+  </div>
+</div>
+</body></html>

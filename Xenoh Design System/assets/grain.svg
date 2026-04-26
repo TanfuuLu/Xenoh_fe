@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <title>Warm paper grain (very subtle)</title>
+  <defs>
+    <filter id="g">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7"></feTurbulence>
+      <feColorMatrix values="0 0 0 0 0.22&#xA;                             0 0 0 0 0.14&#xA;                             0 0 0 0 0.07&#xA;                             0 0 0 0.4 0"></feColorMatrix>
+    </filter>
+  </defs>
+  <rect width="400" height="400" fill="#FBF7EE"></rect>
+  <rect width="400" height="400" filter="url(#g)" opacity="0.08"></rect>
+</svg>

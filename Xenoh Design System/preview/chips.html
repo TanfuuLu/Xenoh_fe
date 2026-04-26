@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Xenoh — Chips & badges</title>
+<link rel="stylesheet" href="../colors_and_type.css"/>
+<style>
+  html,body{margin:0;background:var(--bg-1);}
+  .card{padding:22px 26px; display:flex; flex-direction:column; gap:12px;}
+  .row{display:flex; gap:8px; flex-wrap:wrap; align-items:center;}
+  .chip{display:inline-flex; align-items:center; gap:6px; padding:5px 11px; border-radius:999px;
+        font-family:var(--font-sans); font-weight:500; font-size:12.5px;
+        background:var(--bg-3); color:var(--fg-1); border:1px solid transparent;}
+  .chip.accent{background:var(--xn-clay-200); color:var(--xn-clay-900);}
+  .chip.sage{background:var(--xn-sage-200); color:#5d6635;}
+  .chip.warn{background:var(--xn-warning-bg); color:#8a5a1f;}
+  .chip.danger{background:var(--xn-danger-bg); color:#7a2b1f;}
+  .chip.outline{background:transparent; border-color:var(--border-2); color:var(--fg-2);}
+  .dot{width:6px; height:6px; border-radius:999px;}
+  h4{font-family:var(--font-sans); font-size:12px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:var(--fg-3); margin:0;}
+</style>
+</head>
+<body>
+<div class="card">
+  <h4>Chips & status badges</h4>
+  <div class="row">
+    <span class="chip accent">Push day</span>
+    <span class="chip sage"><span class="dot" style="background:var(--xn-success)"></span> Logged</span>
+    <span class="chip warn"><span class="dot" style="background:var(--xn-warning)"></span> Pending</span>
+    <span class="chip danger"><span class="dot" style="background:var(--xn-danger)"></span> Missed</span>
+    <span class="chip outline">5 × 5 @ 80kg</span>
+    <span class="chip">Chest</span>
+    <span class="chip">Triceps</span>
+    <span class="chip">Shoulders</span>
+  </div>
+</div>
+</body></html>

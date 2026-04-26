@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Xenoh — Numerics</title>
+<link rel="stylesheet" href="../colors_and_type.css"/>
+<style>
+  html,body{margin:0;background:var(--bg-1);}
+  .card{padding:22px 26px;}
+  .row{display:flex; gap:22px; align-items:center;}
+  .stat{font-family:var(--font-display); font-weight:700; font-size:60px; line-height:1;
+        letter-spacing:-0.02em; font-variant-numeric:tabular-nums; color:var(--fg-1);}
+  .unit{font-family:var(--font-sans); font-weight:500; font-size:15px; color:var(--fg-3); margin-left:4px;}
+  .setline{font-family:var(--font-mono); font-size:16px; color:var(--fg-1); letter-spacing:0;}
+  .muted{color:var(--fg-3);}
+  h4{font-family:var(--font-sans); font-size:12px; font-weight:600; letter-spacing:0.14em;
+     text-transform:uppercase; color:var(--fg-3); margin:0 0 10px;}
+  .col{flex:1; padding:14px 16px; background:var(--bg-2); border:1px solid var(--border-1); border-radius:14px;}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="row">
+    <div class="col">
+      <h4>Stat</h4>
+      <div class="stat">80<span class="unit">kg</span></div>
+      <div class="muted" style="font-family:var(--font-sans); font-size:13px; margin-top:6px;">Working weight</div>
+    </div>
+    <div class="col">
+      <h4>Set × rep notation</h4>
+      <div class="setline">5 × 5 <span class="muted">@</span> 80 kg</div>
+      <div class="setline" style="margin-top:6px">3 × 12 <span class="muted">@</span> BW</div>
+      <div class="muted" style="font-family:var(--font-sans); font-size:12px; margin-top:8px;">Always unicode <code>×</code>, never "x". Unit in regular weight.</div>
+    </div>
+  </div>
+</div>
+</body></html>

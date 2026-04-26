@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Xenoh — Radii</title>
+<link rel="stylesheet" href="../colors_and_type.css"/>
+<style>
+  html,body{margin:0;background:var(--bg-1);}
+  .card{padding:22px 26px;}
+  h4{font-family:var(--font-sans); font-size:12px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:var(--fg-3); margin:0 0 16px;}
+  .row{display:flex; gap:14px; align-items:flex-end;}
+  .box{background:var(--xn-clay-200); border:1px solid var(--border-2); width:72px; height:72px;
+       display:flex; align-items:flex-end; justify-content:center; padding:6px;
+       font-family:var(--font-mono); font-size:11px; color:var(--fg-2);}
+  .name{font-family:var(--font-sans); font-size:11.5px; color:var(--fg-2); font-weight:600; text-align:center;}
+  .col{display:flex; flex-direction:column; gap:6px; align-items:center;}
+  .pill{background:var(--xn-clay-700); color:var(--fg-on-clay); padding:8px 18px; border-radius:999px;
+        font-family:var(--font-sans); font-size:12.5px; font-weight:500;}
+</style>
+</head>
+<body>
+<div class="card">
+  <h4>Corner radii</h4>
+  <div class="row">
+    <div class="col"><div class="box" style="border-radius:4px">4</div><div class="name">xs</div></div>
+    <div class="col"><div class="box" style="border-radius:6px">6</div><div class="name">sm</div></div>
+    <div class="col"><div class="box" style="border-radius:10px">10</div><div class="name">md · inputs</div></div>
+    <div class="col"><div class="box" style="border-radius:14px">14</div><div class="name">lg · cards</div></div>
+    <div class="col"><div class="box" style="border-radius:20px">20</div><div class="name">xl · heroes</div></div>
+    <div class="col"><div class="box" style="border-radius:28px">28</div><div class="name">2xl</div></div>
+    <div class="col"><div class="pill">Capsule</div><div class="name">pill · buttons</div></div>
+  </div>
+</div>
+</body></html>

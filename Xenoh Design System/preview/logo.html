@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Xenoh — Logo</title>
+<link rel="stylesheet" href="../colors_and_type.css"/>
+<style>
+  html,body{margin:0;background:var(--bg-1);}
+  .wrap{padding:26px 28px; display:flex; gap:28px; align-items:center; flex-wrap:wrap;}
+  .row{display:flex; gap:22px; align-items:center;}
+  .tile{display:flex; flex-direction:column; gap:10px; align-items:flex-start;}
+  .dark{background:var(--xn-ink-900); padding:18px 22px; border-radius:12px;}
+  .lbl{font-family:var(--font-sans); font-size:11.5px; color:var(--fg-3); font-weight:600;
+       letter-spacing:0.1em; text-transform:uppercase;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="tile"><img src="../assets/logo-mark.svg?v=18" width="88" height="88"/><span class="lbl">Mark</span></div>
+  <div class="tile"><img src="../assets/logo-wordmark.svg?v=18" height="60"/><span class="lbl">Wordmark — light</span></div>
+  <div class="tile"><div class="dark"><img src="../assets/logo-wordmark-dark.svg?v=18" height="56"/></div><span class="lbl">Wordmark — dark</span></div>
+  <div class="tile"><div style="background:var(--bg-2); padding:14px 18px; border-radius:12px; border:1px solid var(--border-1); color:var(--xn-clay-700)"><img src="../assets/logo-mark-mono.svg?v=18" width="48" height="48" style="filter:none"/></div><span class="lbl">Mono</span></div>
+</div>
+</body></html>

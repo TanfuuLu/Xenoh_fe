@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Xenoh — Web app UI kit</title>
+<link rel="stylesheet" href="../../colors_and_type.css"/>
+<link rel="stylesheet" href="app.css"/>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root" data-screen-label="Web app"></div>
+
+<script type="text/babel" src="Primitives.jsx"></script>
+<script type="text/babel" src="Shell.jsx"></script>
+<script type="text/babel" src="Features.jsx"></script>
+<script type="text/babel" src="Screens.jsx"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+
+<script type="text/babel">
+const { useState } = React;
+
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "density": "studio",
+  "character": "journal",
+  "progress": "numbers"
+}/*EDITMODE-END*/;
+
+function AppTweaks() {
+  const [t, setT] = useTweaks(TWEAK_DEFAULTS);
+  // Apply to body via data attrs — CSS does the heavy lifting
+  React.useEffect(() => {
+    document.body.setAttribute('data-density',   t.density   || 'studio');
+    document.body.setAttribute('data-character', t.character || 'journal');
+    document.body.setAttribute('data-progress',  t.progress  || 'numbers');
+    window.__xnTweaks = t;
+    window.dispatchEvent(new Event('__xn_tweaks_changed'));
+  }, [t]);
+  return (
+    <TweaksPanel title="Tweaks">
+      <TweakSection label="Density" help="How much air the UI breathes.">
+        <TweakRadio value={t.density}
+          options={[
+            {value:'roomy',  label:'Roomy'},
+            {value:'studio', label:'Studio'},
+            {value:'tight',  label:'Tight'},
+          ]}
+          onChange={v => setT({density: v})}/>
+      </TweakSection>
+      <TweakSection label="Character" help="The product's personality.">
+        <TweakRadio value={t.character}
+          options={[
+            {value:'journal', label:'Journal'},
+            {value:'clinic',  label:'Clinic'},
+            {value:'gym',     label:'Gym'},
+          ]}
+          onChange={v => setT({character: v})}/>
+      </TweakSection>
+      <TweakSection label="Progress emphasis" help="How completion is communicated.">
+        <TweakRadio value={t.progress}
+          options={[
+            {value:'numbers',   label:'Numbers'},
+            {value:'visual',    label:'Visual'},
+            {value:'narrative', label:'Narrative'},
+          ]}
+          onChange={v => setT({progress: v})}/>
+      </TweakSection>
+    </TweaksPanel>
+  );
+}
+
+function App() {
+  const [persona, setPersona] = useState('individual');
+  const [screen, setScreen] = useState('dashboard');
+
+  // Reset screen if coach flips to individual (same screen ids overlap mostly)
+  const screenFor = (p) => {
+    if (p === 'coach' && screen === 'session') return 'dashboard';
+    return screen;
+  };
+  const cur = screenFor(persona);
+
+  const crumbs = persona === 'coach'
+    ? <span><b>Coach</b> · {labelFor(cur, 'coach')}</span>
+    : <span><b>Training</b> · {labelFor(cur, 'individual')}</span>;
+
+  return (
+    <Shell
+      persona={persona}
+      setPersona={(p)=>{setPersona(p); setScreen('dashboard');}}
+      screen={cur}
+      setScreen={setScreen}
+      crumbs={crumbs}>
+      {persona === 'individual' && cur === 'dashboard' && <DashboardScreen persona="individual" onGoSession={()=>setScreen('session')}/>}
+      {persona === 'individual' && cur === 'session' && <SessionScreen/>}
+      {persona === 'individual' && cur === 'plan' && <PlanEditorScreen/>}
+      {persona === 'individual' && cur === 'library' && <LibraryPlaceholder label="Exercise library"/>}
+      {persona === 'individual' && cur === 'progress' && <LibraryPlaceholder label="Progress"/>}
+      {persona === 'coach' && cur === 'dashboard' && <CoachDashboard/>}
+      {persona === 'coach' && cur === 'clients' && <ClientsScreen/>}
+      {persona === 'coach' && cur === 'plan' && <PlanEditorScreen/>}
+      {persona === 'coach' && cur === 'library' && <LibraryPlaceholder label="Template library"/>}
+      {persona === 'coach' && cur === 'progress' && <LibraryPlaceholder label="Reports"/>}
+    </Shell>
+  );
+}
+
+function labelFor(id, persona) {
+  const map = {
+    individual: { dashboard:'Dashboard', session:"Today's session", plan:'My plan', library:'Exercise library', progress:'Progress' },
+    coach: { dashboard:'Overview', clients:'Clients', plan:'Plan builder', library:'Template library', progress:'Reports' }
+  };
+  return map[persona][id] || id;
+}
+
+function LibraryPlaceholder({ label }) {
+  return (
+    <>
+      <div className="xn-page-head">
+        <div>
+          <div className="xn-eyebrow" style={{color:'var(--fg-3)'}}>Stub</div>
+          <h1>{label}</h1>
+          <div className="sub">This surface is scaffolded but not fleshed out in the kit.</div>
+        </div>
+      </div>
+      <div className="xn-card" style={{padding:'40px', textAlign:'center', color:'var(--fg-3)', fontFamily:'var(--font-sans)'}}>
+        Placeholder — use the primitives in <code>Primitives.jsx</code> to compose this screen.
+      </div>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <>
+    <App/>
+    <AppTweaks/>
+  </>
+);
+</script>
+</body>
+</html>
