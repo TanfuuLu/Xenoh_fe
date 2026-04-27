@@ -75,20 +75,20 @@
   --xn-paper-alt: #F8EED9;
 
   /* Semantic */
-  --xn-success:    #8b9665;
-  --xn-success-bg: #edefdc;
-  --xn-warning:    #d39a52;
-  --xn-warning-bg: #faeccf;
-  --xn-danger:     #c26452;
-  --xn-danger-bg:  #f7ddd4;
-  --xn-info:       #8292a0;
-  --xn-info-bg:    #e6ebef;
+  --xn-success:    #5a7030;
+  --xn-success-bg: #dfe4c3;
+  --xn-warning:    #b06c10;
+  --xn-warning-bg: #f5ddb0;
+  --xn-danger:     #a02818;
+  --xn-danger-bg:  #f0c8c0;
+  --xn-info:       #5a7080;
+  --xn-info-bg:    #d0dce4;
 
   /* Semantic tokens */
   --fg-1: var(--xn-ink-900);
   --fg-2: var(--xn-ink-700);
-  --fg-3: var(--xn-ink-500);
-  --fg-4: var(--xn-ink-400);
+  --fg-3: var(--xn-ink-600);  /* was ink-500 — darker for readability */
+  --fg-4: var(--xn-ink-500);  /* was ink-400 */
   --fg-on-clay: #fefbf4;
 
   --bg-1: var(--xn-paper);
@@ -97,12 +97,12 @@
   --bg-4: var(--xn-paper-alt);
   --bg-inverse: var(--xn-ink-900);
 
-  --border-1: var(--xn-ink-200);
-  --border-2: var(--xn-ink-300);
+  --border-1: var(--xn-ink-300);  /* was ink-200 — more visible */
+  --border-2: var(--xn-ink-400);
 
-  --accent:       var(--xn-clay-700);
-  --accent-hover: var(--xn-clay-800);
-  --accent-press: var(--xn-clay-900);
+  --accent:       var(--xn-clay-800);  /* was clay-700 — darker */
+  --accent-hover: var(--xn-clay-900);
+  --accent-press: #4a2e1a;
   --accent-soft:  var(--xn-clay-200);
   --accent-on:    var(--fg-on-clay);
 
@@ -133,18 +133,18 @@
 /* ── Tailwind theme mapping ────────────────────────────────────────────── */
 @theme {
   /* Core semantic tokens → Tailwind utilities */
-  --color-primary:    #A98B76;    /* clay-700 */
-  --color-surface:    #ffffff;    /* raised card surface */
-  --color-background: #FFFDF8;   /* paper canvas */
-  --color-text:       #3a2a1e;   /* ink-900 */
-  --color-muted:      #a99884;   /* ink-500 */
-  --color-border:     #ece3d1;   /* ink-200 */
-  --color-panel:      #fcf9f1;   /* ink-050 */
-  --color-sand:       #F3E4C9;   /* clay-200 */
-  --color-sage:       #BABF94;   /* sage-500 */
-  --color-success:    #8b9665;
-  --color-danger:     #c26452;
-  --color-warning:    #d39a52;
+  --color-primary:    #8f6f56;    /* clay-800 — darker */
+  --color-surface:    #ffffff;
+  --color-background: #FFFDF8;
+  --color-text:       #3a2a1e;
+  --color-muted:      #8a7864;   /* was #a99884 — much darker */
+  --color-border:     #ded3c0;   /* was #ece3d1 — more visible */
+  --color-panel:      #f8f3e8;
+  --color-sand:       #F3E4C9;
+  --color-sage:       #a7ad83;   /* sage-600 — darker */
+  --color-success:    #5a7030;
+  --color-danger:     #a02818;
+  --color-warning:    #b06c10;
 
   /* Font families available as Tailwind utilities */
   --font-display: "Namdhinggo", Georgia, serif;
@@ -159,13 +159,14 @@ html {
   color-scheme: light;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  font-size: 120%; /* ~20% larger than browser default 16px → 19.2px base */
 }
 
 body {
   background-color: var(--xn-paper);
   color: var(--xn-ink-900);
   font-family: var(--font-sans);
-  font-size: 17px;
+  font-size: 1rem;
   line-height: 1.5;
   margin: 0;
 }
@@ -234,14 +235,14 @@ body {
 .xn-brand-name {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 25px;
+  font-size: 30px;
   letter-spacing: -0.01em;
-  color: var(--xn-clay-700);
+  color: var(--xn-clay-800);
 }
 .xn-nav { display: flex; flex-direction: column; gap: 2px; }
 .xn-nav-section {
   font-family: var(--font-sans);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -255,7 +256,7 @@ body {
   padding: 8px 10px;
   border-radius: 10px;
   font-family: var(--font-sans);
-  font-size: 16px;
+  font-size: 19px;
   color: var(--fg-2);
   text-decoration: none;
   font-weight: 500;
@@ -294,8 +295,8 @@ body {
 .xn-btn {
   font-family: var(--font-sans);
   font-weight: 500;
-  font-size: 16px;
-  padding: 9px 18px;
+  font-size: 19px;
+  padding: 10px 20px;
   border-radius: 999px;
   border: 1px solid transparent;
   cursor: pointer;
@@ -322,18 +323,18 @@ body {
 .xn-btn.ghost { background: transparent; color: var(--fg-1); }
 .xn-btn.ghost:hover { background: var(--bg-3); }
 .xn-btn.danger { background: var(--xn-danger); color: #fbf6ea; }
-.xn-btn.sm { font-size: 15px; padding: 6px 13px; }
+.xn-btn.sm { font-size: 18px; padding: 7px 15px; }
 
 /* Chip/badge */
 .xn-chip {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 3px 10px;
+  padding: 4px 12px;
   border-radius: 999px;
   font-family: var(--font-sans);
   font-weight: 500;
-  font-size: 14px;
+  font-size: 17px;
   background: var(--bg-3);
   color: var(--fg-1);
 }
@@ -357,13 +358,13 @@ body {
 .xn-plan .plan-name {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 25px;
+  font-size: 30px;
   letter-spacing: -0.01em;
   color: var(--fg-1);
 }
 .xn-plan .plan-dates {
   font-family: var(--font-mono);
-  font-size: 14px;
+  font-size: 17px;
   color: var(--fg-3);
 }
 .xn-plan .plan-bar {
@@ -412,13 +413,13 @@ body {
 .xn-ex .ex-name {
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: 23px;
+  font-size: 28px;
   color: var(--fg-1);
   letter-spacing: -0.01em;
 }
 .xn-ex .ex-setline {
   font-family: var(--font-mono);
-  font-size: 16px;
+  font-size: 19px;
   color: var(--fg-1);
   font-variant-numeric: tabular-nums;
 }
@@ -426,11 +427,11 @@ body {
 /* Exercise set row */
 .xn-set {
   flex: 1;
-  padding: 9px 12px;
+  padding: 10px 14px;
   border: 1px solid var(--border-1);
   border-radius: 10px;
   font-family: var(--font-mono);
-  font-size: 15px;
+  font-size: 18px;
   color: var(--fg-2);
   background: var(--bg-1);
   display: flex;
@@ -462,7 +463,7 @@ body {
 .xn-stat .stat-label {
   font-family: var(--font-sans);
   font-weight: 600;
-  font-size: 12px;
+  font-size: 14px;
   letter-spacing: 0.13em;
   text-transform: uppercase;
   color: var(--fg-3);
@@ -470,7 +471,7 @@ body {
 .xn-stat .stat-value {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 47px;
+  font-size: 56px;
   line-height: 1;
   letter-spacing: -0.02em;
   color: var(--fg-1);
@@ -495,14 +496,14 @@ body {
 
 /* Avatar */
 .xn-avatar {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border-radius: 999px;
   background: var(--xn-clay-300);
   color: var(--xn-clay-900);
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 16px;
+  font-size: 19px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -523,9 +524,9 @@ body {
   border: 1px solid var(--border-1);
   border-radius: 8px;
   background: var(--bg-2);
-  padding: 8px 12px;
+  padding: 10px 14px;
   font-family: var(--font-sans);
-  font-size: 16px;
+  font-size: 19px;
   color: var(--fg-1);
   transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
   outline: none;

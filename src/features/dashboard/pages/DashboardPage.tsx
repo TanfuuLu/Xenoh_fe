@@ -95,6 +95,8 @@ export function DashboardPage() {
             </div>
             <Badge variant="success">{tc.active}</Badge>
           </div>
+
+          {/* Plan overall progress */}
           <div>
             <div className="mb-1 flex justify-between text-xs text-muted">
               <span>{activePlan.completedDays} / {activePlan.totalDays} {tc.days}</span>
@@ -109,6 +111,35 @@ export function DashboardPage() {
               />
             </div>
           </div>
+
+          {/* This week's progress */}
+          {currentWeek && currentWeek.totalDays > 0 && (() => {
+            const weekPct  = Math.round((currentWeek.completedDays / currentWeek.totalDays) * 100)
+            const weekDone = currentWeek.completedDays === currentWeek.totalDays
+            return (
+              <div
+                className="rounded-lg px-3 py-2.5 space-y-1.5"
+                style={{ background: 'var(--bg-3)', border: '1px solid var(--border-1)' }}
+              >
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-medium text-muted">{td.thisWeek}</span>
+                  <span className="font-bold" style={{ color: weekDone ? 'var(--xn-success)' : 'var(--color-primary)' }}>
+                    {currentWeek.completedDays}/{currentWeek.totalDays} {tc.days} · {weekPct}%
+                  </span>
+                </div>
+                <div className="h-1.5 w-full overflow-hidden rounded-full" style={{ background: 'var(--border-1)' }}>
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${weekPct}%` }}
+                    transition={{ duration: 0.6, ease: 'easeOut' }}
+                    className="h-full rounded-full"
+                    style={{ background: weekDone ? 'var(--xn-success)' : 'var(--color-primary)' }}
+                  />
+                </div>
+              </div>
+            )
+          })()}
+
           <Link to={`/plans/${activePlan.id}`} className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
             {td.viewDetails} <ChevronRight size={14} />
           </Link>

@@ -108,6 +108,7 @@ export const translations = {
       continueWorkout: 'Continue',
       dayCompleted: 'Completed',
       exercisesPlanned: 'exercises planned',
+      thisWeek: 'This week',
     },
 
     // ── Plan list (PlansPage) ─────────────────────────────────────────────────
@@ -141,6 +142,8 @@ export const translations = {
     weekDetail: {
       title: 'Days this week',
       completed: 'Completed',
+      weeklyCompletion: 'Weekly Completion',
+      daysCompleted: 'days completed',
       startSession: 'Start',
       copyDay: 'Copy to…',
       copyDayTitle: 'Copy exercises',
@@ -365,6 +368,7 @@ export const translations = {
       continueWorkout: 'Tiếp tục',
       dayCompleted: 'Đã hoàn thành',
       exercisesPlanned: 'bài tập',
+      thisWeek: 'Tuần này',
     },
 
     plans: {
@@ -395,6 +399,8 @@ export const translations = {
     weekDetail: {
       title: 'Các ngày trong tuần',
       completed: 'Đã hoàn thành',
+      weeklyCompletion: 'Hoàn thành tuần',
+      daysCompleted: 'ngày đã hoàn thành',
       startSession: 'Vào tập',
       copyDay: 'Copy sang…',
       copyDayTitle: 'Copy bài tập',

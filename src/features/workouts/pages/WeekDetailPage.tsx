@@ -147,6 +147,37 @@ export function WeekDetailPage() {
         )}
       </div>
 
+      {/* Weekly completion progress */}
+      {currentWeek && currentWeek.totalDays > 0 && (() => {
+        const pct      = Math.round((currentWeek.completedDays / currentWeek.totalDays) * 100)
+        const weekDone = currentWeek.completedDays === currentWeek.totalDays
+        return (
+          <div
+            className="rounded-xl px-4 py-3 space-y-2"
+            style={{ background: 'var(--bg-2)', border: '1px solid var(--border-1)' }}
+          >
+            <div className="flex items-center justify-between text-sm">
+              <span className="font-medium text-text">{tw.weeklyCompletion}</span>
+              <span className="font-bold" style={{ color: weekDone ? 'var(--xn-success)' : 'var(--color-primary)' }}>
+                {pct}%
+              </span>
+            </div>
+            <div className="h-2 w-full overflow-hidden rounded-full" style={{ background: 'var(--border-1)' }}>
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${pct}%` }}
+                transition={{ duration: 0.6, ease: 'easeOut' }}
+                className="h-full rounded-full transition-colors"
+                style={{ background: weekDone ? 'var(--xn-success)' : 'var(--color-primary)' }}
+              />
+            </div>
+            <p className="text-xs text-muted">
+              {currentWeek.completedDays} / {currentWeek.totalDays} {tc.days} · {tw.daysCompleted}
+            </p>
+          </div>
+        )
+      })()}
+
       {/* Week-level warning: any day has an exercise with actual < planned */}
       {weekHasWarning && (
         <div
