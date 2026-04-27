@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "xenoh-fe",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["vite", "--host"],
+      "port": 5174,
+      "autoPort": false
+    }
+  ]
+}

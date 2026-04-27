@@ -101,6 +101,12 @@ export const translations = {
       createPlanLink: 'Create a plan →',
       weight: 'Weight',
       streak: 'Streak',
+      todayTraining: "Today's Training",
+      restDay: 'Rest day',
+      startWorkout: 'Start workout',
+      continueWorkout: 'Continue',
+      dayCompleted: 'Completed',
+      exercisesPlanned: 'exercises planned',
     },
 
     // ── Plan list (PlansPage) ─────────────────────────────────────────────────
@@ -351,6 +357,12 @@ export const translations = {
       createPlanLink: 'Tạo plan mới →',
       weight: 'Cân nặng',
       streak: 'Streak',
+      todayTraining: 'Buổi tập hôm nay',
+      restDay: 'Ngày nghỉ',
+      startWorkout: 'Bắt đầu tập',
+      continueWorkout: 'Tiếp tục',
+      dayCompleted: 'Đã hoàn thành',
+      exercisesPlanned: 'bài tập',
     },
 
     plans: {

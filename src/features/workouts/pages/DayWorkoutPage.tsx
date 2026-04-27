@@ -1,24 +1,29 @@
 import { useMemo, useState } from 'react'
 import { useParams, Link, useLocation } from 'react-router'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
-import { ChevronLeft, Plus, Trash2, CheckCircle2, Circle, Trophy, Dumbbell, Search, X, TriangleAlert } from 'lucide-react'
+import { ChevronLeft, Plus, Trash2, CheckCircle2, Circle, Trophy, Dumbbell, Search, X, Copy, AlertTriangle,TriangleAlert } from 'lucide-react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { format } from 'date-fns'
+import { vi as viLocale, enUS } from 'date-fns/locale'
 import { Button } from '@/shared/components/Button'
 import { Badge } from '@/shared/components/Badge'
 import { Spinner } from '@/shared/components/Spinner'
 import { Modal } from '@/shared/components/Modal'
 import { Input } from '@/shared/components/Input'
-import { slideUp, staggerContainer } from '@/shared/utils/motion'
+import { Select } from '@/shared/components/Select'
+import { slideUp, staggerContainer, scaleIn } from '@/shared/utils/motion'
 import { cn } from '@/shared/utils/cn'
-import { useT } from '@/shared/i18n'
+import { useT, useLangStore } from '@/shared/i18n'
 import {
   useExercises,
   useCreateExercise,
   useDeleteExercise,
   useCompleteSet,
   useExerciseTemplates,
+  useDailyWorkouts,
+  useCopyDay,
 } from '../index'
 import type { ExerciseResponse, ExerciseSetResponse, ExerciseTemplateResponse } from '../types'
 
@@ -27,12 +32,19 @@ import type { ExerciseResponse, ExerciseSetResponse, ExerciseTemplateResponse } 
 export function DayWorkoutPage() {
   const { dailyWorkoutId = '' } = useParams()
   const { state } = useLocation()
-  const canEdit = (state as { canEdit?: boolean } | null)?.canEdit ?? true
+  const locationState = state as { canEdit?: boolean; weeklyWorkoutId?: string } | null
+  const canEdit = locationState?.canEdit ?? true
+  const weeklyWorkoutId = locationState?.weeklyWorkoutId ?? ''
   const shouldReduce = useReducedMotion()
   const [showAdd, setShowAdd] = useState(false)
+  const [showCopy, setShowCopy] = useState(false)
+  const [copyTarget, setCopyTarget] = useState('')
   const t   = useT()
+  const tw  = t.weekDetail
   const tdw = t.dayWorkout
   const tc  = t.common
+  const lang = useLangStore((s) => s.lang)
+  const dateLocale = lang === 'vi' ? viLocale : enUS
 
   const { data: exercises, isLoading } = useExercises(dailyWorkoutId)
 
@@ -42,6 +54,9 @@ export function DayWorkoutPage() {
   const { mutate: createExercise, isPending: adding } = useCreateExercise(dailyWorkoutId)
   const { mutate: deleteExercise } = useDeleteExercise(dailyWorkoutId)
   const { mutate: completeSet } = useCompleteSet(dailyWorkoutId)
+
+  const { data: siblingDays } = useDailyWorkouts(weeklyWorkoutId)
+  const { mutate: copyDay, isPending: copying } = useCopyDay(weeklyWorkoutId)
 
   const addSchema = z.object({
     exerciseTemplateId: z.string().min(1, tdw.selectExerciseError),
@@ -73,6 +88,33 @@ export function DayWorkoutPage() {
     completeSet({ setId, data: { actualReps, actualWeight, rpe } })
   }
 
+  const currentDay = siblingDays?.find((d) => d.id === dailyWorkoutId)
+  const copyTargetOptions =
+    siblingDays
+      ?.filter(
+        (d) =>
+          d.id !== dailyWorkoutId &&
+          currentDay != null &&
+          new Date(d.date) > new Date(currentDay.date),
+      )
+      .map((d) => ({
+        value: d.id,
+        label: `${d.dayOfWeek} · ${format(new Date(d.date), 'd MMM', { locale: dateLocale })}`,
+      })) ?? []
+
+  function handleCopyDay() {
+    if (!copyTarget) return
+    copyDay(
+      { sourceDailyWorkoutId: dailyWorkoutId, data: { targetDailyWorkoutId: copyTarget } },
+      {
+        onSuccess: () => {
+          setShowCopy(false)
+          setCopyTarget('')
+        },
+      },
+    )
+  }
+
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
@@ -101,9 +143,16 @@ export function DayWorkoutPage() {
           </div>
         </div>
         {canEdit && (
-          <Button size="sm" onClick={() => setShowAdd(true)}>
-            <Plus size={16} /> {tdw.addExercise}
-          </Button>
+          <div className="flex items-center gap-2">
+            {weeklyWorkoutId && (
+              <Button variant="secondary" size="sm" onClick={() => { setShowCopy(true); setCopyTarget('') }}>
+                <Copy size={15} /> {tw.copyDay}
+              </Button>
+            )}
+            <Button size="sm" onClick={() => setShowAdd(true)}>
+              <Plus size={16} /> {tdw.addExercise}
+            </Button>
+          </div>
         )}
       </div>
 
@@ -192,6 +241,61 @@ export function DayWorkoutPage() {
           </div>
         </form>
       </Modal>
+
+      {/* Modal: Copy Day */}
+      <AnimatePresence>
+        {showCopy && (
+          <Modal
+            open={showCopy}
+            onClose={() => { setShowCopy(false); setCopyTarget('') }}
+            title={tw.copyDayTitle}
+          >
+            <motion.div initial="hidden" animate="visible" variants={scaleIn} className="space-y-4">
+              <Select
+                label={tw.copyDayTarget}
+                options={copyTargetOptions}
+                placeholder={tw.copyDayTargetPlaceholder}
+                value={copyTarget}
+                onChange={setCopyTarget}
+              />
+
+              {copyTarget && (
+                <motion.div
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.18 }}
+                  className="flex items-start gap-2 rounded-lg px-3 py-2.5 text-xs"
+                  style={{
+                    background: 'var(--xn-warning-bg, rgba(245,158,11,0.1))',
+                    color: 'var(--xn-warning, #f59e0b)',
+                  }}
+                >
+                  <AlertTriangle size={14} className="flex-shrink-0 mt-0.5" />
+                  <span>{tw.copyDayWarning}</span>
+                </motion.div>
+              )}
+
+              <div className="flex justify-end gap-2 pt-1">
+                <Button
+                  variant="secondary"
+                  type="button"
+                  onClick={() => { setShowCopy(false); setCopyTarget('') }}
+                >
+                  {tc.cancel}
+                </Button>
+                <Button
+                  type="button"
+                  disabled={!copyTarget}
+                  loading={copying}
+                  onClick={handleCopyDay}
+                >
+                  <Copy size={14} /> {tw.copyDayConfirm}
+                </Button>
+              </div>
+            </motion.div>
+          </Modal>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

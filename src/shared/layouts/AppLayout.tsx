@@ -1,9 +1,10 @@
 import React, { useState } from 'react'
-import { NavLink, Link, Outlet, useNavigate } from 'react-router' // Outlet used for page content slot
+import { NavLink, Link, Outlet, useNavigate } from 'react-router'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, ClipboardList, User, Users,
   UserCheck, Menu, X, LogOut, Dumbbell, ChevronDown,
+  PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react'
 import { cn } from '@/shared/utils/cn'
 import { useAuthStore } from '@/features/auth'
@@ -11,11 +12,13 @@ import { useLogout } from '@/features/auth'
 import { useT } from '@/shared/i18n'
 import { LanguageSwitcher } from '@/shared/components/LanguageSwitcher'
 
-// Nav items are built inside the component so they react to language changes
+const MINI_WIDTH  = 64
+const FULL_WIDTH  = 240
 
 export function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [mini, setMini] = useState(false)
   const user      = useAuthStore((s) => s.user)
   const isCoach   = useAuthStore((s) => s.user?.roles?.includes('Coach') ?? false)
   const { mutate: logout } = useLogout()
@@ -50,15 +53,19 @@ export function AppLayout() {
     : '?'
 
   return (
-    <div className="xn-shell">
-
+    <div
+      className="xn-shell"
+      style={{ gridTemplateColumns: `${mini ? MINI_WIDTH : FULL_WIDTH}px 1fr` }}
+    >
       {/* ── Sidebar (desktop) ─────────────────────────────────────────── */}
-      <aside className="xn-sidebar hidden md:flex">
+      <aside className="xn-sidebar hidden md:flex" style={{ width: mini ? MINI_WIDTH : FULL_WIDTH }}>
         <SidebarInner
           navItems={navItems}
           initials={initials}
           user={user}
           isCoach={isCoach}
+          mini={mini}
+          onToggleMini={() => setMini((v) => !v)}
           onLogout={handleLogout}
         />
       </aside>
@@ -80,13 +87,20 @@ export function AppLayout() {
               animate={{ x: 0 }}
               exit={{ x: -260 }}
               transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-              className="xn-sidebar fixed inset-y-0 left-0 z-50 flex w-64 md:hidden"
+              className="xn-sidebar fixed inset-y-0 left-0 z-50 flex md:hidden"
+              style={{ width: FULL_WIDTH }}
             >
-              <div className="flex items-center justify-between" style={{ padding: '0 4px 12px', borderBottom: '1px solid var(--border-1)' }}>
+              <div
+                className="flex items-center justify-between"
+                style={{ height: 60, padding: '0 8px', borderBottom: '1px solid var(--border-1)', flexShrink: 0 }}
+              >
                 <Link to="/" className="xn-brand-name" style={{ textDecoration: 'none' }} onClick={() => setMobileOpen(false)}>
                   Xenoh
                 </Link>
-                <button onClick={() => setMobileOpen(false)} style={{ color: 'var(--fg-3)', background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
+                <button
+                  onClick={() => setMobileOpen(false)}
+                  style={{ color: 'var(--fg-3)', background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}
+                >
                   <X size={20} />
                 </button>
               </div>
@@ -95,6 +109,7 @@ export function AppLayout() {
                 initials={initials}
                 user={user}
                 isCoach={isCoach}
+                mini={false}
                 onLogout={handleLogout}
                 onNavClick={() => setMobileOpen(false)}
                 hideBrand
@@ -123,83 +138,83 @@ export function AppLayout() {
             Xenoh
           </Link>
 
-          {/* Desktop: breadcrumb slot */}
+          {/* Desktop: spacer */}
           <div className="hidden md:block" />
 
           {/* Right: lang switcher + user menu */}
           <div className="flex items-center gap-3">
-          <LanguageSwitcher variant="text" />
-          <div className="relative">
-            <button
-              onClick={() => setUserMenuOpen((v) => !v)}
-              className="flex items-center gap-2 rounded-full px-2 py-1 transition-colors"
-              style={{ background: 'none', border: '1px solid var(--border-1)', cursor: 'pointer' }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--bg-3)'; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'none'; }}
-            >
-              <div className="xn-avatar" style={{ width: 28, height: 28, fontSize: 11 }}>{initials}</div>
-              <span className="hidden md:block text-sm font-medium max-w-[120px] truncate" style={{ color: 'var(--fg-1)' }}>
-                {user?.fullName ?? user?.email}
-              </span>
-              <ChevronDown size={13} style={{ color: 'var(--fg-3)', transform: userMenuOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
-            </button>
+            <LanguageSwitcher variant="text" />
+            <div className="relative">
+              <button
+                onClick={() => setUserMenuOpen((v) => !v)}
+                className="flex items-center gap-2 rounded-full px-2 py-1 transition-colors"
+                style={{ background: 'none', border: '1px solid var(--border-1)', cursor: 'pointer' }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--bg-3)' }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'none' }}
+              >
+                <div className="xn-avatar" style={{ width: 28, height: 28, fontSize: 11 }}>{initials}</div>
+                <span className="hidden md:block text-sm font-medium max-w-[120px] truncate" style={{ color: 'var(--fg-1)' }}>
+                  {user?.fullName ?? user?.email}
+                </span>
+                <ChevronDown size={13} style={{ color: 'var(--fg-3)', transform: userMenuOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
+              </button>
 
-            <AnimatePresence>
-              {userMenuOpen && (
-                <>
-                  <div className="fixed inset-0 z-10" onClick={() => setUserMenuOpen(false)} />
-                  <motion.div
-                    initial={{ opacity: 0, y: -8, scale: 0.96 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -8, scale: 0.96 }}
-                    transition={{ duration: 0.13 }}
-                    className="xn-card absolute right-0 top-full z-20 mt-2 w-52"
-                    style={{ padding: 0, overflow: 'hidden', borderRadius: 14 }}
-                  >
-                    <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-1)' }}>
-                      <p className="text-sm font-medium truncate" style={{ color: 'var(--fg-1)', margin: 0 }}>{user?.fullName}</p>
-                      <p className="text-xs truncate" style={{ color: 'var(--fg-3)', margin: '2px 0 0' }}>{user?.email}</p>
-                    </div>
-                    <div style={{ padding: 6 }}>
-                      <NavLink
-                        to="/profile"
-                        onClick={() => setUserMenuOpen(false)}
-                        className="xn-nav-item"
-                        style={{ fontSize: 13 }}
-                      >
-                        <User size={15} />
-                        {tn.profile}
-                      </NavLink>
-                      <button
-                        onClick={handleLogout}
-                        className="xn-nav-item w-full text-left"
-                        style={{ fontSize: 13, background: 'none', border: 'none', width: '100%', cursor: 'pointer' }}
-                        onMouseEnter={(e) => {
-                          const el = e.currentTarget as HTMLElement
-                          el.style.background = 'var(--xn-danger-bg)'
-                          el.style.color = 'var(--xn-danger)'
-                        }}
-                        onMouseLeave={(e) => {
-                          const el = e.currentTarget as HTMLElement
-                          el.style.background = ''
-                          el.style.color = ''
-                        }}
-                      >
-                        <LogOut size={15} />
-                        {tn.logout}
-                      </button>
-                    </div>
-                  </motion.div>
-                </>
-              )}
-            </AnimatePresence>
+              <AnimatePresence>
+                {userMenuOpen && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setUserMenuOpen(false)} />
+                    <motion.div
+                      initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                      transition={{ duration: 0.13 }}
+                      className="xn-card absolute right-0 top-full z-20 mt-2 w-52"
+                      style={{ padding: 0, overflow: 'hidden', borderRadius: 14 }}
+                    >
+                      <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-1)' }}>
+                        <p className="text-sm font-medium truncate" style={{ color: 'var(--fg-1)', margin: 0 }}>{user?.fullName}</p>
+                        <p className="text-xs truncate" style={{ color: 'var(--fg-3)', margin: '2px 0 0' }}>{user?.email}</p>
+                      </div>
+                      <div style={{ padding: 6 }}>
+                        <NavLink
+                          to="/profile"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="xn-nav-item"
+                          style={{ fontSize: 13 }}
+                        >
+                          <User size={15} />
+                          {tn.profile}
+                        </NavLink>
+                        <button
+                          onClick={handleLogout}
+                          className="xn-nav-item w-full text-left"
+                          style={{ fontSize: 13, background: 'none', border: 'none', width: '100%', cursor: 'pointer' }}
+                          onMouseEnter={(e) => {
+                            const el = e.currentTarget as HTMLElement
+                            el.style.background = 'var(--xn-danger-bg)'
+                            el.style.color = 'var(--xn-danger)'
+                          }}
+                          onMouseLeave={(e) => {
+                            const el = e.currentTarget as HTMLElement
+                            el.style.background = ''
+                            el.style.color = ''
+                          }}
+                        >
+                          <LogOut size={15} />
+                          {tn.logout}
+                        </button>
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
-          </div>{/* end flex gap-3 */}
         </header>
 
         {/* Page content */}
         <main className="flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-5xl" style={{ padding: '28px 32px' }}>
+          <div className="mx-auto max-w-7xl" style={{ padding: '28px 32px' }}>
             <Outlet />
           </div>
         </main>
@@ -221,68 +236,136 @@ interface SidebarInnerProps {
   initials: string
   user: { fullName?: string; email?: string } | null
   isCoach: boolean
+  mini: boolean
+  onToggleMini?: () => void
   onLogout: () => void
   onNavClick?: () => void
   hideBrand?: boolean
 }
 
-function SidebarInner({ navItems, initials, user, isCoach, onLogout, onNavClick, hideBrand }: SidebarInnerProps) {
+function SidebarInner({
+  navItems, initials, user, isCoach, mini, onToggleMini, onLogout, onNavClick, hideBrand,
+}: SidebarInnerProps) {
   const t  = useT()
   const tn = t.nav
+
   return (
     <>
+      {/* Brand */}
       {!hideBrand && (
-        <div className="xn-brand">
-          <img src="/assets/logo-mark.svg" alt="Xenoh" width={30} height={30} />
-          <Link to="/" className="xn-brand-name" style={{ textDecoration: 'none' }}>Xenoh</Link>
+        <div className="xn-brand" style={{ justifyContent: mini ? 'center' : 'space-between' }}>
+          {mini ? (
+            <img src="/assets/logo-mark.svg" alt="Xenoh" width={30} height={30} />
+          ) : (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <img src="/assets/logo-mark.svg" alt="Xenoh" width={30} height={30} />
+                <Link to="/" className="xn-brand-name" style={{ textDecoration: 'none' }}>Xenoh</Link>
+              </div>
+            </>
+          )}
+
+          {onToggleMini && (
+            <button
+              onClick={onToggleMini}
+              title={mini ? 'Expand sidebar' : 'Collapse sidebar'}
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                color: 'var(--fg-3)', padding: 4, borderRadius: 6,
+                display: 'flex', alignItems: 'center', flexShrink: 0,
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--fg-1)' }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--fg-3)' }}
+            >
+              {mini ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+            </button>
+          )}
         </div>
       )}
 
-      <nav className="xn-nav flex-1">
-        <span className="xn-nav-section">{isCoach ? tn.sectionCoach : tn.sectionTraining}</span>
+      {/* Nav */}
+      <nav className="xn-nav flex-1" style={{ marginTop: hideBrand ? 8 : 0 }}>
+        {!mini && (
+          <span className="xn-nav-section">{isCoach ? tn.sectionCoach : tn.sectionTraining}</span>
+        )}
         {navItems.map(({ to, icon: Icon, label }) => (
           <NavLink
             key={to}
             to={to}
             end={to === '/dashboard'}
             onClick={onNavClick}
+            title={mini ? label : undefined}
             className={({ isActive }) => cn('xn-nav-item', isActive && 'active')}
+            style={mini ? { justifyContent: 'center', padding: '10px 0' } : undefined}
           >
             <Icon size={17} />
-            {label}
+            {!mini && label}
           </NavLink>
         ))}
       </nav>
 
       {/* User area */}
       <div style={{ borderTop: '1px solid var(--border-1)', paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <div className="flex items-center gap-2.5" style={{ padding: '6px 10px' }}>
-          <div className="xn-avatar" style={{ width: 32, height: 32, fontSize: 12, flexShrink: 0 }}>{initials}</div>
-          <div className="min-w-0">
-            <p className="text-sm font-medium truncate" style={{ color: 'var(--fg-1)', margin: 0 }}>{user?.fullName}</p>
-            <p className="text-xs truncate" style={{ color: 'var(--fg-3)', margin: 0 }}>{user?.email}</p>
-          </div>
-        </div>
-        <button
-          onClick={onLogout}
-          className="xn-nav-item"
-          style={{ background: 'none', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left' }}
-          onMouseEnter={(e) => {
-            const el = e.currentTarget as HTMLElement
-            el.style.background = 'var(--xn-danger-bg)'
-            el.style.color = 'var(--xn-danger)'
-          }}
-          onMouseLeave={(e) => {
-            const el = e.currentTarget as HTMLElement
-            el.style.background = ''
-            el.style.color = ''
-          }}
-        >
-          <LogOut size={16} />
-          {tn.logout}
-        </button>
+        {mini ? (
+          <>
+            <div
+              title={user?.fullName}
+              style={{ display: 'flex', justifyContent: 'center', padding: '4px 0' }}
+            >
+              <div className="xn-avatar" style={{ width: 32, height: 32, fontSize: 12 }}>{initials}</div>
+            </div>
+            <button
+              onClick={onLogout}
+              title={tn.logout}
+              className="xn-nav-item"
+              style={{
+                justifyContent: 'center', padding: '10px 0',
+                background: 'none', border: 'none', cursor: 'pointer', width: '100%',
+              }}
+              onMouseEnter={(e) => {
+                const el = e.currentTarget as HTMLElement
+                el.style.background = 'var(--xn-danger-bg)'
+                el.style.color = 'var(--xn-danger)'
+              }}
+              onMouseLeave={(e) => {
+                const el = e.currentTarget as HTMLElement
+                el.style.background = ''
+                el.style.color = ''
+              }}
+            >
+              <LogOut size={16} />
+            </button>
+          </>
+        ) : (
+          <>
+            <div className="flex items-center gap-2.5" style={{ padding: '6px 10px' }}>
+              <div className="xn-avatar" style={{ width: 32, height: 32, fontSize: 12, flexShrink: 0 }}>{initials}</div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium truncate" style={{ color: 'var(--fg-1)', margin: 0 }}>{user?.fullName}</p>
+                <p className="text-xs truncate" style={{ color: 'var(--fg-3)', margin: 0 }}>{user?.email}</p>
+              </div>
+            </div>
+            <button
+              onClick={onLogout}
+              className="xn-nav-item"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left' }}
+              onMouseEnter={(e) => {
+                const el = e.currentTarget as HTMLElement
+                el.style.background = 'var(--xn-danger-bg)'
+                el.style.color = 'var(--xn-danger)'
+              }}
+              onMouseLeave={(e) => {
+                const el = e.currentTarget as HTMLElement
+                el.style.background = ''
+                el.style.color = ''
+              }}
+            >
+              <LogOut size={16} />
+              {tn.logout}
+            </button>
+          </>
+        )}
       </div>
     </>
   )
 }
-
