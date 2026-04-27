@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, ClipboardList, User, Users,
   UserCheck, Menu, X, LogOut, Dumbbell, ChevronDown,
-  PanelLeftClose, PanelLeftOpen,
+  PanelLeftClose, PanelLeftOpen, Trophy,
 } from 'lucide-react'
 import { cn } from '@/shared/utils/cn'
 import { useAuthStore } from '@/features/auth'
@@ -27,18 +27,20 @@ export function AppLayout() {
   const tn        = t.nav
 
   const individualNav = [
-    { to: '/dashboard', icon: LayoutDashboard, label: tn.dashboard },
-    { to: '/plans',     icon: ClipboardList,   label: tn.myPlans },
-    { to: '/coaches',   icon: Users,           label: tn.findCoach },
-    { to: '/profile',   icon: User,            label: tn.profile },
+    { to: '/dashboard',    icon: LayoutDashboard, label: tn.dashboard },
+    { to: '/plans',        icon: ClipboardList,   label: tn.myPlans },
+    { to: '/leaderboard',  icon: Trophy,          label: tn.leaderboard },
+    { to: '/coaches',      icon: Users,           label: tn.findCoach },
+    { to: '/profile',      icon: User,            label: tn.profile },
   ]
 
   const coachNav = [
     { to: '/dashboard',     icon: LayoutDashboard, label: tn.overview },
     { to: '/plans',         icon: ClipboardList,   label: tn.myPlans },
-    { to: '/coach/clients', icon: UserCheck,        label: tn.clients },
-    { to: '/coach/plans',   icon: Dumbbell,         label: tn.clientPlans },
-    { to: '/profile',       icon: User,             label: tn.profile },
+    { to: '/leaderboard',   icon: Trophy,          label: tn.leaderboard },
+    { to: '/coach/clients', icon: UserCheck,       label: tn.clients },
+    { to: '/coach/plans',   icon: Dumbbell,        label: tn.clientPlans },
+    { to: '/profile',       icon: User,            label: tn.profile },
   ]
 
   const navItems = isCoach ? coachNav : individualNav

@@ -18,6 +18,7 @@ const ClientsPage      = lazy(() => import('@/features/coach-client/pages/Client
 const CoachPlansPage   = lazy(() => import('@/features/plans/pages/CoachPlansPage').then((m) => ({ default: m.CoachPlansPage })))
 const ClientProfilePage = lazy(() => import('@/features/profile/pages/ClientProfilePage').then((m) => ({ default: m.ClientProfilePage })))
 const CoachProfilePage  = lazy(() => import('@/features/coaches/pages/CoachProfilePage').then((m) => ({ default: m.CoachProfilePage })))
+const LeaderboardPage   = lazy(() => import('@/features/leaderboard/pages/LeaderboardPage').then((m) => ({ default: m.LeaderboardPage })))
 const LandingPage      = lazy(() => import('@/features/marketing/pages/LandingPage').then((m) => ({ default: m.LandingPage })))
 const AboutPage        = lazy(() => import('@/features/marketing/pages/AboutPage').then((m) => ({ default: m.AboutPage })))
 
@@ -125,6 +126,14 @@ export const router = createBrowserRouter([
             element: (
               <Suspense fallback={<SuspenseFallback />}>
                 <ProfilePage />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'leaderboard',
+            element: (
+              <Suspense fallback={<SuspenseFallback />}>
+                <LeaderboardPage />
               </Suspense>
             ),
           },
