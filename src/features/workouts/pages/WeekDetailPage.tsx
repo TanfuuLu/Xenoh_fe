@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useParams, Link, useLocation } from 'react-router'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
-import { ChevronLeft, ChevronRight, CheckCircle2, Copy, AlertTriangle } from 'lucide-react'
+import { ChevronLeft, ChevronRight, CheckCircle2, Copy, AlertTriangle, TriangleAlert } from 'lucide-react'
 import { format } from 'date-fns'
 import { vi as viLocale, enUS } from 'date-fns/locale'
+import { useQueryClient } from '@tanstack/react-query'
 import { Badge } from '@/shared/components/Badge'
 import { Button } from '@/shared/components/Button'
 import { Modal } from '@/shared/components/Modal'
@@ -13,7 +14,8 @@ import { cn } from '@/shared/utils/cn'
 import { staggerContainer, slideUp, scaleIn } from '@/shared/utils/motion'
 import { useT, useLangStore } from '@/shared/i18n'
 import { useDailyWorkouts, useCopyDay } from '../index'
-import type { DailyWorkoutResponse } from '../types'
+import { exerciseKeys } from '../api/useExercises'
+import type { DailyWorkoutResponse, ExerciseResponse } from '../types'
 
 export function WeekDetailPage() {
   const { planId = '', weekId = '' } = useParams()
@@ -21,6 +23,7 @@ export function WeekDetailPage() {
   const canEdit = (state as { canEdit?: boolean } | null)?.canEdit ?? true
   const shouldReduce = useReducedMotion()
 
+  const queryClient = useQueryClient()
   const { data: days, isLoading } = useDailyWorkouts(weekId)
   const { mutate: copyDay, isPending: copying } = useCopyDay(weekId)
 
@@ -78,7 +81,18 @@ export function WeekDetailPage() {
         variants={staggerContainer}
         className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
       >
-        {days?.map((day) => (
+        {days?.map((day) => {
+          const cachedExercises = queryClient.getQueryData<ExerciseResponse[]>(exerciseKeys.byDay(day.id))
+          const hasUnderperformed = cachedExercises?.some((ex) =>
+            ex.sets.some(
+              (s) =>
+                s.isCompleted &&
+                ((s.actualReps != null && s.actualReps < s.plannedReps) ||
+                 (s.actualWeight != null && s.plannedWeight != null && s.actualWeight < s.plannedWeight)),
+            ),
+          ) ?? false
+
+          return (
           <motion.div key={day.id} variants={slideUp} className="group relative">
             <Link
               to={`/days/${day.id}`}
@@ -88,7 +102,9 @@ export function WeekDetailPage() {
                 'hover:-translate-y-0.5 hover:shadow-md',
               )}
               style={
-                day.isCompleted
+                hasUnderperformed
+                  ? { borderColor: 'var(--color-warning)', background: 'rgba(245,158,11,0.07)' }
+                  : day.isCompleted
                   ? { borderColor: 'var(--xn-sage-400)', background: 'var(--xn-sage-200)' }
                   : { borderColor: 'var(--border-1)', background: 'var(--bg-2)' }
               }
@@ -103,7 +119,9 @@ export function WeekDetailPage() {
                     {format(new Date(day.date), 'd MMM', { locale: dateLocale })}
                   </p>
                 </div>
-                {day.isCompleted ? (
+                {hasUnderperformed ? (
+                  <TriangleAlert size={18} style={{ color: 'var(--color-warning)' }} />
+                ) : day.isCompleted ? (
                   <CheckCircle2 size={18} style={{ color: 'var(--xn-success)' }} />
                 ) : (
                   <Badge variant={day.totalExercises === 0 ? 'default' : 'warning'}>
@@ -120,12 +138,16 @@ export function WeekDetailPage() {
               <div
                 className="mt-3 flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors"
                 style={
-                  day.isCompleted
+                  hasUnderperformed
+                    ? { background: 'rgba(245,158,11,0.15)', color: 'var(--color-warning)' }
+                    : day.isCompleted
                     ? { background: 'rgba(139,150,101,0.15)', color: 'var(--xn-success)' }
                     : { background: 'var(--xn-clay-200)', color: 'var(--xn-clay-800)' }
                 }
               >
-                {day.isCompleted ? (
+                {hasUnderperformed ? (
+                  <><TriangleAlert size={13} /> Below target</>
+                ) : day.isCompleted ? (
                   <><CheckCircle2 size={13} /> {tw.completed}</>
                 ) : (
                   <>{tw.startSession} <ChevronRight size={13} /></>
@@ -147,7 +169,8 @@ export function WeekDetailPage() {
               </button>
             )}
           </motion.div>
-        ))}
+          )
+        })}
       </motion.div>
 
       {/* Copy Day Modal */}

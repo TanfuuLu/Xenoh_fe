@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useParams, Link, useLocation } from 'react-router'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
-import { ChevronLeft, Plus, Trash2, CheckCircle2, Circle, Trophy, Dumbbell, Search, X } from 'lucide-react'
+import { ChevronLeft, Plus, Trash2, CheckCircle2, Circle, Trophy, Dumbbell, Search, X, TriangleAlert } from 'lucide-react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -352,19 +352,37 @@ function ExerciseCard({ exercise, canEdit, onCompleteSet, onDelete }: ExerciseCa
     ? Math.round((exercise.completedSetsCount / exercise.sets.length) * 100)
     : 0
 
+  const hasUnderperformed = exercise.sets.some(
+    (s) =>
+      s.isCompleted &&
+      ((s.actualReps != null && s.actualReps < s.plannedReps) ||
+       (s.actualWeight != null && s.plannedWeight != null && s.actualWeight < s.plannedWeight)),
+  )
+
   return (
     <motion.div
       variants={slideUp}
       exit={{ opacity: 0, scale: 0.97, transition: { duration: 0.15 } }}
       className="rounded-xl border border-border p-4 space-y-3 transition-colors duration-300"
-      style={exercise.isCompleted ? { borderColor: 'var(--xn-sage-400)', background: 'var(--xn-sage-200)' } : undefined}
+      style={
+        hasUnderperformed
+          ? { borderColor: 'var(--color-warning)', background: 'rgba(245,158,11,0.07)' }
+          : exercise.isCompleted
+          ? { borderColor: 'var(--xn-sage-400)', background: 'var(--xn-sage-200)' }
+          : undefined
+      }
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="font-semibold text-text">{exercise.name}</h3>
-            {exercise.isCompleted && <Badge variant="success">Done ✓</Badge>}
+            {exercise.isCompleted && !hasUnderperformed && <Badge variant="success">Done ✓</Badge>}
+            {hasUnderperformed && (
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-warning">
+                <TriangleAlert size={12} /> Below target
+              </span>
+            )}
             {exercise.personalRecordWeight != null && (
               <span className="inline-flex items-center gap-1 text-xs font-medium text-warning">
                 <Trophy size={11} /> PR {exercise.personalRecordWeight} kg
