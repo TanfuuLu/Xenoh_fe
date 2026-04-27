@@ -153,6 +153,13 @@ export function LeaderboardPage() {
                     {score != null ? `${score} kg` : '—'}
                   </p>
 
+                  {/* Bodyweight */}
+                  {entry.bodyweight != null && (
+                    <p className="text-xs" style={{ color: 'var(--fg-3)' }}>
+                      BW: {entry.bodyweight} kg
+                    </p>
+                  )}
+
                   {/* Rank badge */}
                   <span
                     className="rounded-full px-2.5 py-0.5 text-xs font-semibold"
@@ -181,7 +188,7 @@ export function LeaderboardPage() {
           <div
             className="grid items-center px-4 py-2.5 text-xs font-semibold uppercase tracking-wider"
             style={{
-              gridTemplateColumns: '48px 1fr 80px 80px 80px 90px',
+              gridTemplateColumns: '48px 1fr 80px 80px 80px 90px 80px',
               background: 'var(--bg-2)',
               color: 'var(--fg-3)',
               borderBottom: '1px solid var(--border-1)',
@@ -193,6 +200,7 @@ export function LeaderboardPage() {
             <span className="text-right">Bench</span>
             <span className="text-right">Deadlift</span>
             <span className="text-right">Total</span>
+            <span className="text-right">BW</span>
           </div>
 
           <AnimatePresence mode="wait">
@@ -207,7 +215,7 @@ export function LeaderboardPage() {
                   layout
                   className="grid items-center px-4 py-3"
                   style={{
-                    gridTemplateColumns: '48px 1fr 80px 80px 80px 90px',
+                    gridTemplateColumns: '48px 1fr 80px 80px 80px 90px 80px',
                     borderBottom: '1px solid var(--border-1)',
                     background: isMe
                       ? 'rgba(99,102,241,0.06)'
@@ -284,6 +292,11 @@ export function LeaderboardPage() {
                     }}
                   >
                     {entry.total > 0 ? `${entry.total}` : '—'}
+                  </span>
+
+                  {/* Bodyweight */}
+                  <span className="text-right text-sm" style={{ color: 'var(--fg-3)' }}>
+                    {entry.bodyweight != null ? `${entry.bodyweight}` : '—'}
                   </span>
                 </motion.div>
               )
