@@ -1,28 +1,28 @@
-import { useState } from 'react'
-import { useParams, Link, useLocation } from 'react-router'
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
-import { ChevronLeft, ChevronRight, CheckCircle2, Copy, AlertTriangle } from 'lucide-react'
+import { useParams, Link, useLocation, useNavigate } from 'react-router'
+import { motion, useReducedMotion } from 'framer-motion'
+import { ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react'
 import { format } from 'date-fns'
 import { vi as viLocale, enUS } from 'date-fns/locale'
 import { Badge } from '@/shared/components/Badge'
 import { Button } from '@/shared/components/Button'
-import { Modal } from '@/shared/components/Modal'
-import { Select } from '@/shared/components/Select'
 import { Spinner } from '@/shared/components/Spinner'
 import { cn } from '@/shared/utils/cn'
-import { staggerContainer, slideUp, scaleIn } from '@/shared/utils/motion'
+import { staggerContainer, slideUp } from '@/shared/utils/motion'
 import { useT, useLangStore } from '@/shared/i18n'
-import { useDailyWorkouts, useCopyDay } from '../index'
-import type { DailyWorkoutResponse } from '../types'
+import { useDailyWorkouts, useWeeklyWorkouts } from '../index'
+
+const DAY_ORDER = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+const DAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 export function WeekDetailPage() {
   const { planId = '', weekId = '' } = useParams()
   const { state } = useLocation()
+  const navigate = useNavigate()
   const canEdit = (state as { canEdit?: boolean } | null)?.canEdit ?? true
   const shouldReduce = useReducedMotion()
 
+  const { data: allWeeks } = useWeeklyWorkouts(planId)
   const { data: days, isLoading } = useDailyWorkouts(weekId)
-  const { mutate: copyDay, isPending: copying } = useCopyDay(weekId)
 
   const t  = useT()
   const tw = t.weekDetail
@@ -30,23 +30,15 @@ export function WeekDetailPage() {
   const lang = useLangStore((s) => s.lang)
   const dateLocale = lang === 'vi' ? viLocale : enUS
 
-  const [copySource, setCopySource] = useState<DailyWorkoutResponse | null>(null)
-  const [copyTarget, setCopyTarget] = useState('')
+  const currentWeekIndex = allWeeks?.findIndex((w) => w.id === weekId) ?? -1
+  const currentWeek = allWeeks?.[currentWeekIndex]
+  const prevWeek = currentWeekIndex > 0 ? allWeeks![currentWeekIndex - 1] : null
+  const nextWeek =
+    currentWeekIndex >= 0 && currentWeekIndex < (allWeeks?.length ?? 0) - 1
+      ? allWeeks![currentWeekIndex + 1]
+      : null
 
-  function handleCopy() {
-    if (!copySource || !copyTarget) return
-    copyDay(
-      { sourceDailyWorkoutId: copySource.id, data: { targetDailyWorkoutId: copyTarget } },
-      { onSuccess: () => { setCopySource(null); setCopyTarget('') } },
-    )
-  }
-
-  function openCopy(day: DailyWorkoutResponse, e: React.MouseEvent) {
-    e.preventDefault()
-    e.stopPropagation()
-    setCopySource(day)
-    setCopyTarget('')
-  }
+  const dayMap = new Map(days?.map((d) => [d.dayOfWeek, d]) ?? [])
 
   if (isLoading) {
     return (
@@ -56,170 +48,184 @@ export function WeekDetailPage() {
     )
   }
 
-  const targetOptions = days
-    ?.filter((d) => d.id !== copySource?.id)
-    .map((d) => ({
-      value: d.id,
-      label: `${d.dayOfWeek} · ${format(new Date(d.date), 'd MMM', { locale: dateLocale })}`,
-    })) ?? []
-
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2">
-        <Link to={`/plans/${planId}`}>
-          <Button variant="ghost" size="sm"><ChevronLeft size={16} /></Button>
-        </Link>
-        <h1 className="text-2xl font-bold text-text">{tw.title}</h1>
+      {/* Header */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-2 min-w-0">
+          <Link to={`/plans/${planId}`}>
+            <Button variant="ghost" size="sm">
+              <ChevronLeft size={16} />
+            </Button>
+          </Link>
+          <div className="min-w-0">
+            <h1 className="text-2xl font-bold text-text">
+              {currentWeek ? `${tw.title} ${currentWeek.weekNumber}` : tw.title}
+            </h1>
+            {currentWeek && (
+              <p className="text-xs mt-0.5" style={{ color: 'var(--fg-3)' }}>
+                {format(new Date(currentWeek.startDate), 'd MMM', { locale: dateLocale })}
+                {' — '}
+                {format(new Date(currentWeek.endDate), 'd MMM yyyy', { locale: dateLocale })}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {allWeeks && allWeeks.length > 1 && (
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <button
+              disabled={!prevWeek}
+              onClick={() =>
+                prevWeek &&
+                navigate(`/plans/${planId}/weeks/${prevWeek.id}`, { state: { canEdit } })
+              }
+              className={cn(
+                'flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors',
+                prevWeek ? 'cursor-pointer hover:opacity-80' : 'cursor-not-allowed opacity-30',
+              )}
+              style={{ background: 'var(--bg-3)', color: 'var(--fg-2)' }}
+            >
+              <ChevronLeft size={14} />
+              {prevWeek ? `W${prevWeek.weekNumber}` : ''}
+            </button>
+
+            <span className="px-1 text-xs font-medium" style={{ color: 'var(--fg-3)' }}>
+              {currentWeek ? `W${currentWeek.weekNumber}` : ''}
+            </span>
+
+            <button
+              disabled={!nextWeek}
+              onClick={() =>
+                nextWeek &&
+                navigate(`/plans/${planId}/weeks/${nextWeek.id}`, { state: { canEdit } })
+              }
+              className={cn(
+                'flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors',
+                nextWeek ? 'cursor-pointer hover:opacity-80' : 'cursor-not-allowed opacity-30',
+              )}
+              style={{ background: 'var(--bg-3)', color: 'var(--fg-2)' }}
+            >
+              {nextWeek ? `W${nextWeek.weekNumber}` : ''}
+              <ChevronRight size={14} />
+            </button>
+          </div>
+        )}
       </div>
 
+      {/* Calendar grid */}
       <motion.div
         initial={shouldReduce ? false : 'hidden'}
         animate="visible"
         variants={staggerContainer}
-        className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+        className="overflow-hidden rounded-2xl border"
+        style={{ borderColor: 'var(--border-1)', background: 'var(--border-1)' }}
       >
-        {days?.map((day) => (
-          <motion.div key={day.id} variants={slideUp} className="group relative">
-            <Link
-              to={`/days/${day.id}`}
-              state={{ canEdit }}
-              className={cn(
-                'flex flex-col rounded-xl border p-4 transition-all cursor-pointer',
-                'hover:-translate-y-0.5 hover:shadow-md',
-              )}
-              style={
-                day.isCompleted
-                  ? { borderColor: 'var(--xn-sage-400)', background: 'var(--xn-sage-200)' }
-                  : { borderColor: 'var(--border-1)', background: 'var(--bg-2)' }
-              }
+        {/* Day-of-week header row */}
+        <div className="grid grid-cols-7 gap-px">
+          {DAY_SHORT.map((d) => (
+            <div
+              key={d}
+              className="px-3 py-2.5 text-center text-xs font-semibold uppercase tracking-widest"
+              style={{ background: 'var(--bg-2)', color: 'var(--fg-3)' }}
             >
-              {/* Top row */}
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--fg-3)' }}>
-                    {day.dayOfWeek}
-                  </p>
-                  <p className="text-sm font-semibold" style={{ color: 'var(--fg-1)' }}>
-                    {format(new Date(day.date), 'd MMM', { locale: dateLocale })}
-                  </p>
-                </div>
-                {day.isCompleted ? (
-                  <CheckCircle2 size={18} style={{ color: 'var(--xn-success)' }} />
-                ) : (
-                  <Badge variant={day.totalExercises === 0 ? 'default' : 'warning'}>
-                    {day.completedExercises}/{day.totalExercises}
-                  </Badge>
-                )}
-              </div>
+              {d}
+            </div>
+          ))}
+        </div>
 
-              <p className="mt-2 text-xs" style={{ color: 'var(--fg-3)' }}>
-                {day.totalExercises} {tc.exercises}
-              </p>
+        {/* Day cells */}
+        <div className="grid grid-cols-7 gap-px">
+          {DAY_ORDER.map((dayName) => {
+            const day = dayMap.get(dayName)
 
-              {/* CTA */}
-              <div
-                className="mt-3 flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors"
-                style={
-                  day.isCompleted
-                    ? { background: 'rgba(139,150,101,0.15)', color: 'var(--xn-success)' }
-                    : { background: 'var(--xn-clay-200)', color: 'var(--xn-clay-800)' }
-                }
+            if (!day) {
+              return (
+                <div
+                  key={dayName}
+                  className="min-h-36 p-3"
+                  style={{ background: 'var(--bg-1)', opacity: 0.4 }}
+                />
+              )
+            }
+
+            const isToday =
+              format(new Date(day.date), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
+
+            return (
+              <motion.div
+                key={day.id}
+                variants={slideUp}
+                className="relative min-h-36"
+                style={day.isCompleted ? { background: 'var(--xn-sage-200)' } : { background: 'var(--bg-2)' }}
               >
-                {day.isCompleted ? (
-                  <><CheckCircle2 size={13} /> {tw.completed}</>
-                ) : (
-                  <>{tw.startSession} <ChevronRight size={13} /></>
-                )}
-              </div>
-            </Link>
+                <Link
+                  to={`/days/${day.id}`}
+                  state={{ canEdit, weeklyWorkoutId: day.weeklyWorkoutId }}
+                  className="flex flex-col h-full min-h-36 p-3 transition-opacity hover:opacity-80"
+                >
+                  {/* Date number */}
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <span
+                        className={cn(
+                          'inline-flex items-center justify-center w-7 h-7 rounded-full text-sm font-bold',
+                          isToday ? 'text-white' : day.isCompleted ? 'text-success' : 'text-text',
+                        )}
+                        style={isToday ? { background: 'var(--color-primary)' } : undefined}
+                      >
+                        {format(new Date(day.date), 'd')}
+                      </span>
+                      <p className="text-xs mt-0.5" style={{ color: 'var(--fg-3)' }}>
+                        {format(new Date(day.date), 'MMM', { locale: dateLocale })}
+                      </p>
+                    </div>
 
-            {/* Copy button — overlaid top-right, only when canEdit */}
-            {canEdit && (
-              <button
-                onClick={(e) => openCopy(day, e)}
-                title={tw.copyDay}
-                className="absolute right-2 top-2 rounded-lg p-1.5 opacity-0 transition-all group-hover:opacity-100 hover:opacity-100 focus:opacity-100"
-                style={{ color: 'var(--fg-3)', background: 'var(--bg-3)' }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--fg-1)' }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--fg-3)' }}
-              >
-                <Copy size={13} />
-              </button>
-            )}
-          </motion.div>
-        ))}
+                    {day.isCompleted ? (
+                      <CheckCircle2 size={15} style={{ color: 'var(--xn-success)', flexShrink: 0 }} />
+                    ) : day.totalExercises > 0 ? (
+                      <Badge variant="warning">
+                        {day.completedExercises}/{day.totalExercises}
+                      </Badge>
+                    ) : null}
+                  </div>
+
+                  {/* Exercise count */}
+                  {day.totalExercises > 0 ? (
+                    <p className="text-xs" style={{ color: 'var(--fg-3)' }}>
+                      {day.totalExercises} {tc.exercises}
+                    </p>
+                  ) : (
+                    <p className="text-xs" style={{ color: 'var(--fg-3)', opacity: 0.5 }}>
+                      Rest
+                    </p>
+                  )}
+
+                  {!day.isCompleted && day.totalExercises > 0 && (
+                    <div
+                      className="mt-auto flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium"
+                      style={{ background: 'var(--xn-clay-200)', color: 'var(--xn-clay-800)' }}
+                    >
+                      {tw.startSession}
+                      <ChevronRight size={11} className="ml-auto" />
+                    </div>
+                  )}
+
+                  {day.isCompleted && (
+                    <div
+                      className="mt-auto flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium"
+                      style={{ background: 'rgba(139,150,101,0.15)', color: 'var(--xn-success)' }}
+                    >
+                      <CheckCircle2 size={11} />
+                      {tw.completed}
+                    </div>
+                  )}
+                </Link>
+              </motion.div>
+            )
+          })}
+        </div>
       </motion.div>
-
-      {/* Copy Day Modal */}
-      <AnimatePresence>
-        {copySource && (
-          <Modal
-            open={!!copySource}
-            onClose={() => { setCopySource(null); setCopyTarget('') }}
-            title={tw.copyDayTitle}
-          >
-            <motion.div
-              initial="hidden"
-              animate="visible"
-              variants={scaleIn}
-              className="space-y-4"
-            >
-              {/* Source info */}
-              <div
-                className="rounded-lg px-3 py-2.5 text-sm"
-                style={{ background: 'var(--bg-3)', borderLeft: '3px solid var(--xn-clay-500)' }}
-              >
-                <p className="text-xs font-medium text-muted mb-0.5">{tw.copyDayFrom}</p>
-                <p className="font-medium text-text">
-                  {copySource.dayOfWeek} · {format(new Date(copySource.date), 'd MMM', { locale: dateLocale })}
-                  <span className="ml-2 text-xs text-muted">({copySource.totalExercises} {tc.exercises})</span>
-                </p>
-              </div>
-
-              {/* Target select */}
-              <Select
-                label={tw.copyDayTarget}
-                options={targetOptions}
-                placeholder={tw.copyDayTargetPlaceholder}
-                value={copyTarget}
-                onChange={setCopyTarget}
-              />
-
-              {/* Warning */}
-              {copyTarget && (
-                <motion.div
-                  initial={{ opacity: 0, y: -6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.18 }}
-                  className="flex items-start gap-2 rounded-lg px-3 py-2.5 text-xs"
-                  style={{ background: 'var(--xn-warning-bg, rgba(245,158,11,0.1))', color: 'var(--xn-warning, #f59e0b)' }}
-                >
-                  <AlertTriangle size={14} className="flex-shrink-0 mt-0.5" />
-                  <span>{tw.copyDayWarning}</span>
-                </motion.div>
-              )}
-
-              <div className="flex justify-end gap-2 pt-1">
-                <Button
-                  variant="secondary"
-                  type="button"
-                  onClick={() => { setCopySource(null); setCopyTarget('') }}
-                >
-                  {tc.cancel}
-                </Button>
-                <Button
-                  type="button"
-                  disabled={!copyTarget}
-                  loading={copying}
-                  onClick={handleCopy}
-                >
-                  <Copy size={14} /> {tw.copyDayConfirm}
-                </Button>
-              </div>
-            </motion.div>
-          </Modal>
-        )}
-      </AnimatePresence>
     </div>
   )
 }
