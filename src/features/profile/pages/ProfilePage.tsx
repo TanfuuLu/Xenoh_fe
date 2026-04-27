@@ -154,7 +154,7 @@ export function ProfilePage() {
       <Card>
         <h2 className="mb-4 text-lg font-semibold text-text">{tp.weightSection}</h2>
 
-        <form onSubmit={handleWeightSubmit(onLogWeight)} className="mb-4 flex gap-2">
+        <form onSubmit={handleWeightSubmit(onLogWeight)} className="mb-4 flex items-start gap-2">
           <Input
             placeholder="70.5"
             type="number"
