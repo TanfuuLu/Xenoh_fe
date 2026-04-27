@@ -69,4 +69,9 @@ export const ENDPOINTS = {
   exerciseTemplates: {
     list: '/api/exercise-templates',
   },
+
+  // Leaderboard
+  leaderboard: {
+    big3: '/api/leaderboard/big3',
+  },
 } as const
