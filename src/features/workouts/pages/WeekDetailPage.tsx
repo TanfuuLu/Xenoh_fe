@@ -1,9 +1,11 @@
 import { useParams, Link, useLocation, useNavigate } from 'react-router'
 import { motion, useReducedMotion } from 'framer-motion'
-import { ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, CheckCircle2, AlertTriangle } from 'lucide-react'
 import { format } from 'date-fns'
 import { vi as viLocale, enUS } from 'date-fns/locale'
-import { useQueryClient } from '@tanstack/react-query'
+import { useQueries } from '@tanstack/react-query'
+import { api } from '@/shared/api/axios'
+import { ENDPOINTS } from '@/shared/api/endpoints'
 import { Badge } from '@/shared/components/Badge'
 import { Button } from '@/shared/components/Button'
 import { Spinner } from '@/shared/components/Spinner'
@@ -11,9 +13,21 @@ import { cn } from '@/shared/utils/cn'
 import { staggerContainer, slideUp } from '@/shared/utils/motion'
 import { useT, useLangStore } from '@/shared/i18n'
 import { useDailyWorkouts, useWeeklyWorkouts } from '../index'
+import type { ExerciseResponse } from '../types'
 
 const DAY_ORDER = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 const DAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+
+function hasExerciseWarning(exercises: ExerciseResponse[]): boolean {
+  return exercises.some((ex) =>
+    ex.sets.some(
+      (s) =>
+        s.isCompleted &&
+        ((s.actualReps != null && s.actualReps < s.plannedReps) ||
+          (s.actualWeight != null && s.plannedWeight != null && s.actualWeight < s.plannedWeight)),
+    ),
+  )
+}
 
 export function WeekDetailPage() {
   const { planId = '', weekId = '' } = useParams()
@@ -40,6 +54,25 @@ export function WeekDetailPage() {
       : null
 
   const dayMap = new Map(days?.map((d) => [d.dayOfWeek, d]) ?? [])
+
+  // Fetch exercises for each day that has exercises to detect warnings
+  const daysWithExercises = days?.filter((d) => d.totalExercises > 0) ?? []
+  const exerciseQueries = useQueries({
+    queries: daysWithExercises.map((day) => ({
+      queryKey: ['exercises', day.id],
+      queryFn: () =>
+        api.get<ExerciseResponse[]>(ENDPOINTS.exercises.byDay(day.id)).then((r) => r.data),
+    })),
+  })
+
+  // Map dayId → has warning
+  const warnedDayIds = new Set<string>()
+  exerciseQueries.forEach((q, i) => {
+    if (q.data && hasExerciseWarning(q.data)) {
+      warnedDayIds.add(daysWithExercises[i].id)
+    }
+  })
+  const weekHasWarning = warnedDayIds.size > 0
 
   if (isLoading) {
     return (
@@ -114,6 +147,21 @@ export function WeekDetailPage() {
         )}
       </div>
 
+      {/* Week-level warning: any day has an exercise with actual < planned */}
+      {weekHasWarning && (
+        <div
+          className="flex items-center gap-2 rounded-xl px-4 py-3"
+          style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)' }}
+        >
+          <AlertTriangle size={15} style={{ color: 'var(--color-warning)', flexShrink: 0 }} />
+          <p className="text-sm font-medium" style={{ color: 'var(--color-warning)' }}>
+            {warnedDayIds.size === 1
+              ? '1 day this week has exercises below planned — review your performance.'
+              : `${warnedDayIds.size} days this week have exercises below planned — review your performance.`}
+          </p>
+        </div>
+      )}
+
       {/* Calendar grid */}
       <motion.div
         initial={shouldReduce ? false : 'hidden'}
@@ -152,6 +200,7 @@ export function WeekDetailPage() {
 
             const isToday =
               format(new Date(day.date), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
+            const dayWarned = warnedDayIds.has(day.id)
 
             return (
               <motion.div
@@ -182,7 +231,9 @@ export function WeekDetailPage() {
                       </p>
                     </div>
 
-                    {day.isCompleted ? (
+                    {dayWarned ? (
+                      <AlertTriangle size={15} style={{ color: 'var(--color-warning)', flexShrink: 0 }} />
+                    ) : day.isCompleted ? (
                       <CheckCircle2 size={15} style={{ color: 'var(--xn-success)', flexShrink: 0 }} />
                     ) : day.totalExercises > 0 ? (
                       <Badge variant="warning">
@@ -212,13 +263,23 @@ export function WeekDetailPage() {
                     </div>
                   )}
 
-                  {day.isCompleted && (
+                  {day.isCompleted && !dayWarned && (
                     <div
                       className="mt-auto flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium"
                       style={{ background: 'rgba(139,150,101,0.15)', color: 'var(--xn-success)' }}
                     >
                       <CheckCircle2 size={11} />
                       {tw.completed}
+                    </div>
+                  )}
+
+                  {day.isCompleted && dayWarned && (
+                    <div
+                      className="mt-auto flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium"
+                      style={{ background: 'rgba(245,158,11,0.12)', color: 'var(--color-warning)' }}
+                    >
+                      <AlertTriangle size={11} />
+                      Below planned
                     </div>
                   )}
                 </Link>
