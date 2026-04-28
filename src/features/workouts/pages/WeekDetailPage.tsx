@@ -14,6 +14,8 @@ import { staggerContainer, slideUp } from '@/shared/utils/motion'
 import { useT, useLangStore } from '@/shared/i18n'
 import { useDailyWorkouts, useWeeklyWorkouts } from '../index'
 import type { ExerciseResponse } from '../types'
+import { CommentSection } from '@/features/comments/components/CommentSection'
+import { useWeekComments, useAddWeekComment, useDeleteWeekComment } from '@/features/comments/api/useWeekComments'
 
 function hasExerciseWarning(exercises: ExerciseResponse[]): boolean {
   return exercises.some((ex) =>
@@ -35,6 +37,9 @@ export function WeekDetailPage() {
 
   const { data: allWeeks } = useWeeklyWorkouts(planId)
   const { data: days, isLoading } = useDailyWorkouts(weekId)
+  const { data: comments = [], isLoading: commentsLoading } = useWeekComments(weekId)
+  const { mutateAsync: addComment, isPending: addingComment } = useAddWeekComment(weekId)
+  const { mutate: deleteComment, isPending: deletingComment } = useDeleteWeekComment(weekId)
 
   const t  = useT()
   const tw = t.weekDetail
@@ -306,6 +311,15 @@ export function WeekDetailPage() {
           })}
         </div>
       </motion.div>
+
+      <CommentSection
+        comments={comments}
+        isLoading={commentsLoading}
+        onAdd={(content) => addComment(content)}
+        onDelete={(id) => deleteComment(id)}
+        isPendingAdd={addingComment}
+        isPendingDelete={deletingComment}
+      />
     </div>
   )
 }

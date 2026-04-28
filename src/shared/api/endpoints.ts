@@ -13,6 +13,7 @@ export const ENDPOINTS = {
     bodyweight: '/api/users/me/bodyweight',
     bodyweightById: (id: string) => `/api/users/me/bodyweight/${id}`,
     profile: (userId: string) => `/api/users/${userId}`,
+    profileBodyweight: (userId: string) => `/api/users/${userId}/bodyweight`,
   },
 
   // Coaches
@@ -74,5 +75,26 @@ export const ENDPOINTS = {
   // Leaderboard
   leaderboard: {
     big3: '/api/leaderboard/big3',
+  },
+
+  // Plan Comments
+  planComments: {
+    list: (planId: string) => `/api/plans/${planId}/comments`,
+    create: (planId: string) => `/api/plans/${planId}/comments`,
+    delete: (planId: string, commentId: string) => `/api/plans/${planId}/comments/${commentId}`,
+  },
+
+  // Week Comments
+  weekComments: {
+    list: (weekId: string) => `/api/weeks/${weekId}/comments`,
+    create: (weekId: string) => `/api/weeks/${weekId}/comments`,
+    delete: (weekId: string, commentId: string) => `/api/weeks/${weekId}/comments/${commentId}`,
+  },
+
+  // Notifications
+  notifications: {
+    list: '/api/notifications',
+    markRead: (id: string) => `/api/notifications/${id}/read`,
+    markAllRead: '/api/notifications/read-all',
   },
 } as const

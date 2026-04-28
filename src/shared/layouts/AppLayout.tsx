@@ -3,7 +3,7 @@ import { NavLink, Link, Outlet, useNavigate } from 'react-router'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, ClipboardList, User, Users,
-  UserCheck, Menu, X, LogOut, Dumbbell, ChevronDown,
+  UserCheck, Menu, X, LogOut, ChevronDown,
   PanelLeftClose, PanelLeftOpen, Trophy,
 } from 'lucide-react'
 import { cn } from '@/shared/utils/cn'
@@ -11,6 +11,8 @@ import { useAuthStore } from '@/features/auth'
 import { useLogout } from '@/features/auth'
 import { useT } from '@/shared/i18n'
 import { LanguageSwitcher } from '@/shared/components/LanguageSwitcher'
+import { NotificationBell } from '@/features/notifications/components/NotificationBell'
+import { useNotificationHub } from '@/features/notifications/hooks/useNotificationHub'
 
 const MINI_WIDTH  = 64
 const FULL_WIDTH  = 240
@@ -26,6 +28,8 @@ export function AppLayout() {
   const t         = useT()
   const tn        = t.nav
 
+  useNotificationHub()
+
   const individualNav = [
     { to: '/dashboard',    icon: LayoutDashboard, label: tn.dashboard },
     { to: '/plans',        icon: ClipboardList,   label: tn.myPlans },
@@ -39,7 +43,6 @@ export function AppLayout() {
     { to: '/plans',         icon: ClipboardList,   label: tn.myPlans },
     { to: '/leaderboard',   icon: Trophy,          label: tn.leaderboard },
     { to: '/coach/clients', icon: UserCheck,       label: tn.clients },
-    { to: '/coach/plans',   icon: Dumbbell,        label: tn.clientPlans },
     { to: '/profile',       icon: User,            label: tn.profile },
   ]
 
@@ -143,9 +146,10 @@ export function AppLayout() {
           {/* Desktop: spacer */}
           <div className="hidden md:block" />
 
-          {/* Right: lang switcher + user menu */}
+          {/* Right: lang switcher + notification bell + user menu */}
           <div className="flex items-center gap-3">
             <LanguageSwitcher variant="text" />
+            <NotificationBell />
             <div className="relative">
               <button
                 onClick={() => setUserMenuOpen((v) => !v)}

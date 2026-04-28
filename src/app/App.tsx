@@ -1,4 +1,5 @@
 import { RouterProvider } from 'react-router'
+import { Toaster } from 'sonner'
 import { QueryProvider } from './QueryProvider'
 import { router } from './Router'
 import { useEffect } from 'react'
@@ -23,6 +24,7 @@ export function App() {
   return (
     <QueryProvider>
       <RouterProvider router={router} />
+      <Toaster position="bottom-right" richColors duration={4000} />
     </QueryProvider>
   )
 }
