@@ -17,6 +17,10 @@ export const MuscleGroup = {
   Calves: 'Calves',
   FullBody: 'FullBody',
   Cardio: 'Cardio',
+  Traps: 'Traps',
+  Neck: 'Neck',
+  Adductors: 'Adductors',
+  Abductors: 'Abductors',
 } as const
 
 export type MuscleGroup = (typeof MuscleGroup)[keyof typeof MuscleGroup]

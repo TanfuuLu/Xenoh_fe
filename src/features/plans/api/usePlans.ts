@@ -80,11 +80,12 @@ export function useDeactivatePlan() {
   })
 }
 
-export function useCoachPlanOverview() {
+export function useCoachPlanOverview(enabled = true) {
   return useQuery({
     queryKey: planKeys.coachOverview,
     queryFn: () =>
       api.get<CoachPlanResponse[]>(ENDPOINTS.plans.coachOverview).then((r) => r.data),
+    enabled,
   })
 }
 
@@ -93,6 +94,9 @@ export function useCreatePlanForUser() {
   return useMutation({
     mutationFn: (data: CreatePlanForUserRequest) =>
       api.post<PlanResponse>(ENDPOINTS.plans.forUser, data).then((r) => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: planKeys.coachOverview }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: planKeys.coachOverview })
+      void qc.invalidateQueries({ queryKey: planKeys.all })
+    },
   })
 }

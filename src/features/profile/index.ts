@@ -5,6 +5,7 @@ export {
   useBodyweightHistory,
   useDeleteBodyweight,
   useClientProfile,
+  useClientBodyweightHistory,
 } from './api/useProfile'
 export type {
   UserProfileResponse,

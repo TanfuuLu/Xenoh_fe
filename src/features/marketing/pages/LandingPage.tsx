@@ -137,11 +137,11 @@ function Stats() {
   return (
     <div className="mk-stats">
       {data.map((s, i) => (
-        <div key={i} className="stat">
+        <a key={i} href="#features" className="stat mk-card-link" aria-label={`View features for ${s.lbl}`}>
           <div className="lbl">{s.lbl}</div>
           <div className="num">{s.num}{s.suffix && <span>{s.suffix}</span>}</div>
           <div className="desc">{s.desc}</div>
-        </div>
+        </a>
       ))}
     </div>
   )
@@ -189,12 +189,12 @@ function HowItWorks() {
       </div>
       <div className="mk-steps">
         {steps.map((s) => (
-          <div key={s.n} className="mk-step">
+          <a key={s.n} href="#features" className="mk-step mk-card-link" aria-label={`${s.h} View features`}>
             <div className="n">{s.n}</div>
             <h4>{s.h}</h4>
             <p>{s.p}</p>
             <div className="tag">{s.tag}</div>
-          </div>
+          </a>
         ))}
       </div>
     </section>
@@ -324,11 +324,11 @@ function FeatureGrid() {
       </div>
       <div className="mk-grid6">
         {cells.map((c, i) => (
-          <div key={i} className="cell">
+          <a key={i} href="#pricing" className="cell mk-card-link" aria-label={`${c.h}. View pricing`}>
             <div className="ico">{c.ico}</div>
             <h5>{c.h}</h5>
             <p>{c.p}</p>
-          </div>
+          </a>
         ))}
       </div>
     </section>
@@ -359,7 +359,7 @@ function Pricing() {
         <p>Free for individuals, forever. Coaches pay per active client and nothing else.</p>
       </div>
       <div className="mk-pricing">
-        <div className="mk-price">
+        <Link to="/register" className="mk-price mk-card-link" aria-label="Start Solo free">
           <div>
             <div className="tier">Individual</div>
             <h3>Solo</h3>
@@ -373,9 +373,9 @@ function Pricing() {
             <li>Accept plans from a coach</li>
             <li>CSV export</li>
           </ul>
-          <Link to="/register" className="mk-btn secondary lg">Start free</Link>
-        </div>
-        <div className="mk-price featured">
+          <span className="mk-btn secondary lg">Start free</span>
+        </Link>
+        <Link to="/register" className="mk-price featured mk-card-link" aria-label="Start Coach 30-day trial">
           <div>
             <div className="tier">Coach</div>
             <h3>Coach</h3>
@@ -389,8 +389,8 @@ function Pricing() {
             <li>Coach dashboard with client stats</li>
             <li>Priority support within 1 business day</li>
           </ul>
-          <Link to="/register" className="mk-btn on-dark lg">Start a 30-day trial</Link>
-        </div>
+          <span className="mk-btn on-dark lg">Start a 30-day trial</span>
+        </Link>
       </div>
     </section>
   )
@@ -414,10 +414,10 @@ function FAQ() {
       </div>
       <div className="mk-faq">
         {qs.map((q, i) => (
-          <div key={i} className="q">
+          <a key={i} href="/about" className="q mk-card-link" aria-label={`${q.q} Read more about Xenoh`}>
             <h4>{q.q}</h4>
             <p>{q.a}</p>
-          </div>
+          </a>
         ))}
       </div>
     </section>

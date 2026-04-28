@@ -63,3 +63,12 @@ export function useClientProfile(clientId: string) {
     enabled: !!clientId,
   })
 }
+
+export function useClientBodyweightHistory(clientId: string) {
+  return useQuery({
+    queryKey: ['profile', 'user', clientId, 'bodyweight'] as const,
+    queryFn: () =>
+      api.get<BodyweightLogResponse[]>(ENDPOINTS.users.profileBodyweight(clientId)).then((r) => r.data),
+    enabled: !!clientId,
+  })
+}

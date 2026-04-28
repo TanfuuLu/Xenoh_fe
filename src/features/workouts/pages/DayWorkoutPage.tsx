@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import type { DragEvent, ReactNode } from 'react'
 import { useParams, Link, useLocation } from 'react-router'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
@@ -18,6 +18,7 @@ import { Select } from '@/shared/components/Select'
 import { slideUp, staggerContainer, scaleIn } from '@/shared/utils/motion'
 import { cn } from '@/shared/utils/cn'
 import { useT, useLangStore } from '@/shared/i18n'
+import { MuscleGroup, type MuscleGroup as MuscleGroupValue } from '@/shared/types/api'
 import {
   useExercises,
   useCreateExercise,
@@ -42,6 +43,7 @@ export function DayWorkoutPage() {
   const [showAdd, setShowAdd] = useState(false)
   const [showCopy, setShowCopy] = useState(false)
   const [copyTarget, setCopyTarget] = useState('')
+  const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<MuscleGroupValue | ''>('')
   const [orderedExercises, setOrderedExercises] = useState<ExerciseResponse[]>([])
   const [draggedExerciseId, setDraggedExerciseId] = useState<string | null>(null)
   const autoScrollFrame = useRef<number | null>(null)
@@ -56,7 +58,9 @@ export function DayWorkoutPage() {
   const { data: exercises, isLoading } = useExercises(dailyWorkoutId)
 
   // ── Prefetch ALL templates on mount — no filter, data ready before modal opens
-  const { data: templates = [], isLoading: templatesLoading } = useExerciseTemplates()
+  const { data: templates = [], isLoading: templatesLoading } = useExerciseTemplates({
+    muscleGroup: selectedMuscleGroup || undefined,
+  })
 
   const { mutate: createExercise, isPending: adding } = useCreateExercise(dailyWorkoutId)
   const { mutate: deleteExercise } = useDeleteExercise(dailyWorkoutId)
@@ -92,6 +96,7 @@ export function DayWorkoutPage() {
       {
         onSuccess: () => {
           addForm.reset({ plannedSets: 3, plannedReps: 8 })
+          setSelectedMuscleGroup('')
           setShowAdd(false)
         },
       },
@@ -305,7 +310,7 @@ export function DayWorkoutPage() {
       {/* Modal: Add exercise */}
       <Modal
         open={canEdit && showAdd}
-        onClose={() => { setShowAdd(false); addForm.reset({ plannedSets: 3, plannedReps: 8 }) }}
+        onClose={() => { setShowAdd(false); setSelectedMuscleGroup(''); addForm.reset({ plannedSets: 3, plannedReps: 8 }) }}
         title={tdw.modalTitle}
         className="max-w-lg"
       >
@@ -319,6 +324,8 @@ export function DayWorkoutPage() {
                 templates={templates}
                 isLoading={templatesLoading}
                 value={field.value ?? ''}
+                muscleGroup={selectedMuscleGroup}
+                onMuscleGroupChange={setSelectedMuscleGroup}
                 onChange={field.onChange}
                 error={addForm.formState.errors.exerciseTemplateId?.message}
               />
@@ -338,7 +345,7 @@ export function DayWorkoutPage() {
             <Button
               variant="secondary"
               type="button"
-              onClick={() => { setShowAdd(false); addForm.reset({ plannedSets: 3, plannedReps: 8 }) }}
+              onClick={() => { setShowAdd(false); setSelectedMuscleGroup(''); addForm.reset({ plannedSets: 3, plannedReps: 8 }) }}
             >
               {tc.cancel}
             </Button>
@@ -505,69 +512,95 @@ interface ExercisePickerProps {
   templates: ExerciseTemplateResponse[]
   isLoading: boolean
   value: string
+  muscleGroup: MuscleGroupValue | ''
+  onMuscleGroupChange: (muscleGroup: MuscleGroupValue | '') => void
   onChange: (id: string) => void
   error?: string
 }
 
-function ExercisePicker({ templates, isLoading, value, onChange, error }: ExercisePickerProps) {
+function ExercisePicker({
+  templates,
+  isLoading,
+  value,
+  muscleGroup,
+  onMuscleGroupChange,
+  onChange,
+  error,
+}: ExercisePickerProps) {
   const [search, setSearch] = useState('')
   const t = useT()
+  const deferredSearch = useDeferredValue(search)
+  const muscleGroupOptions = useMemo(
+    () => Object.values(MuscleGroup).map((group) => ({ value: group, label: formatMuscleGroup(group) })),
+    [],
+  )
 
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase()
+    const q = deferredSearch.trim().toLowerCase()
     if (!q) return templates
     return templates.filter(
       (tmpl) =>
         tmpl.name.toLowerCase().includes(q) ||
-        tmpl.primaryMuscleGroup.toLowerCase().includes(q),
+        (tmpl.description?.toLowerCase().includes(q) ?? false) ||
+        tmpl.primaryMuscleGroup.toLowerCase().includes(q) ||
+        tmpl.secondaryMuscleGroups.some((group) => group.toLowerCase().includes(q)),
     )
-  }, [templates, search])
+  }, [templates, deferredSearch])
 
-  const selected = templates.find((t) => t.id === value)
+  const selected = useMemo(() => templates.find((t) => t.id === value), [templates, value])
+  const visibleTemplates = useMemo(() => filtered.slice(0, 40), [filtered])
+  const hasMore = filtered.length > visibleTemplates.length
+  const handlePick = useCallback((id: string) => onChange(id), [onChange])
 
   return (
     <div className="space-y-2">
+      <Select
+        label={t.dayWorkout.filterMuscle}
+        options={muscleGroupOptions}
+        placeholder={t.dayWorkout.allMuscles}
+        value={muscleGroup}
+        onChange={(next) => {
+          onMuscleGroupChange(next as MuscleGroupValue | '')
+          onChange('')
+        }}
+      />
+
       {/* Selected exercise preview */}
-      <AnimatePresence>
-        {selected && (
-          <motion.div
-            initial={{ opacity: 0, y: -6, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -4, scale: 0.97 }}
-            transition={{ duration: 0.15 }}
-            className="flex items-center justify-between rounded-lg px-3 py-2.5 text-sm"
-            style={{ background: 'var(--xn-clay-200)', border: '1px solid var(--xn-clay-400)' }}
-          >
-            <div className="flex items-center gap-2 min-w-0">
-              <CheckCircle2 size={14} style={{ color: 'var(--xn-clay-700)', flexShrink: 0 }} />
-              <span className="font-medium truncate" style={{ color: 'var(--xn-clay-800)' }}>{selected.name}</span>
-            </div>
-            <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-              <span className="text-xs" style={{ color: 'var(--xn-clay-600)' }}>{selected.primaryMuscleGroup}</span>
-              <button
-                type="button"
-                onClick={() => onChange('')}
-                className="rounded p-0.5 transition-colors"
-                style={{ color: 'var(--xn-clay-600)' }}
-                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = 'var(--xn-danger)')}
-                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = 'var(--xn-clay-600)')}
-              >
-                <X size={13} />
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {selected && (
+        <div
+          className="flex items-center justify-between rounded-lg px-3 py-2.5 text-sm"
+          style={{ background: 'var(--xn-clay-200)', border: '1px solid var(--xn-clay-400)' }}
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <CheckCircle2 size={14} style={{ color: 'var(--xn-clay-700)', flexShrink: 0 }} />
+            <span className="font-medium truncate" style={{ color: 'var(--xn-clay-800)' }}>{selected.name}</span>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+            <span className="text-xs" style={{ color: 'var(--xn-clay-600)' }}>{selected.primaryMuscleGroup}</span>
+            <button
+              type="button"
+              onClick={() => onChange('')}
+              className="rounded p-0.5 transition-colors"
+              style={{ color: 'var(--xn-clay-600)' }}
+              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = 'var(--xn-danger)')}
+              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = 'var(--xn-clay-600)')}
+            >
+              <X size={13} />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Search input */}
       <div className="relative">
-        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--fg-3)' }} />
+        <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--fg-3)' }} />
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={t.dayWorkout.searchExercise}
-          className="xn-input w-full pl-9 pr-4 text-sm"
+          className="xn-input w-full pr-4 text-sm"
+          style={{ paddingLeft: '2.75rem' }}
           autoComplete="off"
         />
         {search && (
@@ -584,7 +617,7 @@ function ExercisePicker({ templates, isLoading, value, onChange, error }: Exerci
 
       {/* Exercise list */}
       <div
-        className="max-h-52 overflow-y-auto rounded-xl border p-1.5 space-y-0.5"
+        className="max-h-44 overflow-y-auto rounded-xl border p-1.5 space-y-0.5"
         style={{ borderColor: 'var(--border-1)', background: 'var(--bg-1)' }}
       >
         {isLoading ? (
@@ -594,31 +627,21 @@ function ExercisePicker({ templates, isLoading, value, onChange, error }: Exerci
         ) : filtered.length === 0 ? (
           <p className="py-5 text-center text-sm text-muted">{t.dayWorkout.noExerciseFound}</p>
         ) : (
-          filtered.map((tmpl) => {
-            const isSelected = tmpl.id === value
-            return (
-              <div
+          <>
+            {visibleTemplates.map((tmpl) => (
+              <ExerciseTemplateOption
                 key={tmpl.id}
-                onClick={() => onChange(tmpl.id)}
-                className={cn(
-                  'flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors select-none',
-                  isSelected ? 'font-medium' : 'hover:bg-white/6',
-                )}
-                style={isSelected ? { background: 'var(--xn-clay-200)', color: 'var(--xn-clay-800)' } : undefined}
-              >
-                <span className="truncate">{tmpl.name}</span>
-                <span
-                  className="ml-3 flex-shrink-0 rounded-md px-1.5 py-0.5 text-xs"
-                  style={{
-                    background: isSelected ? 'rgba(139,100,60,0.15)' : 'var(--bg-3)',
-                    color: isSelected ? 'var(--xn-clay-700)' : 'var(--fg-3)',
-                  }}
-                >
-                  {tmpl.primaryMuscleGroup}
-                </span>
-              </div>
-            )
-          })
+                template={tmpl}
+                isSelected={tmpl.id === value}
+                onPick={handlePick}
+              />
+            ))}
+            {hasMore && (
+              <p className="px-3 py-2 text-center text-xs text-muted">
+                Showing {visibleTemplates.length} of {filtered.length}
+              </p>
+            )}
+          </>
         )}
       </div>
 
@@ -641,7 +664,43 @@ function ExercisePicker({ templates, isLoading, value, onChange, error }: Exerci
   )
 }
 
+const ExerciseTemplateOption = memo(function ExerciseTemplateOption({
+  template,
+  isSelected,
+  onPick,
+}: {
+  template: ExerciseTemplateResponse
+  isSelected: boolean
+  onPick: (id: string) => void
+}) {
+  return (
+    <div
+      onClick={() => onPick(template.id)}
+      className={cn(
+        'flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors select-none',
+        isSelected ? 'font-medium' : 'hover:bg-white/6',
+      )}
+      style={isSelected ? { background: 'var(--xn-clay-200)', color: 'var(--xn-clay-800)' } : undefined}
+    >
+      <span className="truncate">{template.name}</span>
+      <span
+        className="ml-3 flex-shrink-0 rounded-md px-1.5 py-0.5 text-xs"
+        style={{
+          background: isSelected ? 'rgba(139,100,60,0.15)' : 'var(--bg-3)',
+          color: isSelected ? 'var(--xn-clay-700)' : 'var(--fg-3)',
+        }}
+      >
+        {template.primaryMuscleGroup}
+      </span>
+    </div>
+  )
+})
+
 // ─── ExerciseCard ─────────────────────────────────────────────────────────────
+
+function formatMuscleGroup(group: MuscleGroupValue) {
+  return group.replace(/([a-z])([A-Z])/g, '$1 $2')
+}
 
 interface ExerciseCardProps {
   exercise: ExerciseResponse

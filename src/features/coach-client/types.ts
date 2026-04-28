@@ -17,6 +17,7 @@ export interface ClientResponse {
   email: string
   status: RelationshipStatus
   connectedAt: string
+  lastWorkoutCompletedAt: string | null
 }
 
 export interface RequestCoachRequest {

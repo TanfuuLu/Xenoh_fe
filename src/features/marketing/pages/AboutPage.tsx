@@ -133,11 +133,11 @@ export function AboutPage() {
                 p: 'No streak guilt. No "you\'re falling behind" push notifications. No gamification of something that\'s already its own reward.',
               },
             ].map((v) => (
-              <div key={v.n} style={{ background: 'var(--bg-2)', border: '1px solid var(--border-1)', borderRadius: 18, padding: '24px 26px' }}>
+              <a key={v.n} href="/#features" className="mk-card-link" style={{ background: 'var(--bg-2)', border: '1px solid var(--border-1)', borderRadius: 18, padding: '24px 26px' }}>
                 <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 36, color: 'var(--xn-clay-400)', lineHeight: 1, letterSpacing: '-0.02em', marginBottom: 14 }}>{v.n}</div>
                 <h4 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 20, letterSpacing: '-0.01em', margin: '0 0 10px', color: 'var(--fg-1)' }}>{v.h}</h4>
                 <p style={{ fontFamily: 'var(--font-sans)', fontSize: 14, lineHeight: 1.65, color: 'var(--fg-2)', margin: 0 }}>{v.p}</p>
-              </div>
+              </a>
             ))}
           </div>
         </div>
@@ -172,7 +172,7 @@ export function AboutPage() {
             detail: 'The coach dashboard shows each client\'s Big 3 PRs (squat, bench, deadlift) at a glance, plus last workout date, plan compliance %, and current bodyweight.',
           },
         ].map((item, i) => (
-          <div key={i} style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: 40, padding: '36px 0', borderTop: '1px solid var(--border-1)' }}>
+          <a key={i} href="/#features" className="mk-card-link" style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: 40, padding: '36px 0', borderTop: '1px solid var(--border-1)' }}>
             <div>
               <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 22, letterSpacing: '-0.01em', margin: 0, color: 'var(--fg-1)' }}>{item.title}</h3>
             </div>
@@ -180,7 +180,7 @@ export function AboutPage() {
               <p style={{ fontFamily: 'var(--font-sans)', fontSize: 16, lineHeight: 1.65, color: 'var(--fg-1)', margin: '0 0 12px' }}>{item.desc}</p>
               <p style={{ fontFamily: 'var(--font-sans)', fontSize: 14, lineHeight: 1.65, color: 'var(--fg-3)', margin: 0, borderLeft: '2px solid var(--xn-clay-400)', paddingLeft: 14 }}>{item.detail}</p>
             </div>
-          </div>
+          </a>
         ))}
       </section>
 

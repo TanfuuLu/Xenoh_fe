@@ -32,6 +32,7 @@ export function useCreateExercise(dailyWorkoutId: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: exerciseKeys.byDay(dailyWorkoutId) })
       qc.invalidateQueries({ queryKey: ['days'] })
+      qc.invalidateQueries({ queryKey: ['weeks'] })
     },
   })
 }
@@ -52,6 +53,7 @@ export function useDeleteExercise(dailyWorkoutId: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: exerciseKeys.byDay(dailyWorkoutId) })
       qc.invalidateQueries({ queryKey: ['days'] })
+      qc.invalidateQueries({ queryKey: ['weeks'] })
     },
   })
 }

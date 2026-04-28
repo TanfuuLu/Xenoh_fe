@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type TextareaHTMLAttributes } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -13,6 +13,7 @@ import { Button } from '@/shared/components/Button'
 import { Input } from '@/shared/components/Input'
 import { Select } from '@/shared/components/Select'
 import { Spinner } from '@/shared/components/Spinner'
+import { cn } from '@/shared/utils/cn'
 import { slideUp } from '@/shared/utils/motion'
 import { useT } from '@/shared/i18n'
 import {
@@ -25,7 +26,12 @@ import {
 import type { AxiosError } from 'axios'
 import type { ApiError } from '@/shared/types/api'
 
-type ProfileForm = { height?: number; gender?: 'Male' | 'Female' | 'Other'; dateOfBirth?: string }
+type ProfileForm = {
+  bio?: string
+  height?: number
+  gender?: 'Male' | 'Female' | 'Other'
+  dateOfBirth?: string
+}
 type WeightForm  = { weight: number }
 
 export function ProfilePage() {
@@ -41,6 +47,7 @@ export function ProfilePage() {
 
   // Build schemas inside component for translated error messages
   const profileSchema = z.object({
+    bio: z.string().max(500, tp.bioMaxError).optional(),
     height: z.coerce.number().min(50).max(300).optional(),
     gender: z.enum(['Male', 'Female', 'Other']).optional(),
     dateOfBirth: z.string().optional(),
@@ -58,6 +65,7 @@ export function ProfilePage() {
   } = useForm<ProfileForm>({
     resolver: zodResolver(profileSchema),
     values: {
+      bio: profile?.bio ?? '',
       height: profile?.height ?? undefined,
       gender: profile?.gender ?? undefined,
       dateOfBirth: profile?.dateOfBirth ?? undefined,
@@ -114,6 +122,13 @@ export function ProfilePage() {
 
         {editMode ? (
           <form onSubmit={handleProfileSubmit(onSaveProfile)} className="space-y-4">
+            <Textarea
+              label={tp.bioLabel}
+              rows={4}
+              maxLength={500}
+              error={profileErrors.bio?.message}
+              {...regProfile('bio')}
+            />
             <div className="grid grid-cols-2 gap-3">
               <Input label={tp.heightLabel} type="number" step="0.1" error={profileErrors.height?.message} {...regProfile('height')} />
               <Controller
@@ -140,6 +155,12 @@ export function ProfilePage() {
           </form>
         ) : (
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            <div className="col-span-2 md:col-span-4">
+              <p className="text-xs text-muted">{tp.bioStat}</p>
+              <p className="whitespace-pre-line text-sm font-medium text-text">
+                {profile?.bio?.trim() ? profile.bio : tp.noBio}
+              </p>
+            </div>
             <Stat label={tp.heightStat} value={profile?.height ? `${profile.height} cm` : '—'} />
             <Stat label={tp.genderStat} value={profile?.gender === 'Male' ? tp.male : profile?.gender === 'Female' ? tp.female : profile?.gender === 'Other' ? tp.other : '—'} />
             <Stat label={tp.dobStat}    value={profile?.dateOfBirth ? format(new Date(profile.dateOfBirth), 'dd/MM/yyyy') : '—'} />
@@ -205,6 +226,29 @@ export function ProfilePage() {
           </div>
         )}
       </Card>
+    </div>
+  )
+}
+
+function Textarea({
+  label,
+  error,
+  className,
+  ...props
+}: TextareaHTMLAttributes<HTMLTextAreaElement> & { label?: string; error?: string }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      {label && (
+        <label className="text-sm font-medium" style={{ color: 'var(--fg-1)' }}>
+          {label}
+        </label>
+      )}
+      <textarea className={cn('xn-input min-h-28 resize-y text-sm', error && 'error', className)} {...props} />
+      {error && (
+        <span className="text-xs" style={{ color: 'var(--xn-danger)' }}>
+          {error}
+        </span>
+      )}
     </div>
   )
 }

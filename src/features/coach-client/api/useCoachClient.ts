@@ -35,11 +35,12 @@ export function useMyCoach() {
   })
 }
 
-export function useMyClients() {
+export function useMyClients(enabled = true) {
   return useQuery({
     queryKey: coachClientKeys.myClients,
     queryFn: () =>
       api.get<ClientResponse[]>(ENDPOINTS.coachClient.myClients).then((r) => r.data),
+    enabled,
   })
 }
 

@@ -106,7 +106,16 @@ export function ClientsPage() {
             <motion.div
               key={client.relationshipId}
               variants={slideUp}
-              className="flex items-center justify-between rounded-xl border border-border bg-surface px-4 py-3"
+              role="button"
+              tabIndex={0}
+              onClick={() => navigate(`/coach/clients/${client.clientId}`)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault()
+                  navigate(`/coach/clients/${client.clientId}`)
+                }
+              }}
+              className="flex cursor-pointer items-center justify-between rounded-xl border border-border bg-surface px-4 py-3 transition hover:border-primary hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
             >
               <div>
                 <p className="font-medium text-text">{client.fullName}</p>
@@ -116,11 +125,20 @@ export function ClientsPage() {
                 </p>
               </div>
               <div className="flex items-center gap-2">
+                <span className="text-xs text-muted">
+                  Last workout:{' '}
+                  {client.lastWorkoutCompletedAt
+                    ? format(new Date(client.lastWorkoutCompletedAt), 'dd/MM/yyyy')
+                    : '-'}
+                </span>
                 <Badge variant="success">Active</Badge>
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => navigate(`/coach/clients/${client.clientId}`)}
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    navigate(`/coach/clients/${client.clientId}`)
+                  }}
                 >
                   <User size={14} />
                 </Button>
@@ -128,7 +146,8 @@ export function ClientsPage() {
                   variant="ghost"
                   size="sm"
                   loading={terminating}
-                  onClick={() => {
+                  onClick={(event) => {
+                    event.stopPropagation()
                     if (confirm(tcl.disconnectConfirm.replace('{name}', client.fullName))) {
                       terminate(client.relationshipId)
                     }

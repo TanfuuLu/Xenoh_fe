@@ -9,6 +9,7 @@ export interface WeeklyWorkoutResponse {
   planId: string
   totalDays: number
   completedDays: number
+  hasWarning: boolean
 }
 
 export interface DailyWorkoutResponse {
@@ -19,6 +20,7 @@ export interface DailyWorkoutResponse {
   weeklyWorkoutId: string
   totalExercises: number
   completedExercises: number
+  hasWarning: boolean
 }
 
 export interface ExerciseSetResponse {

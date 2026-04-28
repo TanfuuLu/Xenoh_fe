@@ -159,7 +159,7 @@ html {
   color-scheme: light;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  font-size: 120%; /* ~20% larger than browser default 16px → 19.2px base */
+  font-size: 100%;
 }
 
 body {
@@ -235,14 +235,14 @@ body {
 .xn-brand-name {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 30px;
+  font-size: 25px;
   letter-spacing: -0.01em;
   color: var(--xn-clay-800);
 }
 .xn-nav { display: flex; flex-direction: column; gap: 2px; }
 .xn-nav-section {
   font-family: var(--font-sans);
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -256,7 +256,7 @@ body {
   padding: 8px 10px;
   border-radius: 10px;
   font-family: var(--font-sans);
-  font-size: 19px;
+  font-size: 16px;
   color: var(--fg-2);
   text-decoration: none;
   font-weight: 500;
@@ -295,7 +295,7 @@ body {
 .xn-btn {
   font-family: var(--font-sans);
   font-weight: 500;
-  font-size: 19px;
+  font-size: 16px;
   padding: 10px 20px;
   border-radius: 999px;
   border: 1px solid transparent;
@@ -323,7 +323,7 @@ body {
 .xn-btn.ghost { background: transparent; color: var(--fg-1); }
 .xn-btn.ghost:hover { background: var(--bg-3); }
 .xn-btn.danger { background: var(--xn-danger); color: #fbf6ea; }
-.xn-btn.sm { font-size: 18px; padding: 7px 15px; }
+.xn-btn.sm { font-size: 15px; padding: 7px 15px; }
 
 /* Chip/badge */
 .xn-chip {
@@ -334,7 +334,7 @@ body {
   border-radius: 999px;
   font-family: var(--font-sans);
   font-weight: 500;
-  font-size: 17px;
+  font-size: 14px;
   background: var(--bg-3);
   color: var(--fg-1);
 }
@@ -358,13 +358,13 @@ body {
 .xn-plan .plan-name {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 30px;
+  font-size: 25px;
   letter-spacing: -0.01em;
   color: var(--fg-1);
 }
 .xn-plan .plan-dates {
   font-family: var(--font-mono);
-  font-size: 17px;
+  font-size: 14px;
   color: var(--fg-3);
 }
 .xn-plan .plan-bar {
@@ -413,13 +413,13 @@ body {
 .xn-ex .ex-name {
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: 28px;
+  font-size: 23px;
   color: var(--fg-1);
   letter-spacing: -0.01em;
 }
 .xn-ex .ex-setline {
   font-family: var(--font-mono);
-  font-size: 19px;
+  font-size: 16px;
   color: var(--fg-1);
   font-variant-numeric: tabular-nums;
 }
@@ -431,7 +431,7 @@ body {
   border: 1px solid var(--border-1);
   border-radius: 10px;
   font-family: var(--font-mono);
-  font-size: 18px;
+  font-size: 15px;
   color: var(--fg-2);
   background: var(--bg-1);
   display: flex;
@@ -463,7 +463,7 @@ body {
 .xn-stat .stat-label {
   font-family: var(--font-sans);
   font-weight: 600;
-  font-size: 14px;
+  font-size: 12px;
   letter-spacing: 0.13em;
   text-transform: uppercase;
   color: var(--fg-3);
@@ -471,7 +471,7 @@ body {
 .xn-stat .stat-value {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 56px;
+  font-size: 47px;
   line-height: 1;
   letter-spacing: -0.02em;
   color: var(--fg-1);
@@ -503,7 +503,7 @@ body {
   color: var(--xn-clay-900);
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 19px;
+  font-size: 16px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -526,7 +526,7 @@ body {
   background: var(--bg-2);
   padding: 10px 14px;
   font-family: var(--font-sans);
-  font-size: 19px;
+  font-size: 16px;
   color: var(--fg-1);
   transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
   outline: none;

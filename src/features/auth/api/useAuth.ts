@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/shared/api/axios'
 import { ENDPOINTS } from '@/shared/api/endpoints'
 import { useAuthStore } from '../store/authStore'
@@ -6,11 +6,13 @@ import type { AuthResponse, LoginRequest, RegisterRequest } from '../types'
 
 export function useLogin() {
   const setAuth = useAuthStore((s) => s.setAuth)
+  const qc = useQueryClient()
 
   return useMutation({
     mutationFn: (data: LoginRequest) =>
       api.post<AuthResponse>(ENDPOINTS.auth.login, data).then((r) => r.data),
     onSuccess: (data) => {
+      qc.clear()
       setAuth(data.accessToken, data.refreshToken, {
         email: data.email,
         fullName: data.fullName,
@@ -22,11 +24,13 @@ export function useLogin() {
 
 export function useRegister() {
   const setAuth = useAuthStore((s) => s.setAuth)
+  const qc = useQueryClient()
 
   return useMutation({
     mutationFn: (data: RegisterRequest) =>
       api.post<AuthResponse>(ENDPOINTS.auth.register, data).then((r) => r.data),
     onSuccess: (data) => {
+      qc.clear()
       setAuth(data.accessToken, data.refreshToken, {
         email: data.email,
         fullName: data.fullName,
@@ -38,9 +42,13 @@ export function useRegister() {
 
 export function useLogout() {
   const clear = useAuthStore((s) => s.clear)
+  const qc = useQueryClient()
 
   return useMutation({
     mutationFn: () => api.post(ENDPOINTS.auth.logout).then(() => undefined),
-    onSettled: () => clear(),
+    onSettled: () => {
+      clear()
+      qc.clear()
+    },
   })
 }

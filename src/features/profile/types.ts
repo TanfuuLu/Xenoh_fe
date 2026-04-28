@@ -5,6 +5,7 @@ export interface UserProfileResponse {
   email: string
   firstName: string
   lastName: string
+  bio: string | null
   height: number | null
   gender: Gender | null
   dateOfBirth: string | null
@@ -16,6 +17,7 @@ export interface UserProfileResponse {
 }
 
 export interface UpdateProfileRequest {
+  bio?: string
   height?: number
   gender?: Gender
   dateOfBirth?: string
