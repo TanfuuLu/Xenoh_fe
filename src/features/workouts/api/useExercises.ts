@@ -5,6 +5,7 @@ import type {
   CompleteSetRequest,
   CreateExerciseRequest,
   ExerciseResponse,
+  ReorderExercisesRequest,
   UpdateExerciseRequest,
 } from '../types'
 
@@ -52,6 +53,40 @@ export function useDeleteExercise(dailyWorkoutId: string) {
       qc.invalidateQueries({ queryKey: exerciseKeys.byDay(dailyWorkoutId) })
       qc.invalidateQueries({ queryKey: ['days'] })
     },
+  })
+}
+
+export function useReorderExercises(dailyWorkoutId: string) {
+  const qc = useQueryClient()
+  const key = exerciseKeys.byDay(dailyWorkoutId)
+
+  return useMutation({
+    mutationFn: (data: ReorderExercisesRequest) =>
+      api
+        .patch<ExerciseResponse[]>(ENDPOINTS.exercises.reorderByDay(dailyWorkoutId), data)
+        .then((r) => r.data),
+    onMutate: async (data) => {
+      await qc.cancelQueries({ queryKey: key })
+      const previous = qc.getQueryData<ExerciseResponse[]>(key)
+
+      qc.setQueryData<ExerciseResponse[]>(key, (old) => {
+        if (!old) return old
+        const byId = new Map(old.map((exercise) => [exercise.id, exercise]))
+        return data.exerciseIds
+          .map((id, index) => {
+            const exercise = byId.get(id)
+            return exercise ? { ...exercise, sortOrder: index } : null
+          })
+          .filter((exercise): exercise is ExerciseResponse => exercise != null)
+      })
+
+      return { previous }
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) qc.setQueryData(key, ctx.previous)
+    },
+    onSuccess: (data) => qc.setQueryData(key, data),
+    onSettled: () => qc.invalidateQueries({ queryKey: key }),
   })
 }
 

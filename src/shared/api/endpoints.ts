@@ -63,6 +63,7 @@ export const ENDPOINTS = {
     update: (id: string) => `/api/exercises/${id}`,
     delete: (id: string) => `/api/exercises/${id}`,
     completeSet: (setId: string) => `/api/exercises/sets/${setId}/complete`,
+    reorderByDay: (dailyWorkoutId: string) => `/api/exercises/by-day/${dailyWorkoutId}/reorder`,
   },
 
   // Exercise Templates

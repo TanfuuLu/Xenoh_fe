@@ -15,9 +15,6 @@ import { useT, useLangStore } from '@/shared/i18n'
 import { useDailyWorkouts, useWeeklyWorkouts } from '../index'
 import type { ExerciseResponse } from '../types'
 
-const DAY_ORDER = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-const DAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-
 function hasExerciseWarning(exercises: ExerciseResponse[]): boolean {
   return exercises.some((ex) =>
     ex.sets.some(
@@ -53,7 +50,9 @@ export function WeekDetailPage() {
       ? allWeeks![currentWeekIndex + 1]
       : null
 
-  const dayMap = new Map(days?.map((d) => [d.dayOfWeek, d]) ?? [])
+  const orderedDays = [...(days ?? [])].sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+  )
 
   // Fetch exercises for each day that has exercises to detect warnings
   const daysWithExercises = days?.filter((d) => d.totalExercises > 0) ?? []
@@ -203,32 +202,20 @@ export function WeekDetailPage() {
       >
         {/* Day-of-week header row */}
         <div className="grid grid-cols-7 gap-px">
-          {DAY_SHORT.map((d) => (
+          {orderedDays.map((day) => (
             <div
-              key={d}
+              key={day.id}
               className="px-3 py-2.5 text-center text-xs font-semibold uppercase tracking-widest"
               style={{ background: 'var(--bg-2)', color: 'var(--fg-3)' }}
             >
-              {d}
+              {format(new Date(day.date), 'EEE', { locale: dateLocale })}
             </div>
           ))}
         </div>
 
         {/* Day cells */}
         <div className="grid grid-cols-7 gap-px">
-          {DAY_ORDER.map((dayName) => {
-            const day = dayMap.get(dayName)
-
-            if (!day) {
-              return (
-                <div
-                  key={dayName}
-                  className="min-h-36 p-3"
-                  style={{ background: 'var(--bg-1)', opacity: 0.4 }}
-                />
-              )
-            }
-
+          {orderedDays.map((day) => {
             const isToday =
               format(new Date(day.date), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
             const dayWarned = warnedDayIds.has(day.id)

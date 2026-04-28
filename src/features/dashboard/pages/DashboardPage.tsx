@@ -3,6 +3,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { Link } from 'react-router'
 import { Flame, TrendingUp, Calendar, ChevronRight, Dumbbell, CheckCircle2 } from 'lucide-react'
 import { format, isSameDay } from 'date-fns'
+import type { Locale } from 'date-fns'
 import { vi as viLocale, enUS } from 'date-fns/locale'
 import { Card } from '@/shared/components/Card'
 import { Badge } from '@/shared/components/Badge'
@@ -74,7 +75,6 @@ export function DashboardPage() {
         <motion.div variants={slideUp} initial={shouldReduce ? false : 'hidden'} animate="visible">
           <TodayTrainingCard
             todayDay={todayDay ?? null}
-            weekId={currentWeek?.id}
             td={td}
             tc={tc}
             dateLocale={dateLocale}
@@ -169,13 +169,12 @@ interface TodayDayShape {
 
 interface TodayTrainingCardProps {
   todayDay: TodayDayShape | null
-  weekId: string | undefined
   td: Record<string, string>
   tc: Record<string, string>
   dateLocale: Locale
 }
 
-function TodayTrainingCard({ todayDay, weekId, td, tc, dateLocale }: TodayTrainingCardProps) {
+function TodayTrainingCard({ todayDay, td, tc, dateLocale }: TodayTrainingCardProps) {
   const isRest = !todayDay || todayDay.totalExercises === 0
 
   if (isRest) {

@@ -6,7 +6,7 @@ import { useAuthStore } from '@/features/auth'
 import { initAxiosInterceptors } from '@/shared/api/axios'
 
 export function App() {
-  const { accessToken, refreshToken, setAuth, clear } = useAuthStore()
+  const { setAuth, clear } = useAuthStore()
 
   useEffect(() => {
     initAxiosInterceptors(

@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import type { DragEvent, ReactNode } from 'react'
 import { useParams, Link, useLocation } from 'react-router'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
-import { ChevronLeft, Plus, Trash2, CheckCircle2, Circle, Trophy, Dumbbell, Search, X, Copy, AlertTriangle,TriangleAlert } from 'lucide-react'
+import { ChevronLeft, Plus, Trash2, CheckCircle2, Circle, Trophy, Dumbbell, Search, X, Copy, AlertTriangle, TriangleAlert, Activity, GripVertical } from 'lucide-react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -9,6 +10,7 @@ import { format } from 'date-fns'
 import { vi as viLocale, enUS } from 'date-fns/locale'
 import { Button } from '@/shared/components/Button'
 import { Badge } from '@/shared/components/Badge'
+import { Card } from '@/shared/components/Card'
 import { Spinner } from '@/shared/components/Spinner'
 import { Modal } from '@/shared/components/Modal'
 import { Input } from '@/shared/components/Input'
@@ -20,6 +22,7 @@ import {
   useExercises,
   useCreateExercise,
   useDeleteExercise,
+  useReorderExercises,
   useCompleteSet,
   useExerciseTemplates,
   useDailyWorkouts,
@@ -39,6 +42,10 @@ export function DayWorkoutPage() {
   const [showAdd, setShowAdd] = useState(false)
   const [showCopy, setShowCopy] = useState(false)
   const [copyTarget, setCopyTarget] = useState('')
+  const [orderedExercises, setOrderedExercises] = useState<ExerciseResponse[]>([])
+  const [draggedExerciseId, setDraggedExerciseId] = useState<string | null>(null)
+  const autoScrollFrame = useRef<number | null>(null)
+  const autoScrollSpeed = useRef(0)
   const t   = useT()
   const tw  = t.weekDetail
   const tdw = t.dayWorkout
@@ -54,9 +61,16 @@ export function DayWorkoutPage() {
   const { mutate: createExercise, isPending: adding } = useCreateExercise(dailyWorkoutId)
   const { mutate: deleteExercise } = useDeleteExercise(dailyWorkoutId)
   const { mutate: completeSet } = useCompleteSet(dailyWorkoutId)
+  const { mutate: reorderExercises } = useReorderExercises(dailyWorkoutId)
 
   const { data: siblingDays } = useDailyWorkouts(weeklyWorkoutId)
   const { mutate: copyDay, isPending: copying } = useCopyDay(weeklyWorkoutId)
+
+  useEffect(() => {
+    setOrderedExercises(exercises ?? [])
+  }, [exercises])
+
+  useEffect(() => () => stopDragAutoScroll(), [])
 
   const addSchema = z.object({
     exerciseTemplateId: z.string().min(1, tdw.selectExerciseError),
@@ -86,6 +100,67 @@ export function DayWorkoutPage() {
 
   function handleCompleteSet(setId: string, actualReps: number, actualWeight: number, rpe?: number) {
     completeSet({ setId, data: { actualReps, actualWeight, rpe } })
+  }
+
+  function moveDraggedExercise(targetExerciseId: string) {
+    if (!draggedExerciseId || draggedExerciseId === targetExerciseId) return
+
+    setOrderedExercises((current) => {
+      const fromIndex = current.findIndex((exercise) => exercise.id === draggedExerciseId)
+      const toIndex = current.findIndex((exercise) => exercise.id === targetExerciseId)
+      if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) return current
+
+      const next = [...current]
+      const [moved] = next.splice(fromIndex, 1)
+      next.splice(toIndex, 0, moved)
+      return next
+    })
+  }
+
+  function stopDragAutoScroll() {
+    autoScrollSpeed.current = 0
+    if (autoScrollFrame.current != null) {
+      window.cancelAnimationFrame(autoScrollFrame.current)
+      autoScrollFrame.current = null
+    }
+  }
+
+  function startDragAutoScroll(clientY: number) {
+    const edgeSize = 110
+    const maxSpeed = 18
+    const bottomDistance = window.innerHeight - clientY
+    const topDistance = clientY
+
+    if (topDistance < edgeSize) {
+      autoScrollSpeed.current = -Math.round(((edgeSize - topDistance) / edgeSize) * maxSpeed)
+    } else if (bottomDistance < edgeSize) {
+      autoScrollSpeed.current = Math.round(((edgeSize - bottomDistance) / edgeSize) * maxSpeed)
+    } else {
+      stopDragAutoScroll()
+      return
+    }
+
+    if (autoScrollFrame.current != null) return
+
+    const scrollStep = () => {
+      if (autoScrollSpeed.current === 0) {
+        autoScrollFrame.current = null
+        return
+      }
+
+      window.scrollBy({ top: autoScrollSpeed.current, behavior: 'auto' })
+      autoScrollFrame.current = window.requestAnimationFrame(scrollStep)
+    }
+
+    autoScrollFrame.current = window.requestAnimationFrame(scrollStep)
+  }
+
+  function saveExerciseOrder(nextExercises = orderedExercises) {
+    if (!canEdit || nextExercises.length === 0) return
+    reorderExercises({
+      dailyWorkoutId,
+      exerciseIds: nextExercises.map((exercise) => exercise.id),
+    })
   }
 
   const currentDay = siblingDays?.find((d) => d.id === dailyWorkoutId)
@@ -126,6 +201,10 @@ export function DayWorkoutPage() {
   const totalSets = exercises?.reduce((s, e) => s + e.sets.length, 0) ?? 0
   const doneSets  = exercises?.reduce((s, e) => s + e.completedSetsCount, 0) ?? 0
   const pct = totalSets > 0 ? Math.round((doneSets / totalSets) * 100) : 0
+  const completedExercises = exercises?.filter((e) => e.isCompleted).length ?? 0
+  const isDayCompleted = (exercises?.length ?? 0) > 0 && completedExercises === exercises?.length
+  const warningExercises = exercises?.filter(hasWarningExercise) ?? []
+  const dayVolume = exercises?.reduce((sum, exercise) => sum + getExerciseVolume(exercise), 0) ?? 0
 
   return (
     <div className="space-y-5">
@@ -166,6 +245,14 @@ export function DayWorkoutPage() {
         </div>
       )}
 
+      {isDayCompleted && (
+        <DayResultCard
+          exerciseCount={exercises?.length ?? 0}
+          warningCount={warningExercises.length}
+          volume={dayVolume}
+        />
+      )}
+
       {/* Exercise list */}
       <motion.div
         initial={shouldReduce ? false : 'hidden'}
@@ -174,11 +261,29 @@ export function DayWorkoutPage() {
         className="space-y-4"
       >
         <AnimatePresence>
-          {exercises?.map((exercise) => (
+          {orderedExercises.map((exercise) => (
             <ExerciseCard
               key={exercise.id}
               exercise={exercise}
               canEdit={canEdit}
+              animateLayout={!shouldReduce}
+              isDragging={draggedExerciseId === exercise.id}
+              onDragStart={() => setDraggedExerciseId(exercise.id)}
+              onDragMove={startDragAutoScroll}
+              onDragOver={(event) => {
+                event.preventDefault()
+                startDragAutoScroll(event.clientY)
+                moveDraggedExercise(exercise.id)
+              }}
+              onDrop={() => {
+                saveExerciseOrder()
+                stopDragAutoScroll()
+                setDraggedExerciseId(null)
+              }}
+              onDragEnd={() => {
+                stopDragAutoScroll()
+                setDraggedExerciseId(null)
+              }}
               onCompleteSet={handleCompleteSet}
               onDelete={() => {
                 if (confirm(tdw.deleteExerciseConfirm.replace('{name}', exercise.name))) {
@@ -189,7 +294,7 @@ export function DayWorkoutPage() {
           ))}
         </AnimatePresence>
 
-        {exercises?.length === 0 && (
+        {orderedExercises.length === 0 && (
           <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-surface py-14 text-center">
             <Dumbbell size={36} className="text-muted/40" />
             <p className="text-muted">{tdw.empty}</p>
@@ -298,6 +403,100 @@ export function DayWorkoutPage() {
       </AnimatePresence>
     </div>
   )
+}
+
+// ─── Day Result ───────────────────────────────────────────────────────────────
+
+interface DayResultCardProps {
+  exerciseCount: number
+  warningCount: number
+  volume: number
+}
+
+function DayResultCard({ exerciseCount, warningCount, volume }: DayResultCardProps) {
+  const status = warningCount > 0 ? 'Warning' : 'Good'
+  const isWarning = warningCount > 0
+  const formattedVolume = new Intl.NumberFormat(undefined, {
+    maximumFractionDigits: volume % 1 === 0 ? 0 : 1,
+  }).format(volume)
+
+  return (
+    <Card className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div
+            className="flex h-11 w-11 items-center justify-center rounded-xl"
+            style={{ background: isWarning ? 'rgba(245,158,11,0.12)' : 'var(--xn-sage-200)' }}
+          >
+            {isWarning ? (
+              <TriangleAlert size={22} className="text-warning" />
+            ) : (
+              <CheckCircle2 size={22} className="text-success" />
+            )}
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted">Daily Result</p>
+            <h2 className="text-lg font-semibold text-text">Workout completed</h2>
+          </div>
+        </div>
+
+        <Badge variant={isWarning ? 'warning' : 'success'}>{status}</Badge>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-3">
+        <ResultMetric label="Exercises" value={exerciseCount.toString()} />
+        <ResultMetric
+          label="Status"
+          value={status}
+          sub={isWarning ? `${warningCount} exercise${warningCount === 1 ? '' : 's'} warning` : 'No warning exercises'}
+        />
+        <ResultMetric
+          label="Volume"
+          value={`${formattedVolume} kg`}
+          sub="sets x reps x weight"
+          icon={<Activity size={16} />}
+        />
+      </div>
+    </Card>
+  )
+}
+
+interface ResultMetricProps {
+  label: string
+  value: string
+  sub?: string
+  icon?: ReactNode
+}
+
+function ResultMetric({ label, value, sub, icon }: ResultMetricProps) {
+  return (
+    <div className="rounded-xl border border-border bg-background px-4 py-3">
+      <div className="mb-1 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted">
+        {icon}
+        {label}
+      </div>
+      <p className="text-xl font-bold text-text">{value}</p>
+      {sub && <p className="mt-0.5 text-xs text-muted">{sub}</p>}
+    </div>
+  )
+}
+
+function hasWarningExercise(exercise: ExerciseResponse) {
+  return exercise.sets.some(
+    (set) =>
+      set.isCompleted &&
+      ((set.actualReps != null && set.actualReps < set.plannedReps) ||
+        (set.actualWeight != null && set.plannedWeight != null && set.actualWeight < set.plannedWeight)),
+  )
+}
+
+function getExerciseVolume(exercise: ExerciseResponse) {
+  return exercise.sets.reduce((total, set) => {
+    if (!set.isCompleted) return total
+    const reps = set.actualReps ?? set.plannedReps
+    const weight = set.actualWeight ?? set.plannedWeight ?? 0
+    return total + reps * weight
+  }, 0)
 }
 
 // ─── ExercisePicker ───────────────────────────────────────────────────────────
@@ -447,27 +646,50 @@ function ExercisePicker({ templates, isLoading, value, onChange, error }: Exerci
 interface ExerciseCardProps {
   exercise: ExerciseResponse
   canEdit: boolean
+  animateLayout: boolean
+  isDragging: boolean
+  onDragStart: () => void
+  onDragMove: (clientY: number) => void
+  onDragOver: (event: DragEvent<HTMLDivElement>) => void
+  onDrop: () => void
+  onDragEnd: () => void
   onCompleteSet: (setId: string, actualReps: number, actualWeight: number, rpe?: number) => void
   onDelete: () => void
 }
 
-function ExerciseCard({ exercise, canEdit, onCompleteSet, onDelete }: ExerciseCardProps) {
+function ExerciseCard({
+  exercise,
+  canEdit,
+  animateLayout,
+  isDragging,
+  onDragStart,
+  onDragMove,
+  onDragOver,
+  onDrop,
+  onDragEnd,
+  onCompleteSet,
+  onDelete,
+}: ExerciseCardProps) {
   const pct = exercise.sets.length > 0
     ? Math.round((exercise.completedSetsCount / exercise.sets.length) * 100)
     : 0
 
-  const hasUnderperformed = exercise.sets.some(
-    (s) =>
-      s.isCompleted &&
-      ((s.actualReps != null && s.actualReps < s.plannedReps) ||
-       (s.actualWeight != null && s.plannedWeight != null && s.actualWeight < s.plannedWeight)),
-  )
+  const hasUnderperformed = hasWarningExercise(exercise)
 
   return (
     <motion.div
+      layout={animateLayout ? 'position' : false}
       variants={slideUp}
       exit={{ opacity: 0, scale: 0.97, transition: { duration: 0.15 } }}
-      className="rounded-xl border border-border p-4 space-y-3 transition-colors duration-300"
+      transition={{
+        layout: { type: 'spring', stiffness: 420, damping: 34, mass: 0.7 },
+      }}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+      className={cn(
+        'rounded-xl border border-border p-4 space-y-3 transition-[box-shadow,border-color,background-color,opacity,scale] duration-200',
+        isDragging && 'scale-[1.01] opacity-70 shadow-lg ring-2 ring-primary/25',
+      )}
       style={
         hasUnderperformed
           ? { borderColor: 'var(--color-warning)', background: 'rgba(245,158,11,0.07)' }
@@ -480,6 +702,24 @@ function ExerciseCard({ exercise, canEdit, onCompleteSet, onDelete }: ExerciseCa
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
+            {canEdit && (
+              <button
+                type="button"
+                draggable
+                onDragStart={(event) => {
+                  event.dataTransfer.effectAllowed = 'move'
+                  onDragStart()
+                }}
+                onDrag={(event) => {
+                  if (event.clientY > 0) onDragMove(event.clientY)
+                }}
+                onDragEnd={onDragEnd}
+                className="cursor-grab rounded-md p-1 text-muted active:cursor-grabbing"
+                title="Drag to reorder"
+              >
+                <GripVertical size={15} />
+              </button>
+            )}
             <h3 className="font-semibold text-text">{exercise.name}</h3>
             {exercise.isCompleted && !hasUnderperformed && <Badge variant="success">Done ✓</Badge>}
             {hasUnderperformed && (
@@ -547,6 +787,18 @@ function SetRow({ set, onComplete }: SetRowProps) {
   const [rpe, setRpe]       = useState('')
   const t = useT()
 
+  function handleComplete() {
+    const actualReps = Number.isFinite(reps) && reps >= 1 ? reps : set.plannedReps
+    const actualWeight = Number.isFinite(weight) && weight >= 0 ? weight : set.plannedWeight ?? 0
+    const parsedRpe = rpe.trim() ? Number(rpe) : undefined
+    const actualRpe =
+      parsedRpe != null && Number.isFinite(parsedRpe) && parsedRpe >= 1 && parsedRpe <= 10
+        ? parsedRpe
+        : undefined
+
+    onComplete(set.id, actualReps, actualWeight, actualRpe)
+  }
+
   if (set.isCompleted) {
     return (
       <div
@@ -612,7 +864,7 @@ function SetRow({ set, onComplete }: SetRowProps) {
 
       {/* Complete button */}
       <button
-        onClick={() => onComplete(set.id, reps, weight, rpe ? Number(rpe) : undefined)}
+        onClick={handleComplete}
         className="ml-auto flex-shrink-0 rounded-lg p-1.5 text-muted transition-colors hover:text-success active:scale-95"
         onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = 'var(--xn-sage-200)')}
         onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = '')}

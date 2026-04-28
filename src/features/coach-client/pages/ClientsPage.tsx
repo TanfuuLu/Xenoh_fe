@@ -24,7 +24,6 @@ export function ClientsPage() {
   const { mutate: terminate, isPending: terminating } = useTerminateRelationship()
   const t   = useT()
   const tcl = t.clients
-  const tcp = t.coachProfile
 
   if (pendingLoading || clientsLoading) {
     return (

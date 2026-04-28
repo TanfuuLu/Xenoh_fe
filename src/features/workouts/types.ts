@@ -46,6 +46,7 @@ export interface ExerciseResponse {
   isCompleted: boolean
   notes: string | null
   dailyWorkoutId: string
+  sortOrder: number
   sets: ExerciseSetResponse[]
   personalRecordWeight: number | null
 }
@@ -78,6 +79,11 @@ export interface CompleteSetRequest {
   actualReps?: number
   actualWeight?: number
   rpe?: number
+}
+
+export interface ReorderExercisesRequest {
+  dailyWorkoutId: string
+  exerciseIds: string[]
 }
 
 export interface UpdateWeeklyWorkoutRequest {

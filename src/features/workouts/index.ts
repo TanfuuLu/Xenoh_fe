@@ -5,6 +5,7 @@ export {
   useCreateExercise,
   useUpdateExercise,
   useDeleteExercise,
+  useReorderExercises,
   useCompleteSet,
 } from './api/useExercises'
 export { useExerciseTemplates } from './api/useExerciseTemplates'
@@ -17,6 +18,7 @@ export type {
   CreateExerciseRequest,
   UpdateExerciseRequest,
   CompleteSetRequest,
+  ReorderExercisesRequest,
   CopyDayRequest,
   CopyDayResponse,
 } from './types'

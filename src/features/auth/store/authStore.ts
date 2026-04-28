@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware'
 import type { UserRole } from '@/shared/types/api'
 
 interface AuthUser {
+  id?: string
   email: string
   fullName: string
   roles: UserRole[]
