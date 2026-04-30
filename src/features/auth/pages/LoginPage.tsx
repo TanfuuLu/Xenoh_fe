@@ -114,7 +114,7 @@ export function LoginPage() {
       <div
         className="hidden md:flex flex-col justify-center flex-1"
         style={{
-          background: 'linear-gradient(145deg, var(--xn-clay-200) 0%, var(--xn-clay-100) 60%, var(--xn-ink-100) 100%)',
+          background: 'linear-gradient(145deg, var(--bg-4) 0%, var(--xn-clay-200) 58%, var(--bg-3) 100%)',
           padding: '60px clamp(40px, 6vw, 72px)',
           position: 'relative',
           overflow: 'hidden',

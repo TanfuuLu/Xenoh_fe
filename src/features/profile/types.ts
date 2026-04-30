@@ -5,6 +5,7 @@ export interface UserProfileResponse {
   email: string
   firstName: string
   lastName: string
+  avatarUrl: string | null
   bio: string | null
   height: number | null
   gender: Gender | null

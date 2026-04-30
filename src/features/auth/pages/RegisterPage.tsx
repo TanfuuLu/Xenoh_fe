@@ -27,14 +27,14 @@ const PANEL_STYLE = {
     badgeColor: 'var(--xn-clay-900)',
     checkBg: 'var(--xn-clay-700)',
     footerBg: 'rgba(163, 139, 118, 0.12)',
-    panelGradient: 'linear-gradient(145deg, var(--xn-clay-200) 0%, var(--xn-clay-100) 60%, var(--xn-ink-100) 100%)',
+    panelGradient: 'linear-gradient(145deg, var(--bg-4) 0%, var(--xn-clay-200) 58%, var(--bg-3) 100%)',
   },
   Coach: {
     badgeBg: 'var(--xn-sage-300)',
     badgeColor: '#2e4018',
     checkBg: 'var(--xn-sage-600)',
     footerBg: 'rgba(140, 150, 101, 0.12)',
-    panelGradient: 'linear-gradient(145deg, var(--xn-sage-200) 0%, var(--xn-sage-100) 60%, var(--xn-ink-100) 100%)',
+    panelGradient: 'linear-gradient(145deg, var(--xn-sage-200) 0%, var(--xn-sage-100) 48%, var(--bg-3) 100%)',
   },
 } as const
 

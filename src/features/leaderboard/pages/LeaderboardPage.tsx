@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { Trophy, Medal } from 'lucide-react'
 import { Spinner } from '@/shared/components/Spinner'
+import { UserAvatar } from '@/shared/components/UserAvatar'
 import { cn } from '@/shared/utils/cn'
 import { staggerContainer, slideUp, fadeIn } from '@/shared/utils/motion'
 import { useAuthStore } from '@/features/auth'
@@ -35,10 +36,6 @@ function sorted(entries: Big3LeaderboardEntry[], lift: Big3Lift): Big3Leaderboar
     const sb = getScore(b, lift) ?? -1
     return sb - sa
   })
-}
-
-function initials(name: string): string {
-  return name.split(' ').map((w) => w[0]).slice(-2).join('').toUpperCase()
 }
 
 export function LeaderboardPage() {
@@ -127,16 +124,11 @@ export function LeaderboardPage() {
                   <Medal size={20} style={{ color: medal.text }} />
 
                   {/* Avatar */}
-                  <div
-                    className="flex h-12 w-12 items-center justify-center rounded-full text-sm font-bold"
-                    style={{
-                      background: isMe ? 'var(--color-primary)' : 'var(--bg-3)',
-                      color: isMe ? '#fff' : 'var(--fg-1)',
-                      border: isMe ? '2px solid var(--color-primary)' : '2px solid var(--border-1)',
-                    }}
-                  >
-                    {initials(entry.fullName)}
-                  </div>
+                  <UserAvatar
+                    name={entry.fullName}
+                    size={48}
+                    variant={isMe ? 'primary' : 'clay'}
+                  />
 
                   {/* Name */}
                   <p
@@ -232,15 +224,11 @@ export function LeaderboardPage() {
 
                   {/* Athlete */}
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div
-                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold"
-                      style={{
-                        background: isMe ? 'var(--color-primary)' : 'var(--bg-3)',
-                        color: isMe ? '#fff' : 'var(--fg-2)',
-                      }}
-                    >
-                      {initials(entry.fullName)}
-                    </div>
+                    <UserAvatar
+                      name={entry.fullName}
+                      size={32}
+                      variant={isMe ? 'primary' : 'clay'}
+                    />
                     <span
                       className="truncate text-sm font-medium"
                       style={{ color: isMe ? 'var(--color-primary)' : 'var(--fg-1)' }}

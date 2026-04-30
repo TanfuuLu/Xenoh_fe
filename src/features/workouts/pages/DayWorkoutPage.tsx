@@ -83,9 +83,9 @@ export function DayWorkoutPage() {
     plannedWeight: z.coerce.number().min(0).max(10000).optional(),
     notes: z.string().optional(),
   })
-  type AddForm = z.infer<typeof addSchema>
+  type AddForm = z.output<typeof addSchema>
 
-  const addForm = useForm<AddForm>({
+  const addForm = useForm<z.input<typeof addSchema>, unknown, AddForm>({
     resolver: zodResolver(addSchema),
     defaultValues: { plannedSets: 3, plannedReps: 8 },
   })

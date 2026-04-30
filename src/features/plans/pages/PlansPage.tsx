@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -52,6 +52,14 @@ export function PlansPage() {
   const tc = t.common
 
   const activeClients = clients?.filter((c) => c.status === 'Active') ?? []
+  const displayedPlans = useMemo(
+    () =>
+      (plans ?? [])
+        .map((plan, index) => ({ plan, index }))
+        .sort((a, b) => Number(b.plan.isActive) - Number(a.plan.isActive) || a.index - b.index)
+        .map(({ plan }) => plan),
+    [plans],
+  )
 
   const schema = z.object({
     name: z.string().min(2, tp.nameError).max(100),
@@ -128,27 +136,22 @@ export function PlansPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-text">Plans</h1>
-        <p className="mt-1 text-sm text-muted">
-          {(plans?.length ?? 0)}/3 {isCoach ? 'personal plans' : 'plans'}
-          {isCoach && ` - ${clientPlans?.length ?? 0} ${tcp.subtitle}`}
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-text">Plans</h1>
+          <p className="mt-1 text-sm text-muted">
+            {(plans?.length ?? 0)}/3 {isCoach ? 'personal plans' : 'plans'}
+            {isCoach && ` - ${clientPlans?.length ?? 0} ${tcp.subtitle}`}
+          </p>
+        </div>
+        {(plans?.length ?? 0) < 3 && (
+          <Button onClick={() => setShowCreate(true)} size="sm">
+            <Plus size={16} /> {tp.createPlan}
+          </Button>
+        )}
       </div>
 
       <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-text">{tp.title}</h2>
-            <p className="mt-1 text-sm text-muted">{plans?.length ?? 0}/3 plans</p>
-          </div>
-          {(plans?.length ?? 0) < 3 && (
-            <Button onClick={() => setShowCreate(true)} size="sm">
-              <Plus size={16} /> {tp.createPlan}
-            </Button>
-          )}
-        </div>
-
         <motion.div
           initial={shouldReduce ? false : 'hidden'}
           animate="visible"
@@ -156,7 +159,7 @@ export function PlansPage() {
           className="space-y-3"
         >
           <AnimatePresence>
-            {plans?.map((plan) => (
+            {displayedPlans.map((plan) => (
               <PlanRow
                 key={plan.id}
                 plan={plan}

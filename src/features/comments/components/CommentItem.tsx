@@ -2,6 +2,7 @@ import { formatDistanceToNow } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import { Trash2 } from 'lucide-react'
 import { useAuthStore } from '@/features/auth/store/authStore'
+import { UserAvatar } from '@/shared/components/UserAvatar'
 import type { CommentResponse } from '../types'
 
 interface Props {
@@ -14,21 +15,9 @@ export function CommentItem({ comment, onDelete, isDeleting }: Props) {
   const userId = useAuthStore((s) => s.user?.id)
   const isOwn = userId === comment.authorId
 
-  const initials = comment.authorName
-    .split(' ')
-    .map((w) => w[0])
-    .slice(-2)
-    .join('')
-    .toUpperCase() || '?'
-
   return (
     <div className="flex gap-3 group">
-      <div
-        className="xn-avatar flex-shrink-0"
-        style={{ width: 32, height: 32, fontSize: 12 }}
-      >
-        {initials}
-      </div>
+      <UserAvatar name={comment.authorName} size={32} />
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1">

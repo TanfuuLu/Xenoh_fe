@@ -41,48 +41,48 @@
 /* ── Design system CSS variables ──────────────────────────────────────── */
 :root {
   /* Brand palette */
-  --xn-clay-900: #6e4f3a;
-  --xn-clay-800: #8f6f56;
-  --xn-clay-700: #A98B76;
-  --xn-clay-600: #BFA28C;
-  --xn-clay-500: #d6bfa9;
-  --xn-clay-400: #e6d4c1;
-  --xn-clay-300: #f1e3d1;
-  --xn-clay-200: #F3E4C9;
-  --xn-clay-100: #faf1e0;
-  --xn-clay-050: #fdf8ef;
+  --xn-clay-900: #583f2e;
+  --xn-clay-800: #725945;
+  --xn-clay-700: #876f5e;
+  --xn-clay-600: #998270;
+  --xn-clay-500: #c8a489;
+  --xn-clay-400: #d8bda7;
+  --xn-clay-300: #e6cfba;
+  --xn-clay-200: #eedbc1;
+  --xn-clay-100: #f7ead8;
+  --xn-clay-050: #fcf6ee;
 
-  --xn-sage-700: #8f9670;
-  --xn-sage-600: #a7ad83;
-  --xn-sage-500: #BABF94;
-  --xn-sage-400: #cdd1ab;
-  --xn-sage-300: #dfe2c3;
-  --xn-sage-200: #edefdc;
-  --xn-sage-100: #f5f6e8;
+  --xn-sage-700: #72785a;
+  --xn-sage-600: #868a69;
+  --xn-sage-500: #959976;
+  --xn-sage-400: #b8bd95;
+  --xn-sage-300: #cbd0aa;
+  --xn-sage-200: #dfe4c8;
+  --xn-sage-100: #f1f3dc;
 
-  --xn-ink-900: #3a2a1e;
-  --xn-ink-800: #4e3a2b;
-  --xn-ink-700: #6b5645;
-  --xn-ink-600: #8a7864;
-  --xn-ink-500: #a99884;
-  --xn-ink-400: #c7baa6;
-  --xn-ink-300: #ded3c0;
-  --xn-ink-200: #ece3d1;
-  --xn-ink-100: #f8f3e8;
-  --xn-ink-050: #fcf9f1;
+  --xn-ink-900: #2e2218;
+  --xn-ink-800: #3e2e22;
+  --xn-ink-700: #564537;
+  --xn-ink-600: #6e6050;
+  --xn-ink-500: #877a6a;
+  --xn-ink-400: #b49f8d;
+  --xn-ink-300: #c7b29c;
+  --xn-ink-200: #dcc8ad;
+  --xn-ink-100: #efe0c9;
+  --xn-ink-050: #f8eddb;
 
-  --xn-paper:     #FFFDF8;
-  --xn-paper-alt: #F8EED9;
+  --xn-paper:     #efe4d5;
+  --xn-paper-alt: #d8bd98;
 
   /* Semantic */
-  --xn-success:    #5a7030;
-  --xn-success-bg: #dfe4c3;
-  --xn-warning:    #b06c10;
-  --xn-warning-bg: #f5ddb0;
-  --xn-danger:     #a02818;
-  --xn-danger-bg:  #f0c8c0;
-  --xn-info:       #5a7080;
-  --xn-info-bg:    #d0dce4;
+  --xn-success:    #485a26;
+  --xn-success-bg: #e8ecd6;
+  --xn-warning:    #8d560d;
+  --xn-warning-bg: #f0e0c8;
+  --xn-danger:     #802013;
+  --xn-danger-bg:  #f0d9d6;
+  --xn-info:       #485a66;
+  --xn-info-bg:    #dee5ea;
 
   /* Semantic tokens */
   --fg-1: var(--xn-ink-900);
@@ -92,17 +92,17 @@
   --fg-on-clay: #fefbf4;
 
   --bg-1: var(--xn-paper);
-  --bg-2: #ffffff;
-  --bg-3: var(--xn-ink-050);
+  --bg-2: #fffaf3;
+  --bg-3: #ead7bd;
   --bg-4: var(--xn-paper-alt);
   --bg-inverse: var(--xn-ink-900);
 
-  --border-1: var(--xn-ink-300);  /* was ink-200 — more visible */
-  --border-2: var(--xn-ink-400);
+  --border-1: #c1aa95;  /* clearer component borders */
+  --border-2: #8f735e;
 
   --accent:       var(--xn-clay-800);  /* was clay-700 — darker */
   --accent-hover: var(--xn-clay-900);
-  --accent-press: #4a2e1a;
+  --accent-press: #3b2515;
   --accent-soft:  var(--xn-clay-200);
   --accent-on:    var(--fg-on-clay);
 
@@ -115,11 +115,11 @@
   --font-mono:    "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
 
   /* Shadows — warm-tinted */
-  --sh-xs: 0 1px 2px rgba(110, 79, 58, 0.06);
-  --sh-sm: 0 1px 2px rgba(110, 79, 58, 0.06), 0 1px 4px rgba(110, 79, 58, 0.04);
-  --sh-md: 0 4px 12px -4px rgba(110, 79, 58, 0.10), 0 2px 4px rgba(110, 79, 58, 0.04);
-  --sh-lg: 0 20px 40px -16px rgba(110, 79, 58, 0.14), 0 4px 10px rgba(110, 79, 58, 0.05);
-  --sh-xl: 0 36px 64px -24px rgba(110, 79, 58, 0.18), 0 10px 20px rgba(110, 79, 58, 0.07);
+  --sh-xs: 0 1px 4px rgba(88, 63, 46, 0.14);
+  --sh-sm: 0 3px 8px rgba(88, 63, 46, 0.16), 0 1px 4px rgba(88, 63, 46, 0.10);
+  --sh-md: 0 10px 22px -8px rgba(88, 63, 46, 0.26), 0 4px 10px rgba(88, 63, 46, 0.12);
+  --sh-lg: 0 24px 48px -20px rgba(88, 63, 46, 0.30), 0 8px 18px rgba(88, 63, 46, 0.14);
+  --sh-xl: 0 44px 78px -30px rgba(88, 63, 46, 0.36), 0 14px 28px rgba(88, 63, 46, 0.16);
   --sh-inset: inset 0 1px 0 rgba(255, 255, 255, 0.55);
 
   /* Motion */
@@ -133,18 +133,18 @@
 /* ── Tailwind theme mapping ────────────────────────────────────────────── */
 @theme {
   /* Core semantic tokens → Tailwind utilities */
-  --color-primary:    #8f6f56;    /* clay-800 — darker */
-  --color-surface:    #ffffff;
-  --color-background: #FFFDF8;
-  --color-text:       #3a2a1e;
-  --color-muted:      #8a7864;   /* was #a99884 — much darker */
-  --color-border:     #ded3c0;   /* was #ece3d1 — more visible */
-  --color-panel:      #f8f3e8;
-  --color-sand:       #F3E4C9;
-  --color-sage:       #a7ad83;   /* sage-600 — darker */
-  --color-success:    #5a7030;
-  --color-danger:     #a02818;
-  --color-warning:    #b06c10;
+  --color-primary:    #725945;    /* clay-800 — darker */
+  --color-surface:    #fffaf3;
+  --color-background: #efe4d5;
+  --color-text:       #2e2218;
+  --color-muted:      #6e6050;   /* was #a99884 — much darker */
+  --color-border:     #c1aa95;   /* was #ece3d1 — more visible */
+  --color-panel:      #ead7bd;
+  --color-sand:       #eedbc1;
+  --color-sage:       #868a69;   /* sage-600 — darker */
+  --color-success:    #485a26;
+  --color-danger:     #802013;
+  --color-warning:    #8d560d;
 
   /* Font families available as Tailwind utilities */
   --font-display: "Namdhinggo", Georgia, serif;

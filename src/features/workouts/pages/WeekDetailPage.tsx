@@ -151,6 +151,8 @@ export function WeekDetailPage() {
         )}
       </div>
 
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px] 2xl:grid-cols-[minmax(0,1fr)_400px]">
+        <div className="min-w-0 space-y-6">
       {/* Weekly completion progress */}
       {currentWeek && currentWeek.totalDays > 0 && (() => {
         const pct      = Math.round((currentWeek.completedDays / currentWeek.totalDays) * 100)
@@ -312,14 +314,19 @@ export function WeekDetailPage() {
         </div>
       </motion.div>
 
-      <CommentSection
-        comments={comments}
-        isLoading={commentsLoading}
-        onAdd={(content) => addComment(content)}
-        onDelete={(id) => deleteComment(id)}
-        isPendingAdd={addingComment}
-        isPendingDelete={deletingComment}
-      />
+        </div>
+
+        <aside className="min-w-0 xl:sticky xl:top-6 xl:self-start">
+          <CommentSection
+            comments={comments}
+            isLoading={commentsLoading}
+            onAdd={(content) => addComment(content)}
+            onDelete={(id) => deleteComment(id)}
+            isPendingAdd={addingComment}
+            isPendingDelete={deletingComment}
+          />
+        </aside>
+      </div>
     </div>
   )
 }

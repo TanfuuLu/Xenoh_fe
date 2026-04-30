@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/shared/api/axios'
 import { ENDPOINTS } from '@/shared/api/endpoints'
+import { useAuthStore } from '@/features/auth'
 import type {
   BodyweightLogResponse,
   LogBodyweightRequest,
@@ -26,6 +27,31 @@ export function useUpdateProfile() {
     mutationFn: (data: UpdateProfileRequest) =>
       api.put<UserProfileResponse>(ENDPOINTS.users.me, data).then((r) => r.data),
     onSuccess: (data) => qc.setQueryData(profileKeys.me, data),
+  })
+}
+
+export function useUpdateAvatar() {
+  const qc = useQueryClient()
+  const setUser = useAuthStore((s) => s.setUser)
+
+  return useMutation({
+    mutationFn: (file: File) => {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      return api.post<UserProfileResponse>(ENDPOINTS.users.avatar, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      }).then((r) => r.data)
+    },
+    onSuccess: (data) => {
+      qc.setQueryData(profileKeys.me, data)
+      setUser({
+        id: data.id,
+        email: data.email,
+        fullName: `${data.firstName} ${data.lastName}`.trim(),
+        avatarUrl: data.avatarUrl,
+      })
+    },
   })
 }
 

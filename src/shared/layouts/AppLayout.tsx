@@ -1,18 +1,21 @@
 import React, { useState } from 'react'
-import { NavLink, Link, Outlet, useNavigate } from 'react-router'
+import { useQueryClient } from '@tanstack/react-query'
+import { NavLink, Link, Outlet, useLocation, useNavigate } from 'react-router'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, ClipboardList, User, Users,
   UserCheck, Menu, X, LogOut, ChevronDown,
-  PanelLeftClose, PanelLeftOpen, Trophy,
+  PanelLeftClose, PanelLeftOpen, ChartNoAxesCombined,
 } from 'lucide-react'
 import { cn } from '@/shared/utils/cn'
 import { useAuthStore } from '@/features/auth'
 import { useLogout } from '@/features/auth'
 import { useT } from '@/shared/i18n'
 import { LanguageSwitcher } from '@/shared/components/LanguageSwitcher'
+import { UserAvatar } from '@/shared/components/UserAvatar'
 import { NotificationBell } from '@/features/notifications/components/NotificationBell'
 import { useNotificationHub } from '@/features/notifications/hooks/useNotificationHub'
+import { exerciseTrackingKeys } from '@/features/exercise-tracking'
 
 const MINI_WIDTH  = 64
 const FULL_WIDTH  = 240
@@ -24,16 +27,19 @@ export function AppLayout() {
   const user      = useAuthStore((s) => s.user)
   const isCoach   = useAuthStore((s) => s.user?.roles?.includes('Coach') ?? false)
   const { mutate: logout } = useLogout()
+  const queryClient = useQueryClient()
   const navigate  = useNavigate()
+  const location  = useLocation()
   const t         = useT()
   const tn        = t.nav
+  const isWeekDetailPage = /^\/plans\/[^/]+\/weeks\/[^/]+$/.test(location.pathname)
 
   useNotificationHub()
 
   const individualNav = [
     { to: '/dashboard',    icon: LayoutDashboard, label: tn.dashboard },
     { to: '/plans',        icon: ClipboardList,   label: tn.myPlans },
-    { to: '/leaderboard',  icon: Trophy,          label: tn.leaderboard },
+    { to: '/exercise-tracking', icon: ChartNoAxesCombined, label: tn.exerciseTracking },
     { to: '/coaches',      icon: Users,           label: tn.findCoach },
     { to: '/profile',      icon: User,            label: tn.profile },
   ]
@@ -41,7 +47,6 @@ export function AppLayout() {
   const coachNav = [
     { to: '/dashboard',     icon: LayoutDashboard, label: tn.overview },
     { to: '/plans',         icon: ClipboardList,   label: tn.myPlans },
-    { to: '/leaderboard',   icon: Trophy,          label: tn.leaderboard },
     { to: '/coach/clients', icon: UserCheck,       label: tn.clients },
     { to: '/profile',       icon: User,            label: tn.profile },
   ]
@@ -53,9 +58,11 @@ export function AppLayout() {
     logout(undefined, { onSettled: () => navigate('/login') })
   }
 
-  const initials = user?.fullName
-    ? user.fullName.split(' ').map((w) => w[0]).slice(-2).join('').toUpperCase()
-    : '?'
+  function handleNavClick(to: string) {
+    if (to === '/exercise-tracking') {
+      void queryClient.invalidateQueries({ queryKey: exerciseTrackingKeys.all })
+    }
+  }
 
   return (
     <div
@@ -66,12 +73,12 @@ export function AppLayout() {
       <aside className="xn-sidebar hidden md:flex" style={{ width: mini ? MINI_WIDTH : FULL_WIDTH }}>
         <SidebarInner
           navItems={navItems}
-          initials={initials}
           user={user}
           isCoach={isCoach}
           mini={mini}
           onToggleMini={() => setMini((v) => !v)}
           onLogout={handleLogout}
+          onNavClick={handleNavClick}
         />
       </aside>
 
@@ -111,12 +118,14 @@ export function AppLayout() {
               </div>
               <SidebarInner
                 navItems={navItems}
-                initials={initials}
                 user={user}
                 isCoach={isCoach}
                 mini={false}
                 onLogout={handleLogout}
-                onNavClick={() => setMobileOpen(false)}
+                onNavClick={(to) => {
+                  handleNavClick(to)
+                  setMobileOpen(false)
+                }}
                 hideBrand
               />
             </motion.aside>
@@ -158,7 +167,7 @@ export function AppLayout() {
                 onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--bg-3)' }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'none' }}
               >
-                <div className="xn-avatar" style={{ width: 28, height: 28, fontSize: 11 }}>{initials}</div>
+                <UserAvatar name={user?.fullName} email={user?.email} imageUrl={user?.avatarUrl} size={28} />
                 <span className="hidden md:block text-sm font-medium max-w-[120px] truncate" style={{ color: 'var(--fg-1)' }}>
                   {user?.fullName ?? user?.email}
                 </span>
@@ -220,7 +229,7 @@ export function AppLayout() {
 
         {/* Page content */}
         <main className="flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-7xl" style={{ padding: '28px 32px' }}>
+          <div className="mx-auto w-full" style={{ maxWidth: isWeekDetailPage ? 1508 : 1056, padding: '20px 24px' }}>
             <Outlet />
           </div>
         </main>
@@ -239,18 +248,17 @@ interface NavItem {
 
 interface SidebarInnerProps {
   navItems: NavItem[]
-  initials: string
-  user: { fullName?: string; email?: string } | null
+  user: { fullName?: string; email?: string; avatarUrl?: string | null } | null
   isCoach: boolean
   mini: boolean
   onToggleMini?: () => void
   onLogout: () => void
-  onNavClick?: () => void
+  onNavClick?: (to: string) => void
   hideBrand?: boolean
 }
 
 function SidebarInner({
-  navItems, initials, user, isCoach, mini, onToggleMini, onLogout, onNavClick, hideBrand,
+  navItems, user, isCoach, mini, onToggleMini, onLogout, onNavClick, hideBrand,
 }: SidebarInnerProps) {
   const t  = useT()
   const tn = t.nav
@@ -299,7 +307,7 @@ function SidebarInner({
             key={to}
             to={to}
             end={to === '/dashboard'}
-            onClick={onNavClick}
+            onClick={() => onNavClick?.(to)}
             title={mini ? label : undefined}
             className={({ isActive }) => cn('xn-nav-item', isActive && 'active')}
             style={mini ? { justifyContent: 'center', padding: '10px 0' } : undefined}
@@ -318,7 +326,7 @@ function SidebarInner({
               title={user?.fullName}
               style={{ display: 'flex', justifyContent: 'center', padding: '4px 0' }}
             >
-              <div className="xn-avatar" style={{ width: 32, height: 32, fontSize: 12 }}>{initials}</div>
+              <UserAvatar name={user?.fullName} email={user?.email} imageUrl={user?.avatarUrl} size={32} />
             </div>
             <button
               onClick={onLogout}
@@ -345,7 +353,7 @@ function SidebarInner({
         ) : (
           <>
             <div className="flex items-center gap-2.5" style={{ padding: '6px 10px' }}>
-              <div className="xn-avatar" style={{ width: 32, height: 32, fontSize: 12, flexShrink: 0 }}>{initials}</div>
+              <UserAvatar name={user?.fullName} email={user?.email} imageUrl={user?.avatarUrl} size={32} />
               <div className="min-w-0">
                 <p className="text-sm font-medium truncate" style={{ color: 'var(--fg-1)', margin: 0 }}>{user?.fullName}</p>
                 <p className="text-xs truncate" style={{ color: 'var(--fg-3)', margin: 0 }}>{user?.email}</p>

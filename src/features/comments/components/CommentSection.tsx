@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { MessageSquare } from 'lucide-react'
+import { cn } from '@/shared/utils/cn'
 import { motionProps } from '@/shared/utils/motion'
 import { CommentForm } from './CommentForm'
 import { CommentItem } from './CommentItem'
@@ -8,17 +9,18 @@ import type { CommentResponse } from '../types'
 interface Props {
   comments: CommentResponse[]
   isLoading: boolean
-  onAdd: (content: string) => Promise<void>
+  onAdd: (content: string) => Promise<unknown>
   onDelete: (id: string) => void
   isPendingAdd: boolean
   isPendingDelete: boolean
+  className?: string
 }
 
 export function CommentSection({
-  comments, isLoading, onAdd, onDelete, isPendingAdd, isPendingDelete,
+  comments, isLoading, onAdd, onDelete, isPendingAdd, isPendingDelete, className,
 }: Props) {
   return (
-    <motion.div {...motionProps.slideUp} className="xn-card" style={{ marginTop: 24 }}>
+    <motion.div {...motionProps.slideUp} className={cn('xn-card', className)}>
       <div className="flex items-center gap-2" style={{ marginBottom: 16 }}>
         <MessageSquare size={16} style={{ color: 'var(--color-primary)' }} />
         <h3 className="text-sm font-semibold" style={{ color: 'var(--fg-1)', margin: 0 }}>
@@ -26,7 +28,18 @@ export function CommentSection({
         </h3>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 20 }}>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 16,
+          marginBottom: 20,
+          maxHeight: comments.length > 0 ? 'min(42vh, 360px)' : undefined,
+          overflowY: comments.length > 0 ? 'auto' : undefined,
+          paddingRight: comments.length > 0 ? 8 : undefined,
+          scrollbarGutter: comments.length > 0 ? 'stable' : undefined,
+        }}
+      >
         {isLoading ? (
           <p className="text-sm text-center" style={{ color: 'var(--fg-3)', padding: '16px 0' }}>
             Đang tải...

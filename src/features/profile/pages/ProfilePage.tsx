@@ -1,23 +1,25 @@
-import { useState, type TextareaHTMLAttributes } from 'react'
+import { useRef, useState, type ChangeEvent, type TextareaHTMLAttributes } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { motion } from 'framer-motion'
-import { Trash2 } from 'lucide-react'
+import { Camera, Trash2 } from 'lucide-react'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
-import { format } from 'date-fns'
+import { format, isValid } from 'date-fns'
 import { Card } from '@/shared/components/Card'
 import { Button } from '@/shared/components/Button'
 import { Input } from '@/shared/components/Input'
 import { Select } from '@/shared/components/Select'
 import { Spinner } from '@/shared/components/Spinner'
+import { UserAvatar } from '@/shared/components/UserAvatar'
 import { cn } from '@/shared/utils/cn'
 import { slideUp } from '@/shared/utils/motion'
 import { useT } from '@/shared/i18n'
 import {
   useMyProfile,
+  useUpdateAvatar,
   useUpdateProfile,
   useLogBodyweight,
   useBodyweightHistory,
@@ -34,11 +36,25 @@ type ProfileForm = {
 }
 type WeightForm  = { weight: number }
 
+function formatDisplayDate(value: string | null | undefined, pattern = 'dd/MM/yyyy') {
+  if (!value) return '—'
+  const date = new Date(value)
+  return isValid(date) ? format(date, pattern) : '—'
+}
+
+function toDateInputValue(value: string | null | undefined) {
+  if (!value) return undefined
+  const date = new Date(value)
+  return isValid(date) ? format(date, 'yyyy-MM-dd') : undefined
+}
+
 export function ProfilePage() {
   const [editMode, setEditMode] = useState(false)
+  const avatarInputRef = useRef<HTMLInputElement>(null)
   const { data: profile, isLoading } = useMyProfile()
   const { data: bwHistory } = useBodyweightHistory()
   const { mutate: updateProfile, isPending: saving, error: saveError } = useUpdateProfile()
+  const { mutate: updateAvatar, isPending: avatarUploading } = useUpdateAvatar()
   const { mutate: logWeight, isPending: logging } = useLogBodyweight()
   const { mutate: deleteWeight } = useDeleteBodyweight()
   const t  = useT()
@@ -62,13 +78,13 @@ export function ProfilePage() {
     handleSubmit: handleProfileSubmit,
     control: profileControl,
     formState: { errors: profileErrors },
-  } = useForm<ProfileForm>({
+  } = useForm<z.input<typeof profileSchema>, unknown, ProfileForm>({
     resolver: zodResolver(profileSchema),
     values: {
       bio: profile?.bio ?? '',
       height: profile?.height ?? undefined,
       gender: profile?.gender ?? undefined,
-      dateOfBirth: profile?.dateOfBirth ?? undefined,
+      dateOfBirth: toDateInputValue(profile?.dateOfBirth),
     },
   })
 
@@ -77,22 +93,42 @@ export function ProfilePage() {
     handleSubmit: handleWeightSubmit,
     reset: resetWeight,
     formState: { errors: weightErrors },
-  } = useForm<WeightForm>({ resolver: zodResolver(weightSchema) })
+  } = useForm<z.input<typeof weightSchema>, unknown, WeightForm>({
+    resolver: zodResolver(weightSchema),
+  })
 
   function onSaveProfile(data: ProfileForm) {
-    updateProfile(data, { onSuccess: () => setEditMode(false) })
+    updateProfile({
+      ...data,
+      bio: data.bio?.trim() || undefined,
+      dateOfBirth: data.dateOfBirth || undefined,
+    }, { onSuccess: () => setEditMode(false) })
   }
 
   function onLogWeight(data: WeightForm) {
     logWeight(data, { onSuccess: () => resetWeight() })
   }
 
+  function onAvatarChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    updateAvatar(file, {
+      onSettled: () => {
+        event.target.value = ''
+      },
+    })
+  }
+
   const apiError = (saveError as AxiosError<ApiError>)?.response?.data?.message
 
-  const chartData = [...(bwHistory ?? [])]
+  const bodyweightHistory = Array.isArray(bwHistory) ? bwHistory : []
+
+  const chartData = [...bodyweightHistory]
     .reverse()
     .slice(-30)
-    .map((b) => ({ date: format(new Date(b.date), 'dd/MM'), weight: b.weight, id: b.id }))
+    .map((b) => ({ date: formatDisplayDate(b.date, 'dd/MM'), weight: b.weight, id: b.id }))
+    .filter((b) => b.date !== '—')
 
   if (isLoading) {
     return (
@@ -109,11 +145,43 @@ export function ProfilePage() {
       {/* Profile info */}
       <Card>
         <div className="mb-4 flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-text">
-              {profile?.firstName} {profile?.lastName}
-            </h2>
-            <p className="text-sm text-muted">{profile?.email}</p>
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="relative shrink-0">
+              <UserAvatar
+                name={`${profile?.firstName ?? ''} ${profile?.lastName ?? ''}`.trim()}
+                email={profile?.email}
+                imageUrl={profile?.avatarUrl}
+                size={56}
+              />
+              <button
+                type="button"
+                title="Upload avatar"
+                aria-label="Upload avatar"
+                onClick={() => avatarInputRef.current?.click()}
+                disabled={avatarUploading}
+                className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+                style={{
+                  background: 'var(--bg-2)',
+                  borderColor: 'var(--border-1)',
+                  color: 'var(--fg-1)',
+                }}
+              >
+                <Camera size={14} />
+              </button>
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className="hidden"
+                onChange={onAvatarChange}
+              />
+            </div>
+            <div className="min-w-0">
+              <h2 className="truncate text-lg font-semibold text-text">
+                {profile?.firstName} {profile?.lastName}
+              </h2>
+              <p className="truncate text-sm text-muted">{profile?.email}</p>
+            </div>
           </div>
           <Button variant="secondary" size="sm" onClick={() => setEditMode((e) => !e)}>
             {editMode ? tp.cancelBtn : tp.editBtn}
@@ -130,7 +198,13 @@ export function ProfilePage() {
               {...regProfile('bio')}
             />
             <div className="grid grid-cols-2 gap-3">
-              <Input label={tp.heightLabel} type="number" step="0.1" error={profileErrors.height?.message} {...regProfile('height')} />
+              <Input
+                label={tp.heightLabel}
+                type="number"
+                step="0.1"
+                error={profileErrors.height?.message}
+                {...regProfile('height', { setValueAs: (value) => value === '' ? undefined : value })}
+              />
               <Controller
                 name="gender"
                 control={profileControl}
@@ -144,12 +218,16 @@ export function ProfilePage() {
                     ]}
                     placeholder={tc.selectPlaceholder}
                     value={field.value ?? ''}
-                    onChange={field.onChange}
+                    onChange={(value) => field.onChange(value || undefined)}
                   />
                 )}
               />
             </div>
-            <Input label={tp.dobLabel} type="date" {...regProfile('dateOfBirth')} />
+            <Input
+              label={tp.dobLabel}
+              type="date"
+              {...regProfile('dateOfBirth', { setValueAs: (value) => value || undefined })}
+            />
             {apiError && <p className="text-sm text-danger">{apiError}</p>}
             <Button type="submit" loading={saving}>{tp.saveBtn}</Button>
           </form>
@@ -163,7 +241,7 @@ export function ProfilePage() {
             </div>
             <Stat label={tp.heightStat} value={profile?.height ? `${profile.height} cm` : '—'} />
             <Stat label={tp.genderStat} value={profile?.gender === 'Male' ? tp.male : profile?.gender === 'Female' ? tp.female : profile?.gender === 'Other' ? tp.other : '—'} />
-            <Stat label={tp.dobStat}    value={profile?.dateOfBirth ? format(new Date(profile.dateOfBirth), 'dd/MM/yyyy') : '—'} />
+            <Stat label={tp.dobStat}    value={formatDisplayDate(profile?.dateOfBirth)} />
             <Stat label={tp.bmiStat}    value={profile?.bmi ? `${profile.bmi.toFixed(1)} (${profile.bmiCategory})` : '—'} />
             <Stat label={tp.dotsStat}   value={profile?.dotsScore ? profile.dotsScore.toFixed(1) : '—'} />
             <Stat label={tp.streakStat} value={`${profile?.currentStreak ?? 0} ${tc.days}`} />
@@ -208,11 +286,11 @@ export function ProfilePage() {
         )}
 
         {/* History list */}
-        {bwHistory && bwHistory.length > 0 && (
+        {bodyweightHistory.length > 0 && (
           <div className="mt-4 max-h-48 overflow-y-auto space-y-1">
-            {bwHistory.slice(0, 10).map((b) => (
+            {bodyweightHistory.slice(0, 10).map((b) => (
               <div key={b.id} className="flex items-center justify-between rounded-lg px-3 py-2 hover:bg-panel">
-                <span className="text-sm text-text">{format(new Date(b.date), 'dd/MM/yyyy')}</span>
+                <span className="text-sm text-text">{formatDisplayDate(b.date)}</span>
                 <span className="text-sm font-medium text-text">{b.weight} kg</span>
                 <Button
                   variant="ghost"

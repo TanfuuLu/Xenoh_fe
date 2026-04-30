@@ -7,19 +7,26 @@ interface Filters {
   name?: string
 }
 
-export function useCoaches(filters?: Filters) {
+export const coachKeys = {
+  all: ['coaches'] as const,
+  list: (name = '') => ['coaches', name] as const,
+  profile: (coachId: string) => ['coaches', 'profile', coachId] as const,
+}
+
+export function useCoaches(filters?: Filters, enabled = true) {
   return useQuery({
-    queryKey: ['coaches', filters?.name ?? ''],
+    queryKey: coachKeys.list(filters?.name ?? ''),
     queryFn: () =>
       api
         .get<CoachResponse[]>(ENDPOINTS.coaches.list, { params: { name: filters?.name } })
         .then((r) => r.data),
+    enabled,
   })
 }
 
 export function useCoachProfile(coachId: string) {
   return useQuery({
-    queryKey: ['coaches', 'profile', coachId] as const,
+    queryKey: coachKeys.profile(coachId),
     queryFn: () =>
       api.get<CoachProfileResponse>(ENDPOINTS.coaches.profile(coachId)).then((r) => r.data),
     enabled: !!coachId,

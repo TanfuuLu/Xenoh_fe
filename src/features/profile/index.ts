@@ -1,6 +1,7 @@
 export {
   useMyProfile,
   useUpdateProfile,
+  useUpdateAvatar,
   useLogBodyweight,
   useBodyweightHistory,
   useDeleteBodyweight,

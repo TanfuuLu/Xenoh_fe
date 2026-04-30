@@ -9,7 +9,7 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>
 
 interface Props {
-  onSubmit: (content: string) => Promise<void>
+  onSubmit: (content: string) => Promise<unknown>
   isPending: boolean
 }
 

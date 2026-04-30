@@ -14,8 +14,10 @@ export function useLogin() {
     onSuccess: (data) => {
       qc.clear()
       setAuth(data.accessToken, data.refreshToken, {
+        id: data.userId,
         email: data.email,
         fullName: data.fullName,
+        avatarUrl: data.avatarUrl,
         roles: data.roles,
       })
     },
@@ -32,8 +34,10 @@ export function useRegister() {
     onSuccess: (data) => {
       qc.clear()
       setAuth(data.accessToken, data.refreshToken, {
+        id: data.userId,
         email: data.email,
         fullName: data.fullName,
+        avatarUrl: data.avatarUrl,
         roles: data.roles,
       })
     },

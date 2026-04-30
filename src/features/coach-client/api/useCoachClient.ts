@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/shared/api/axios'
 import { ENDPOINTS } from '@/shared/api/endpoints'
+import { coachKeys } from '@/features/coaches/api/useCoaches'
 import type { ClientResponse, CoachRelationshipResponse, RequestCoachRequest } from '../types'
 
 export const coachClientKeys = {
@@ -26,6 +27,8 @@ export function useMyCoach() {
       api
         .get<CoachRelationshipResponse | null>(ENDPOINTS.coachClient.myCoach)
         .then((r) => r.data),
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
     // Poll every 8s while waiting for coach to accept so client sees update without manual refresh
     refetchInterval: (query) => {
       const data = query.state.data
@@ -51,7 +54,11 @@ export function useRequestCoach() {
       api
         .post<CoachRelationshipResponse>(ENDPOINTS.coachClient.request, data)
         .then((r) => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: coachClientKeys.myCoach }),
+    onSuccess: (relationship) => {
+      void qc.invalidateQueries({ queryKey: coachClientKeys.myCoach })
+      void qc.invalidateQueries({ queryKey: coachKeys.all })
+      void qc.invalidateQueries({ queryKey: coachKeys.profile(relationship.coachId) })
+    },
   })
 }
 
@@ -62,9 +69,12 @@ export function useAcceptRequest() {
       api
         .put<CoachRelationshipResponse>(ENDPOINTS.coachClient.accept(relationshipId))
         .then((r) => r.data),
-    onSuccess: () => {
+    onSuccess: (relationship) => {
       void qc.invalidateQueries({ queryKey: coachClientKeys.pendingRequests })
       void qc.invalidateQueries({ queryKey: coachClientKeys.myClients })
+      void qc.invalidateQueries({ queryKey: coachClientKeys.myCoach })
+      void qc.invalidateQueries({ queryKey: coachKeys.all })
+      void qc.invalidateQueries({ queryKey: coachKeys.profile(relationship.coachId) })
     },
   })
 }
@@ -75,8 +85,11 @@ export function useTerminateRelationship() {
     mutationFn: (relationshipId: string) =>
       api.delete(ENDPOINTS.coachClient.terminate(relationshipId)),
     onSuccess: () => {
+      qc.setQueryData(coachClientKeys.myCoach, null)
       void qc.invalidateQueries({ queryKey: coachClientKeys.myCoach })
       void qc.invalidateQueries({ queryKey: coachClientKeys.myClients })
+      void qc.invalidateQueries({ queryKey: coachClientKeys.pendingRequests })
+      void qc.invalidateQueries({ queryKey: coachKeys.all })
     },
   })
 }

@@ -87,6 +87,7 @@ export const translations = {
       overview: 'Overview',
       clients: 'Clients',
       clientPlans: 'Client plans',
+      exerciseTracking: 'Exercise Tracking',
       logout: 'Logout',
       leaderboard: 'Leaderboard',
       sectionTraining: 'Training',
@@ -199,8 +200,13 @@ export const translations = {
     // ── Coaches page ──────────────────────────────────────────────────────────
     coaches: {
       title: 'Find a Coach',
+      coachTitle: 'Coach',
       subtitle: 'Connect with a trainer to get a personalized plan.',
+      coachSubtitle: 'Your current coaching relationship and coach information.',
       currentCoach: 'Current coach',
+      coachDescription: 'This coach can create training plans for you and follow your progress.',
+      relationshipStatus: 'Relationship status',
+      connectedSince: 'Connected since',
       connected: 'Connected',
       pending: 'Pending',
       disconnect: 'Disconnect',
@@ -353,6 +359,7 @@ export const translations = {
       overview: 'Tổng quan',
       clients: 'Học viên',
       clientPlans: 'KH học viên',
+      exerciseTracking: 'Theo dõi bài tập',
       logout: 'Đăng xuất',
       leaderboard: 'Bảng xếp hạng',
       sectionTraining: 'Tập luyện',
@@ -458,8 +465,13 @@ export const translations = {
 
     coaches: {
       title: 'Tìm Coach',
+      coachTitle: 'Coach',
       subtitle: 'Kết nối với huấn luyện viên để nhận plan cá nhân.',
+      coachSubtitle: 'Thông tin coach hiện tại và trạng thái kết nối.',
       currentCoach: 'Coach hiện tại',
+      coachDescription: 'Coach này có thể tạo plan tập và theo dõi tiến độ của bạn.',
+      relationshipStatus: 'Trạng thái kết nối',
+      connectedSince: 'Kết nối từ',
       connected: 'Đang kết nối',
       pending: 'Chờ duyệt',
       disconnect: 'Hủy kết nối',

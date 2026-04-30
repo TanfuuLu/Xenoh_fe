@@ -4,6 +4,7 @@ import { ChevronLeft, Users, Mail } from 'lucide-react'
 import { Button } from '@/shared/components/Button'
 import { Card } from '@/shared/components/Card'
 import { Spinner } from '@/shared/components/Spinner'
+import { UserAvatar } from '@/shared/components/UserAvatar'
 import { slideUp, staggerContainer } from '@/shared/utils/motion'
 import { useT } from '@/shared/i18n'
 import { useCoachProfile } from '../index'
@@ -43,14 +44,14 @@ export function CoachProfilePage() {
         {/* Coach card */}
         <motion.div variants={slideUp}>
           <Card className="space-y-4">
-            {/* Avatar placeholder */}
             <div className="flex items-center gap-4">
-              <div
-                className="flex h-16 w-16 items-center justify-center rounded-full text-2xl font-bold"
-                style={{ background: 'var(--color-primary)', color: '#fff' }}
-              >
-                {coach.fullName.charAt(0).toUpperCase()}
-              </div>
+              <UserAvatar
+                name={coach.fullName}
+                email={coach.email}
+                imageUrl={coach.avatarUrl}
+                size={64}
+                variant="primary"
+              />
               <div>
                 <h2 className="text-xl font-bold text-text">{coach.fullName}</h2>
                 <p className="text-sm text-muted">Coach</p>

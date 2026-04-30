@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useParams, Link, useNavigate } from 'react-router'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
@@ -143,6 +143,7 @@ export function PlanDetailPage() {
   }).sort((a, b) => b.percent - a.percent || a.muscleGroup.localeCompare(b.muscleGroup))
 
   const [editingWeek, setEditingWeek] = useState<WeeklyWorkoutResponse | null>(null)
+  const weeksScrollerRef = useRef<HTMLDivElement>(null)
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>({ resolver: zodResolver(schema) })
 
   function handleEditWeek(week: WeeklyWorkoutResponse) {
@@ -153,6 +154,10 @@ export function PlanDetailPage() {
   function onRenameSubmit(data: FormData) {
     if (!editingWeek) return
     updateWeek({ weekId: editingWeek.id, data }, { onSuccess: () => setEditingWeek(null) })
+  }
+
+  function scrollWeeks(direction: -1 | 1) {
+    weeksScrollerRef.current?.scrollBy({ left: direction * 360, behavior: 'smooth' })
   }
 
   if (planLoading || weeksLoading) {
@@ -292,12 +297,36 @@ export function PlanDetailPage() {
         </div>
       </Card>
 
-      <motion.div
-        initial={shouldReduce ? false : 'hidden'}
-        animate="visible"
-        variants={staggerContainer}
-        className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
-      >
+      <div className="space-y-2">
+        <div className="flex justify-end gap-2">
+          <button
+            type="button"
+            title="Scroll weeks left"
+            onClick={() => scrollWeeks(-1)}
+            className="flex h-9 w-9 items-center justify-center rounded-lg border transition hover:shadow-sm"
+            style={{ borderColor: 'var(--border-1)', background: 'var(--bg-2)', color: 'var(--fg-2)' }}
+          >
+            <ChevronLeft size={17} />
+          </button>
+          <button
+            type="button"
+            title="Scroll weeks right"
+            onClick={() => scrollWeeks(1)}
+            className="flex h-9 w-9 items-center justify-center rounded-lg border transition hover:shadow-sm"
+            style={{ borderColor: 'var(--border-1)', background: 'var(--bg-2)', color: 'var(--fg-2)' }}
+          >
+            <ChevronRight size={17} />
+          </button>
+        </div>
+
+        <motion.div
+          ref={weeksScrollerRef}
+          initial={shouldReduce ? false : 'hidden'}
+          animate="visible"
+          variants={staggerContainer}
+          className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-3"
+          style={{ scrollbarGutter: 'stable' }}
+        >
         <AnimatePresence>
           {weeks?.map((week) => {
             const pct      = week.totalDays > 0 ? Math.round((week.completedDays / week.totalDays) * 100) : 0
@@ -310,7 +339,7 @@ export function PlanDetailPage() {
                 variants={slideUp}
                 layout
                 onClick={() => navigate(`/plans/${planId}/weeks/${week.id}`, { state: { canEdit } })}
-                className="rounded-xl border p-4 space-y-3 cursor-pointer transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md"
+                className="min-w-[280px] snap-start rounded-xl border p-4 space-y-3 cursor-pointer transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md sm:min-w-[320px] lg:min-w-[340px]"
                 style={
                   hasWarning
                     ? { borderColor: 'var(--xn-warning)', background: 'var(--xn-warning-bg)' }
@@ -375,7 +404,8 @@ export function PlanDetailPage() {
             )
           })}
         </AnimatePresence>
-      </motion.div>
+        </motion.div>
+      </div>
 
       <CommentSection
         comments={comments}
@@ -384,6 +414,7 @@ export function PlanDetailPage() {
         onDelete={(id) => deleteComment(id)}
         isPendingAdd={addingComment}
         isPendingDelete={deletingComment}
+        className="mt-6"
       />
 
       <Modal open={!!editingWeek} onClose={() => setEditingWeek(null)} title={tpd.renameWeekTitle}>

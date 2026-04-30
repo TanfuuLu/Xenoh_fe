@@ -10,8 +10,12 @@ export const ENDPOINTS = {
   // Users
   users: {
     me: '/api/users/me',
+    avatar: '/api/users/me/avatar',
     bodyweight: '/api/users/me/bodyweight',
     bodyweightById: (id: string) => `/api/users/me/bodyweight/${id}`,
+    exercisePrs: '/api/users/me/exercise-prs',
+    exercisePrHistory: (exerciseTemplateId: string) =>
+      `/api/users/me/exercise-prs/${exerciseTemplateId}/history`,
     profile: (userId: string) => `/api/users/${userId}`,
     profileBodyweight: (userId: string) => `/api/users/${userId}/bodyweight`,
   },

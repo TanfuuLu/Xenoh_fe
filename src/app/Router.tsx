@@ -13,11 +13,11 @@ const PlanDetailPage   = lazy(() => import('@/features/plans/pages/PlanDetailPag
 const WeekDetailPage   = lazy(() => import('@/features/workouts/pages/WeekDetailPage').then((m) => ({ default: m.WeekDetailPage })))
 const DayWorkoutPage   = lazy(() => import('@/features/workouts/pages/DayWorkoutPage').then((m) => ({ default: m.DayWorkoutPage })))
 const ProfilePage      = lazy(() => import('@/features/profile/pages/ProfilePage').then((m) => ({ default: m.ProfilePage })))
+const ExerciseTrackingPage = lazy(() => import('@/features/exercise-tracking/pages/ExerciseTrackingPage').then((m) => ({ default: m.ExerciseTrackingPage })))
 const CoachesPage      = lazy(() => import('@/features/coaches/pages/CoachesPage').then((m) => ({ default: m.CoachesPage })))
 const ClientsPage      = lazy(() => import('@/features/coach-client/pages/ClientsPage').then((m) => ({ default: m.ClientsPage })))
 const ClientProfilePage = lazy(() => import('@/features/profile/pages/ClientProfilePage').then((m) => ({ default: m.ClientProfilePage })))
 const CoachProfilePage  = lazy(() => import('@/features/coaches/pages/CoachProfilePage').then((m) => ({ default: m.CoachProfilePage })))
-const LeaderboardPage   = lazy(() => import('@/features/leaderboard/pages/LeaderboardPage').then((m) => ({ default: m.LeaderboardPage })))
 const LandingPage      = lazy(() => import('@/features/marketing/pages/LandingPage').then((m) => ({ default: m.LandingPage })))
 const AboutPage        = lazy(() => import('@/features/marketing/pages/AboutPage').then((m) => ({ default: m.AboutPage })))
 
@@ -130,16 +130,20 @@ export const router = createBrowserRouter([
           },
           {
             path: 'leaderboard',
-            element: (
-              <Suspense fallback={<SuspenseFallback />}>
-                <LeaderboardPage />
-              </Suspense>
-            ),
+            element: <Navigate to="/dashboard" replace />,
           },
           // Individual-only
           {
             element: <RoleRoute role="Individual" />,
             children: [
+              {
+                path: 'exercise-tracking',
+                element: (
+                  <Suspense fallback={<SuspenseFallback />}>
+                    <ExerciseTrackingPage />
+                  </Suspense>
+                ),
+              },
               {
                 path: 'coaches',
                 element: (
