@@ -27,6 +27,10 @@ export function usePlan(id: string) {
     queryKey: planKeys.byId(id),
     queryFn: () => api.get<PlanResponse>(ENDPOINTS.plans.byId(id)).then((r) => r.data),
     enabled: !!id,
+    retry: (count, error) => {
+      const status = (error as { response?: { status?: number } })?.response?.status
+      return status !== 404 && count < 3
+    },
   })
 }
 

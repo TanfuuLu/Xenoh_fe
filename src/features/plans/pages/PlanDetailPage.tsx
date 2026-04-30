@@ -20,6 +20,7 @@ import { staggerContainer, slideUp } from '@/shared/utils/motion'
 import { useAuthStore } from '@/features/auth'
 import { useT } from '@/shared/i18n'
 import { MuscleGroup as MuscleGroupValues } from '@/shared/types/api'
+import { NotFoundPage } from '@/shared/components/NotFoundPage'
 import { usePlan } from '../index'
 import { useWeeklyWorkouts, useUpdateWeeklyWorkout } from '@/features/workouts'
 import type { DailyWorkoutResponse, ExerciseResponse, WeeklyWorkoutResponse } from '@/features/workouts'
@@ -87,7 +88,8 @@ export function PlanDetailPage() {
   const shouldReduce = useReducedMotion()
   const navigate = useNavigate()
   const isCoach = useAuthStore((s) => s.user?.roles?.includes('Coach') ?? false)
-  const { data: plan, isLoading: planLoading } = usePlan(planId)
+  const currentUserId = useAuthStore((s) => s.user?.id)
+  const { data: plan, isLoading: planLoading, isError: planError } = usePlan(planId)
   const { data: weeks, isLoading: weeksLoading } = useWeeklyWorkouts(planId)
   const { mutate: updateWeek } = useUpdateWeeklyWorkout(planId)
   const { data: comments = [], isLoading: commentsLoading } = usePlanComments(planId)
@@ -99,6 +101,8 @@ export function PlanDetailPage() {
 
   // Coach can always edit; Individual can only edit their own Self plans
   const canEdit = isCoach || plan?.planType === 'Self'
+  // Only the plan owner can mark sets as done
+  const canComplete = !!currentUserId && plan?.ownerId === currentUserId
 
   const dayQueries = useQueries({
     queries: (weeks ?? []).map((week) => ({
@@ -168,7 +172,7 @@ export function PlanDetailPage() {
     )
   }
 
-  if (!plan) return <p className="text-muted">{tpd.notFound}</p>
+  if (planError || !plan) return <NotFoundPage />
 
   const totalWeeks = plan.totalWeeks || weeks?.length || 0
   const weeksDone = weeks?.filter((week) => week.totalDays > 0 && week.completedDays === week.totalDays).length ?? 0
@@ -184,13 +188,13 @@ export function PlanDetailPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2">
+      <div className="flex items-start gap-2">
         <Link to="/plans">
           <Button variant="ghost" size="sm"><ChevronLeft size={16} /></Button>
         </Link>
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-text">{plan.name}</h1>
+        <div className="min-w-0">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <h1 className="min-w-0 break-words text-2xl font-bold text-text">{plan.name}</h1>
             {plan.isActive && <Badge variant="success">{tc.active}</Badge>}
           </div>
           <p className="text-sm text-muted">
@@ -251,7 +255,7 @@ export function PlanDetailPage() {
                 <button
                   key={day.id}
                   type="button"
-                  onClick={() => navigate(`/days/${day.id}`, { state: { canEdit, weeklyWorkoutId: day.weeklyWorkoutId } })}
+                  onClick={() => navigate(`/days/${day.id}`, { state: { canEdit, canComplete, weeklyWorkoutId: day.weeklyWorkoutId } })}
                   className="rounded-full border px-3 py-1 text-xs font-semibold transition hover:shadow-sm"
                   style={{
                     borderColor: 'var(--xn-warning)',
@@ -338,8 +342,8 @@ export function PlanDetailPage() {
                 key={week.id}
                 variants={slideUp}
                 layout
-                onClick={() => navigate(`/plans/${planId}/weeks/${week.id}`, { state: { canEdit } })}
-                className="min-w-[280px] snap-start rounded-xl border p-4 space-y-3 cursor-pointer transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md sm:min-w-[320px] lg:min-w-[340px]"
+                onClick={() => navigate(`/plans/${planId}/weeks/${week.id}`, { state: { canEdit, canComplete } })}
+                className="min-w-[252px] snap-start rounded-xl border p-4 space-y-3 cursor-pointer transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md min-[390px]:min-w-[280px] sm:min-w-[320px] lg:min-w-[340px]"
                 style={
                   hasWarning
                     ? { borderColor: 'var(--xn-warning)', background: 'var(--xn-warning-bg)' }
@@ -348,12 +352,12 @@ export function PlanDetailPage() {
                     : { borderColor: 'var(--border-1)', background: 'var(--bg-2)' }
                 }
               >
-                <div className="flex items-center justify-between">
-                  <div>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
                     <p className="text-xs uppercase tracking-wide" style={{ color: 'var(--fg-3)' }}>
                       {tpd.weekLabel} {week.weekNumber}
                     </p>
-                    <h3 className="font-medium text-text">{week.name}</h3>
+                    <h3 className="break-words font-medium text-text">{week.name}</h3>
                     <p className="text-xs text-muted">
                       {format(new Date(week.startDate), 'dd/MM')} – {format(new Date(week.endDate), 'dd/MM')}
                     </p>
@@ -420,9 +424,9 @@ export function PlanDetailPage() {
       <Modal open={!!editingWeek} onClose={() => setEditingWeek(null)} title={tpd.renameWeekTitle}>
         <form onSubmit={handleSubmit(onRenameSubmit)} className="space-y-4">
           <Input label={tpd.weekNameLabel} error={errors.name?.message} {...register('name')} />
-          <div className="flex gap-2 justify-end">
-            <Button variant="secondary" type="button" onClick={() => setEditingWeek(null)}>{tc.cancel}</Button>
-            <Button type="submit">{tpd.saveBtn}</Button>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variant="secondary" type="button" className="w-full sm:w-auto" onClick={() => setEditingWeek(null)}>{tc.cancel}</Button>
+            <Button type="submit" className="w-full sm:w-auto">{tpd.saveBtn}</Button>
           </div>
         </form>
       </Modal>

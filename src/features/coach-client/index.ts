@@ -5,5 +5,12 @@ export {
   usePendingRequests,
   useMyCoach,
   useMyClients,
+  useCoachDashboard,
 } from './api/useCoachClient'
-export type { CoachRelationshipResponse, ClientResponse, RequestCoachRequest } from './types'
+export type {
+  CoachRelationshipResponse,
+  ClientResponse,
+  RequestCoachRequest,
+  CoachClientDashboardResponse,
+  BigThreePRs,
+} from './types'

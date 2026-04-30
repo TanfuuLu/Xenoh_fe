@@ -21,6 +21,10 @@ export function useExercises(dailyWorkoutId: string) {
         .get<ExerciseResponse[]>(ENDPOINTS.exercises.byDay(dailyWorkoutId))
         .then((r) => r.data),
     enabled: !!dailyWorkoutId,
+    retry: (count, error) => {
+      const status = (error as { response?: { status?: number } })?.response?.status
+      return status !== 404 && count < 3
+    },
   })
 }
 

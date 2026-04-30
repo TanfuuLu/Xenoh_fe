@@ -17,6 +17,7 @@ export const ENDPOINTS = {
     exercisePrHistory: (exerciseTemplateId: string) =>
       `/api/users/me/exercise-prs/${exerciseTemplateId}/history`,
     profile: (userId: string) => `/api/users/${userId}`,
+    publicProfile: (userId: string) => `/api/users/${userId}/public`,
     profileBodyweight: (userId: string) => `/api/users/${userId}/bodyweight`,
   },
 
@@ -34,6 +35,7 @@ export const ENDPOINTS = {
     pendingRequests: '/api/coach-client/pending-requests',
     myCoach: '/api/coach-client/my-coach',
     myClients: '/api/coach-client/my-clients',
+    dashboard: '/api/coach-client/dashboard',
   },
 
   // Plans
@@ -59,6 +61,7 @@ export const ENDPOINTS = {
   days: {
     byWeek: (weeklyWorkoutId: string) => `/api/weeks/${weeklyWorkoutId}/days`,
     copy: (sourceDailyWorkoutId: string) => `/api/days/${sourceDailyWorkoutId}/copy`,
+    markStatus: (dailyWorkoutId: string) => `/api/days/${dailyWorkoutId}/status`,
   },
 
   // Exercises

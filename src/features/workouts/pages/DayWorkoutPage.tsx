@@ -2,7 +2,7 @@ import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useSta
 import type { DragEvent, ReactNode } from 'react'
 import { useParams, Link, useLocation } from 'react-router'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
-import { ChevronLeft, Plus, Trash2, CheckCircle2, Circle, Trophy, Dumbbell, Search, X, Copy, AlertTriangle, TriangleAlert, Activity, GripVertical } from 'lucide-react'
+import { ChevronLeft, Plus, Trash2, CheckCircle2, Circle, Trophy, Dumbbell, Search, X, Copy, AlertTriangle, TriangleAlert, Activity, GripVertical, BedDouble, XCircle } from 'lucide-react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -18,7 +18,8 @@ import { Select } from '@/shared/components/Select'
 import { slideUp, staggerContainer, scaleIn } from '@/shared/utils/motion'
 import { cn } from '@/shared/utils/cn'
 import { useT, useLangStore } from '@/shared/i18n'
-import { MuscleGroup, type MuscleGroup as MuscleGroupValue } from '@/shared/types/api'
+import { MuscleGroup, type DayStatus, type MuscleGroup as MuscleGroupValue } from '@/shared/types/api'
+import { NotFoundPage } from '@/shared/components/NotFoundPage'
 import {
   useExercises,
   useCreateExercise,
@@ -28,6 +29,7 @@ import {
   useExerciseTemplates,
   useDailyWorkouts,
   useCopyDay,
+  useMarkDayStatus,
 } from '../index'
 import type { ExerciseResponse, ExerciseSetResponse, ExerciseTemplateResponse } from '../types'
 
@@ -36,12 +38,14 @@ import type { ExerciseResponse, ExerciseSetResponse, ExerciseTemplateResponse } 
 export function DayWorkoutPage() {
   const { dailyWorkoutId = '' } = useParams()
   const { state } = useLocation()
-  const locationState = state as { canEdit?: boolean; weeklyWorkoutId?: string } | null
-  const canEdit = locationState?.canEdit ?? true
+  const locationState = state as { canEdit?: boolean; canComplete?: boolean; weeklyWorkoutId?: string } | null
+  const canEdit = locationState?.canEdit ?? false
+  const canComplete = locationState?.canComplete ?? true
   const weeklyWorkoutId = locationState?.weeklyWorkoutId ?? ''
   const shouldReduce = useReducedMotion()
   const [showAdd, setShowAdd] = useState(false)
   const [showCopy, setShowCopy] = useState(false)
+  const [showMarkDay, setShowMarkDay] = useState(false)
   const [copyTarget, setCopyTarget] = useState('')
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<MuscleGroupValue | ''>('')
   const [orderedExercises, setOrderedExercises] = useState<ExerciseResponse[]>([])
@@ -55,7 +59,7 @@ export function DayWorkoutPage() {
   const lang = useLangStore((s) => s.lang)
   const dateLocale = lang === 'vi' ? viLocale : enUS
 
-  const { data: exercises, isLoading } = useExercises(dailyWorkoutId)
+  const { data: exercises, isLoading, isError: exercisesError } = useExercises(dailyWorkoutId)
 
   // ── Prefetch ALL templates on mount — no filter, data ready before modal opens
   const { data: templates = [], isLoading: templatesLoading } = useExerciseTemplates({
@@ -69,6 +73,10 @@ export function DayWorkoutPage() {
 
   const { data: siblingDays } = useDailyWorkouts(weeklyWorkoutId)
   const { mutate: copyDay, isPending: copying } = useCopyDay(weeklyWorkoutId)
+  const { mutate: markDayStatus, isPending: markingStatus } = useMarkDayStatus(weeklyWorkoutId)
+
+  const currentDay = siblingDays?.find((d) => d.id === dailyWorkoutId)
+  const dayStatus: DayStatus = currentDay?.status ?? 'Normal'
 
   useEffect(() => {
     setOrderedExercises(exercises ?? [])
@@ -168,7 +176,6 @@ export function DayWorkoutPage() {
     })
   }
 
-  const currentDay = siblingDays?.find((d) => d.id === dailyWorkoutId)
   const copyTargetOptions =
     siblingDays
       ?.filter(
@@ -195,6 +202,8 @@ export function DayWorkoutPage() {
     )
   }
 
+  if (exercisesError) return <NotFoundPage />
+
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
@@ -214,30 +223,50 @@ export function DayWorkoutPage() {
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-2">
           <Link to={-1 as unknown as string}>
             <Button variant="ghost" size="sm"><ChevronLeft size={16} /></Button>
           </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-text">{tdw.title}</h1>
+          <div className="min-w-0">
+            <h1 className="break-words text-2xl font-bold text-text">{tdw.title}</h1>
             {totalSets > 0 && (
               <p className="text-xs text-muted">{doneSets}/{totalSets} sets · {pct}%</p>
             )}
           </div>
         </div>
-        {canEdit && (
-          <div className="flex items-center gap-2">
-            {weeklyWorkoutId && (
-              <Button variant="secondary" size="sm" onClick={() => { setShowCopy(true); setCopyTarget('') }}>
-                <Copy size={15} /> {tw.copyDay}
-              </Button>
-            )}
-            <Button size="sm" onClick={() => setShowAdd(true)}>
-              <Plus size={16} /> {tdw.addExercise}
+        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+          {canComplete && !isDayCompleted && (
+            <Button
+              variant="secondary"
+              size="sm"
+              className="flex-1 min-[390px]:flex-none"
+              onClick={() => setShowMarkDay(true)}
+              style={
+                dayStatus === 'Rest'
+                  ? { borderColor: 'var(--xn-clay-500)', color: 'var(--xn-clay-700)' }
+                  : dayStatus === 'Missed'
+                  ? { borderColor: 'var(--color-danger)', color: 'var(--color-danger)' }
+                  : undefined
+              }
+            >
+              {dayStatus === 'Rest' ? <BedDouble size={15} /> : dayStatus === 'Missed' ? <XCircle size={15} /> : <XCircle size={15} />}
+              {dayStatus === 'Normal' ? 'Mark day' : dayStatus === 'Rest' ? 'Rest Day' : 'Missed'}
             </Button>
-          </div>
-        )}
+          )}
+          {canEdit && (
+            <>
+              {weeklyWorkoutId && (
+                <Button variant="secondary" size="sm" className="flex-1 min-[390px]:flex-none" onClick={() => { setShowCopy(true); setCopyTarget('') }}>
+                  <Copy size={15} /> {tw.copyDay}
+                </Button>
+              )}
+              <Button size="sm" className="flex-1 min-[390px]:flex-none" onClick={() => setShowAdd(true)}>
+                <Plus size={16} /> {tdw.addExercise}
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Overall progress bar */}
@@ -271,6 +300,7 @@ export function DayWorkoutPage() {
               key={exercise.id}
               exercise={exercise}
               canEdit={canEdit}
+              canComplete={canComplete}
               animateLayout={!shouldReduce}
               isDragging={draggedExerciseId === exercise.id}
               onDragStart={() => setDraggedExerciseId(exercise.id)}
@@ -333,7 +363,7 @@ export function DayWorkoutPage() {
           />
 
           {/* Sets / Reps / Weight */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid gap-3 sm:grid-cols-3">
             <Input label="Sets"        type="number"             error={addForm.formState.errors.plannedSets?.message}  {...addForm.register('plannedSets')} />
             <Input label="Reps"        type="number"             error={addForm.formState.errors.plannedReps?.message}  {...addForm.register('plannedReps')} />
             <Input label="Weight (kg)" type="number" step="0.5"                                                         {...addForm.register('plannedWeight')} />
@@ -341,15 +371,16 @@ export function DayWorkoutPage() {
 
           <Input label={tdw.notesLabel} placeholder="Focus on depth…" {...addForm.register('notes')} />
 
-          <div className="flex justify-end gap-2">
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <Button
               variant="secondary"
               type="button"
+              className="w-full sm:w-auto"
               onClick={() => { setShowAdd(false); setSelectedMuscleGroup(''); addForm.reset({ plannedSets: 3, plannedReps: 8 }) }}
             >
               {tc.cancel}
             </Button>
-            <Button type="submit" loading={adding}>{tdw.addBtn}</Button>
+            <Button type="submit" className="w-full sm:w-auto" loading={adding}>{tdw.addBtn}</Button>
           </div>
         </form>
       </Modal>
@@ -387,16 +418,18 @@ export function DayWorkoutPage() {
                 </motion.div>
               )}
 
-              <div className="flex justify-end gap-2 pt-1">
+              <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
                 <Button
                   variant="secondary"
                   type="button"
+                  className="w-full sm:w-auto"
                   onClick={() => { setShowCopy(false); setCopyTarget('') }}
                 >
                   {tc.cancel}
                 </Button>
                 <Button
                   type="button"
+                  className="w-full sm:w-auto"
                   disabled={!copyTarget}
                   loading={copying}
                   onClick={handleCopyDay}
@@ -404,6 +437,89 @@ export function DayWorkoutPage() {
                   <Copy size={14} /> {tw.copyDayConfirm}
                 </Button>
               </div>
+            </motion.div>
+          </Modal>
+        )}
+      </AnimatePresence>
+
+      {/* Modal: Mark Day as Rest / Missed */}
+      <AnimatePresence>
+        {showMarkDay && (
+          <Modal
+            open={showMarkDay}
+            onClose={() => setShowMarkDay(false)}
+            title="Mark this day"
+          >
+            <motion.div initial="hidden" animate="visible" variants={scaleIn} className="space-y-3">
+              <p className="text-sm text-muted">
+                {dayStatus === 'Normal'
+                  ? 'Choose how to record this day.'
+                  : 'This day is currently marked. You can change or remove the mark.'}
+              </p>
+
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    markDayStatus({ dailyWorkoutId, status: 'Rest' })
+                    setShowMarkDay(false)
+                  }}
+                  disabled={markingStatus}
+                  className={cn(
+                    'flex w-full items-center gap-3 rounded-xl border p-4 text-left transition-colors',
+                    dayStatus === 'Rest'
+                      ? 'border-xn-clay-500 bg-xn-clay-100'
+                      : 'border-border hover:border-xn-clay-400 hover:bg-xn-clay-100/50',
+                  )}
+                >
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full" style={{ background: 'var(--xn-clay-200)' }}>
+                    <BedDouble size={18} style={{ color: 'var(--xn-clay-700)' }} />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-text">Rest Day</p>
+                    <p className="text-xs text-muted">Intentional rest — excluded from missed count</p>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    markDayStatus({ dailyWorkoutId, status: 'Missed' })
+                    setShowMarkDay(false)
+                  }}
+                  disabled={markingStatus}
+                  className={cn(
+                    'flex w-full items-center gap-3 rounded-xl border p-4 text-left transition-colors',
+                    dayStatus === 'Missed'
+                      ? 'border-red-400 bg-red-50'
+                      : 'border-border hover:border-red-300 hover:bg-red-50/50',
+                  )}
+                >
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full" style={{ background: 'rgba(239,68,68,0.1)' }}>
+                    <XCircle size={18} style={{ color: 'var(--color-danger)' }} />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-text">Missed</p>
+                    <p className="text-xs text-muted">Was busy / couldn't train — counts as missed</p>
+                  </div>
+                </button>
+              </div>
+
+              {dayStatus !== 'Normal' && (
+                <div className="flex justify-end pt-1">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    loading={markingStatus}
+                    onClick={() => {
+                      markDayStatus({ dailyWorkoutId, status: 'Normal' })
+                      setShowMarkDay(false)
+                    }}
+                  >
+                    Remove mark
+                  </Button>
+                </div>
+              )}
             </motion.div>
           </Modal>
         )}
@@ -429,8 +545,8 @@ function DayResultCard({ exerciseCount, warningCount, volume }: DayResultCardPro
 
   return (
     <Card className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-3">
           <div
             className="flex h-11 w-11 items-center justify-center rounded-xl"
             style={{ background: isWarning ? 'rgba(245,158,11,0.12)' : 'var(--xn-sage-200)' }}
@@ -441,7 +557,7 @@ function DayResultCard({ exerciseCount, warningCount, volume }: DayResultCardPro
               <CheckCircle2 size={22} className="text-success" />
             )}
           </div>
-          <div>
+          <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted">Daily Result</p>
             <h2 className="text-lg font-semibold text-text">Workout completed</h2>
           </div>
@@ -450,7 +566,7 @@ function DayResultCard({ exerciseCount, warningCount, volume }: DayResultCardPro
         <Badge variant={isWarning ? 'warning' : 'success'}>{status}</Badge>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-3">
         <ResultMetric label="Exercises" value={exerciseCount.toString()} />
         <ResultMetric
           label="Status"
@@ -705,6 +821,7 @@ function formatMuscleGroup(group: MuscleGroupValue) {
 interface ExerciseCardProps {
   exercise: ExerciseResponse
   canEdit: boolean
+  canComplete: boolean
   animateLayout: boolean
   isDragging: boolean
   onDragStart: () => void
@@ -719,6 +836,7 @@ interface ExerciseCardProps {
 function ExerciseCard({
   exercise,
   canEdit,
+  canComplete,
   animateLayout,
   isDragging,
   onDragStart,
@@ -754,7 +872,7 @@ function ExerciseCard({
           ? { borderColor: 'var(--color-warning)', background: 'rgba(245,158,11,0.07)' }
           : exercise.isCompleted
           ? { borderColor: 'var(--xn-sage-400)', background: 'var(--xn-sage-200)' }
-          : undefined
+          : { background: 'var(--bg-2)' }
       }
     >
       {/* Header */}
@@ -779,7 +897,7 @@ function ExerciseCard({
                 <GripVertical size={15} />
               </button>
             )}
-            <h3 className="font-semibold text-text">{exercise.name}</h3>
+            <h3 className="break-words font-semibold text-text">{exercise.name}</h3>
             {exercise.isCompleted && !hasUnderperformed && <Badge variant="success">Done ✓</Badge>}
             {hasUnderperformed && (
               <span className="inline-flex items-center gap-1 text-xs font-medium text-warning">
@@ -826,7 +944,7 @@ function ExerciseCard({
       {/* Sets */}
       <div className="space-y-1.5">
         {exercise.sets.map((set) => (
-          <SetRow key={set.id} set={set} onComplete={onCompleteSet} />
+          <SetRow key={set.id} set={set} canComplete={canComplete} onComplete={onCompleteSet} />
         ))}
       </div>
     </motion.div>
@@ -837,18 +955,21 @@ function ExerciseCard({
 
 interface SetRowProps {
   set: ExerciseSetResponse
+  canComplete: boolean
   onComplete: (setId: string, actualReps: number, actualWeight: number, rpe?: number) => void
 }
 
-function SetRow({ set, onComplete }: SetRowProps) {
-  const [reps, setReps]     = useState(set.plannedReps)
-  const [weight, setWeight] = useState(set.plannedWeight ?? 0)
+function SetRow({ set, canComplete, onComplete }: SetRowProps) {
+  const [reps, setReps]     = useState(String(set.plannedReps))
+  const [weight, setWeight] = useState(String(set.plannedWeight ?? 0))
   const [rpe, setRpe]       = useState('')
   const t = useT()
 
   function handleComplete() {
-    const actualReps = Number.isFinite(reps) && reps >= 1 ? reps : set.plannedReps
-    const actualWeight = Number.isFinite(weight) && weight >= 0 ? weight : set.plannedWeight ?? 0
+    const parsedReps = Number(reps)
+    const parsedWeight = Number(weight)
+    const actualReps = Number.isFinite(parsedReps) && parsedReps >= 1 ? parsedReps : set.plannedReps
+    const actualWeight = Number.isFinite(parsedWeight) && parsedWeight >= 0 ? parsedWeight : set.plannedWeight ?? 0
     const parsedRpe = rpe.trim() ? Number(rpe) : undefined
     const actualRpe =
       parsedRpe != null && Number.isFinite(parsedRpe) && parsedRpe >= 1 && parsedRpe <= 10
@@ -861,12 +982,12 @@ function SetRow({ set, onComplete }: SetRowProps) {
   if (set.isCompleted) {
     return (
       <div
-        className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-success"
+        className="flex items-center gap-2 overflow-x-auto whitespace-nowrap rounded-lg px-2 py-2.5 text-sm text-success sm:gap-3 sm:px-3"
         style={{ background: 'var(--xn-sage-200)' }}
       >
         <CheckCircle2 size={17} className="flex-shrink-0" />
-        <span className="w-12 font-medium">Set {set.setNumber}</span>
-        <span className="flex-1">
+        <span className="shrink-0 font-medium">Set {set.setNumber}</span>
+        <span className="min-w-0 flex-1">
           {set.actualReps ?? set.plannedReps} reps @ {set.actualWeight ?? set.plannedWeight ?? 0} kg
           {set.rpe != null && (
             <span
@@ -882,55 +1003,63 @@ function SetRow({ set, onComplete }: SetRowProps) {
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-background px-3 py-2">
-      <span className="w-12 flex-shrink-0 text-sm font-medium text-muted">Set {set.setNumber}</span>
+    <div
+      className="flex items-center gap-1.5 overflow-x-auto whitespace-nowrap rounded-lg border border-border px-2 py-2 sm:gap-2 sm:px-3"
+      style={{ background: '#ffffff' }}
+    >
+      <span className="shrink-0 text-sm font-medium text-muted">Set {set.setNumber}</span>
 
       {/* Reps */}
-      <div className="flex items-center gap-1">
+      <div className="flex shrink-0 items-center gap-1">
         <input
           type="number" min={1} max={1000}
           value={reps}
-          onChange={(e) => setReps(Number(e.target.value))}
-          className="w-14 rounded-md border border-border bg-background px-2 py-1 text-center text-sm text-text focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
+          onChange={(e) => setReps(e.target.value)}
+          className="w-12 rounded-md border border-border px-1.5 py-1 text-center text-sm text-text focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40 sm:w-14 sm:px-2"
+          style={{ background: 'var(--bg-2)' }}
         />
         <span className="text-xs text-muted">reps</span>
       </div>
 
-      <span className="text-muted/40">@</span>
+      <span className="shrink-0 text-muted/40">@</span>
 
       {/* Weight */}
-      <div className="flex items-center gap-1">
+      <div className="flex shrink-0 items-center gap-1">
         <input
           type="number" min={0} max={10000} step={0.5}
           value={weight}
-          onChange={(e) => setWeight(Number(e.target.value))}
-          className="w-16 rounded-md border border-border bg-background px-2 py-1 text-center text-sm text-text focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
+          onChange={(e) => setWeight(e.target.value)}
+          className="w-14 rounded-md border border-border px-1.5 py-1 text-center text-sm text-text focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40 sm:w-16 sm:px-2"
+          style={{ background: 'var(--bg-2)' }}
         />
         <span className="text-xs text-muted">kg</span>
       </div>
 
       {/* RPE — optional */}
-      <div className="flex items-center gap-1">
+      <div className="flex shrink-0 items-center gap-1">
         <input
           type="number" min={1} max={10} step={0.5}
           value={rpe}
           placeholder="—"
           onChange={(e) => setRpe(e.target.value)}
-          className="w-12 rounded-md border border-border bg-background px-2 py-1 text-center text-sm text-muted focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
+          className="w-11 rounded-md border border-border px-1.5 py-1 text-center text-sm text-muted focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40 sm:w-12 sm:px-2"
+          style={{ background: 'var(--bg-2)' }}
         />
         <span className="text-xs text-muted">{t.dayWorkout.rpeLabel}</span>
       </div>
 
-      {/* Complete button */}
-      <button
-        onClick={handleComplete}
-        className="ml-auto flex-shrink-0 rounded-lg p-1.5 text-muted transition-colors hover:text-success active:scale-95"
-        onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = 'var(--xn-sage-200)')}
-        onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = '')}
-        title="Mark done"
-      >
-        <Circle size={20} />
-      </button>
+      {/* Complete button — owner only */}
+      {canComplete && (
+        <button
+          onClick={handleComplete}
+          className="ml-auto flex-shrink-0 rounded-lg p-1.5 text-muted transition-colors hover:text-success active:scale-95"
+          onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = 'var(--xn-sage-200)')}
+          onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = '')}
+          title="Mark done"
+        >
+          <Circle size={20} />
+        </button>
+      )}
     </div>
   )
 }

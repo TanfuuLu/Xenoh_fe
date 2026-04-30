@@ -1,4 +1,5 @@
 export type UserRole = 'Individual' | 'Coach' | 'Admin'
+export type DayStatus = 'Normal' | 'Rest' | 'Missed'
 export type Gender = 'Male' | 'Female' | 'Other'
 export type RelationshipStatus = 'Pending' | 'Active'
 export type PlanType = 'Self' | 'Coach'

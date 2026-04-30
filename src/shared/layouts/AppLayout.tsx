@@ -67,10 +67,10 @@ export function AppLayout() {
   return (
     <div
       className="xn-shell"
-      style={{ gridTemplateColumns: `${mini ? MINI_WIDTH : FULL_WIDTH}px 1fr` }}
+      style={{ '--xn-sidebar-width': `${mini ? MINI_WIDTH : FULL_WIDTH}px` } as React.CSSProperties}
     >
       {/* ── Sidebar (desktop) ─────────────────────────────────────────── */}
-      <aside className="xn-sidebar hidden md:flex" style={{ width: mini ? MINI_WIDTH : FULL_WIDTH }}>
+      <aside className="xn-sidebar xn-sidebar-desktop hidden md:flex" style={{ width: mini ? MINI_WIDTH : FULL_WIDTH }}>
         <SidebarInner
           navItems={navItems}
           user={user}
@@ -99,7 +99,7 @@ export function AppLayout() {
               animate={{ x: 0 }}
               exit={{ x: -260 }}
               transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-              className="xn-sidebar fixed inset-y-0 left-0 z-50 flex md:hidden"
+              className="xn-sidebar xn-sidebar-mobile fixed inset-y-0 left-0 z-50 flex md:hidden"
               style={{ width: FULL_WIDTH }}
             >
               <div
@@ -156,7 +156,7 @@ export function AppLayout() {
           <div className="hidden md:block" />
 
           {/* Right: lang switcher + notification bell + user menu */}
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <LanguageSwitcher variant="text" />
             <NotificationBell />
             <div className="relative">
@@ -229,7 +229,7 @@ export function AppLayout() {
 
         {/* Page content */}
         <main className="flex-1 overflow-y-auto">
-          <div className="mx-auto w-full" style={{ maxWidth: isWeekDetailPage ? 1508 : 1056, padding: '20px 24px' }}>
+          <div className={cn('xn-page-container', isWeekDetailPage && 'wide')}>
             <Outlet />
           </div>
         </main>

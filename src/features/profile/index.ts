@@ -7,9 +7,11 @@ export {
   useDeleteBodyweight,
   useClientProfile,
   useClientBodyweightHistory,
+  usePublicUserProfile,
 } from './api/useProfile'
 export type {
   UserProfileResponse,
+  PublicUserProfileResponse,
   UpdateProfileRequest,
   BodyweightLogResponse,
   LogBodyweightRequest,

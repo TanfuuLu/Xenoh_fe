@@ -13,6 +13,10 @@ export function useWeeklyWorkouts(planId: string) {
     queryFn: () =>
       api.get<WeeklyWorkoutResponse[]>(ENDPOINTS.weeks.byPlan(planId)).then((r) => r.data),
     enabled: !!planId,
+    retry: (count, error) => {
+      const status = (error as { response?: { status?: number } })?.response?.status
+      return status !== 404 && count < 3
+    },
   })
 }
 

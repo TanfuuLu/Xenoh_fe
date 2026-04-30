@@ -5,6 +5,7 @@ import { useAuthStore } from '@/features/auth'
 import type {
   BodyweightLogResponse,
   LogBodyweightRequest,
+  PublicUserProfileResponse,
   UpdateProfileRequest,
   UserProfileResponse,
 } from '../types'
@@ -96,5 +97,14 @@ export function useClientBodyweightHistory(clientId: string) {
     queryFn: () =>
       api.get<BodyweightLogResponse[]>(ENDPOINTS.users.profileBodyweight(clientId)).then((r) => r.data),
     enabled: !!clientId,
+  })
+}
+
+export function usePublicUserProfile(userId: string | null) {
+  return useQuery({
+    queryKey: ['profile', 'public', userId] as const,
+    queryFn: () =>
+      api.get<PublicUserProfileResponse>(ENDPOINTS.users.publicProfile(userId!)).then((r) => r.data),
+    enabled: !!userId,
   })
 }

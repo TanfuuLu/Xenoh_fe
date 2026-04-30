@@ -1,6 +1,6 @@
 import { useParams, Link, useLocation, useNavigate } from 'react-router'
 import { motion, useReducedMotion } from 'framer-motion'
-import { ChevronLeft, ChevronRight, CheckCircle2, AlertTriangle } from 'lucide-react'
+import { ChevronLeft, ChevronRight, CheckCircle2, AlertTriangle, BarChart2, BedDouble, XCircle } from 'lucide-react'
 import { format } from 'date-fns'
 import { vi as viLocale, enUS } from 'date-fns/locale'
 import { useQueries } from '@tanstack/react-query'
@@ -12,6 +12,7 @@ import { Spinner } from '@/shared/components/Spinner'
 import { cn } from '@/shared/utils/cn'
 import { staggerContainer, slideUp } from '@/shared/utils/motion'
 import { useT, useLangStore } from '@/shared/i18n'
+import { NotFoundPage } from '@/shared/components/NotFoundPage'
 import { useDailyWorkouts, useWeeklyWorkouts } from '../index'
 import type { ExerciseResponse } from '../types'
 import { CommentSection } from '@/features/comments/components/CommentSection'
@@ -32,11 +33,13 @@ export function WeekDetailPage() {
   const { planId = '', weekId = '' } = useParams()
   const { state } = useLocation()
   const navigate = useNavigate()
-  const canEdit = (state as { canEdit?: boolean } | null)?.canEdit ?? true
+  const locationState = state as { canEdit?: boolean; canComplete?: boolean } | null
+  const canEdit = locationState?.canEdit ?? false
+  const canComplete = locationState?.canComplete ?? true
   const shouldReduce = useReducedMotion()
 
-  const { data: allWeeks } = useWeeklyWorkouts(planId)
-  const { data: days, isLoading } = useDailyWorkouts(weekId)
+  const { data: allWeeks, isError: weeksError } = useWeeklyWorkouts(planId)
+  const { data: days, isLoading, isError: daysError } = useDailyWorkouts(weekId)
   const { data: comments = [], isLoading: commentsLoading } = useWeekComments(weekId)
   const { mutateAsync: addComment, isPending: addingComment } = useAddWeekComment(weekId)
   const { mutate: deleteComment, isPending: deletingComment } = useDeleteWeekComment(weekId)
@@ -78,6 +81,8 @@ export function WeekDetailPage() {
   })
   const weekHasWarning = warnedDayIds.size > 0
 
+  if (weeksError || daysError) return <NotFoundPage />
+
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
@@ -89,7 +94,7 @@ export function WeekDetailPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
         <div className="flex items-center gap-2 min-w-0">
           <Link to={`/plans/${planId}`}>
             <Button variant="ghost" size="sm">
@@ -97,7 +102,7 @@ export function WeekDetailPage() {
             </Button>
           </Link>
           <div className="min-w-0">
-            <h1 className="text-2xl font-bold text-text">
+            <h1 className="break-words text-2xl font-bold text-text">
               {currentWeek ? `${tw.title} ${currentWeek.weekNumber}` : tw.title}
             </h1>
             {currentWeek && (
@@ -110,45 +115,54 @@ export function WeekDetailPage() {
           </div>
         </div>
 
-        {allWeeks && allWeeks.length > 1 && (
-          <div className="flex items-center gap-1 flex-shrink-0">
-            <button
-              disabled={!prevWeek}
-              onClick={() =>
-                prevWeek &&
-                navigate(`/plans/${planId}/weeks/${prevWeek.id}`, { state: { canEdit } })
-              }
-              className={cn(
-                'flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors',
-                prevWeek ? 'cursor-pointer hover:opacity-80' : 'cursor-not-allowed opacity-30',
-              )}
-              style={{ background: 'var(--bg-3)', color: 'var(--fg-2)' }}
-            >
-              <ChevronLeft size={14} />
-              {prevWeek ? `W${prevWeek.weekNumber}` : ''}
-            </button>
+        <div className="flex w-full flex-wrap items-center gap-2 lg:w-auto lg:flex-shrink-0 lg:justify-end">
+          <Link to={`/plans/${planId}/weeks/${weekId}/analyze`}>
+            <Button variant="primary" size="sm" className="w-full min-[390px]:w-auto">
+              <BarChart2 size={15} />
+              Analyze
+            </Button>
+          </Link>
 
-            <span className="px-1 text-xs font-medium" style={{ color: 'var(--fg-3)' }}>
-              {currentWeek ? `W${currentWeek.weekNumber}` : ''}
-            </span>
+          {allWeeks && allWeeks.length > 1 && (
+            <div className="flex flex-1 items-center justify-end gap-1 min-[390px]:flex-none">
+              <button
+                disabled={!prevWeek}
+                onClick={() =>
+                  prevWeek &&
+                  navigate(`/plans/${planId}/weeks/${prevWeek.id}`, { state: { canEdit, canComplete } })
+                }
+                className={cn(
+                  'flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors',
+                  prevWeek ? 'cursor-pointer hover:opacity-80' : 'cursor-not-allowed opacity-30',
+                )}
+                style={{ background: 'var(--bg-3)', color: 'var(--fg-2)' }}
+              >
+                <ChevronLeft size={14} />
+                {prevWeek ? `W${prevWeek.weekNumber}` : ''}
+              </button>
 
-            <button
-              disabled={!nextWeek}
-              onClick={() =>
-                nextWeek &&
-                navigate(`/plans/${planId}/weeks/${nextWeek.id}`, { state: { canEdit } })
-              }
-              className={cn(
-                'flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors',
-                nextWeek ? 'cursor-pointer hover:opacity-80' : 'cursor-not-allowed opacity-30',
-              )}
-              style={{ background: 'var(--bg-3)', color: 'var(--fg-2)' }}
-            >
-              {nextWeek ? `W${nextWeek.weekNumber}` : ''}
-              <ChevronRight size={14} />
-            </button>
-          </div>
-        )}
+              <span className="px-1 text-xs font-medium" style={{ color: 'var(--fg-3)' }}>
+                {currentWeek ? `W${currentWeek.weekNumber}` : ''}
+              </span>
+
+              <button
+                disabled={!nextWeek}
+                onClick={() =>
+                  nextWeek &&
+                  navigate(`/plans/${planId}/weeks/${nextWeek.id}`, { state: { canEdit } })
+                }
+                className={cn(
+                  'flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors',
+                  nextWeek ? 'cursor-pointer hover:opacity-80' : 'cursor-not-allowed opacity-30',
+                )}
+                style={{ background: 'var(--bg-3)', color: 'var(--fg-2)' }}
+              >
+                {nextWeek ? `W${nextWeek.weekNumber}` : ''}
+                <ChevronRight size={14} />
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px] 2xl:grid-cols-[minmax(0,1fr)_400px]">
@@ -199,12 +213,73 @@ export function WeekDetailPage() {
         </div>
       )}
 
+      {/* Calendar list on phones */}
+      <motion.div
+        initial={shouldReduce ? false : 'hidden'}
+        animate="visible"
+        variants={staggerContainer}
+        className="space-y-2 sm:hidden"
+      >
+        {orderedDays.map((day) => {
+          const isToday =
+            format(new Date(day.date), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
+          const dayWarned = warnedDayIds.has(day.id)
+
+          return (
+            <motion.div
+              key={day.id}
+              variants={slideUp}
+              className="overflow-hidden rounded-xl border"
+              style={{
+                borderColor: dayWarned ? 'var(--color-warning)' : 'var(--border-1)',
+                background: day.isCompleted
+                  ? 'var(--xn-sage-200)'
+                  : day.status === 'Rest'
+                  ? 'var(--xn-clay-200)'
+                  : day.status === 'Missed'
+                  ? 'rgba(239,68,68,0.07)'
+                  : 'var(--bg-2)',
+              }}
+            >
+              <Link
+                to={`/days/${day.id}`}
+                state={{ canEdit, canComplete, weeklyWorkoutId: day.weeklyWorkoutId }}
+                className="flex items-center gap-3 p-3"
+              >
+                <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl" style={isToday ? { background: 'var(--color-primary)', color: 'white' } : { background: 'var(--bg-3)', color: 'var(--fg-1)' }}>
+                  <span className="text-sm font-bold">{format(new Date(day.date), 'd')}</span>
+                  <span className="text-[10px] uppercase">{format(new Date(day.date), 'EEE', { locale: dateLocale })}</span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-text">{day.dayOfWeek}</p>
+                  <p className="text-xs text-muted">
+                    {day.totalExercises > 0 ? `${day.totalExercises} ${tc.exercises}` : 'Rest'}
+                    {day.totalExercises > 0 && ` · ${day.completedExercises}/${day.totalExercises}`}
+                  </p>
+                </div>
+                {dayWarned ? (
+                  <AlertTriangle size={17} style={{ color: 'var(--color-warning)', flexShrink: 0 }} />
+                ) : day.isCompleted ? (
+                  <CheckCircle2 size={17} style={{ color: 'var(--xn-success)', flexShrink: 0 }} />
+                ) : day.status === 'Rest' ? (
+                  <BedDouble size={17} style={{ color: 'var(--xn-clay-600)', flexShrink: 0 }} />
+                ) : day.status === 'Missed' ? (
+                  <XCircle size={17} style={{ color: 'var(--color-danger)', flexShrink: 0 }} />
+                ) : (
+                  <ChevronRight size={16} style={{ color: 'var(--fg-3)', flexShrink: 0 }} />
+                )}
+              </Link>
+            </motion.div>
+          )
+        })}
+      </motion.div>
+
       {/* Calendar grid */}
       <motion.div
         initial={shouldReduce ? false : 'hidden'}
         animate="visible"
         variants={staggerContainer}
-        className="overflow-hidden rounded-2xl border"
+        className="hidden overflow-hidden rounded-2xl border sm:block"
         style={{ borderColor: 'var(--border-1)', background: 'var(--border-1)' }}
       >
         {/* Day-of-week header row */}
@@ -232,11 +307,19 @@ export function WeekDetailPage() {
                 key={day.id}
                 variants={slideUp}
                 className="relative min-h-36"
-                style={day.isCompleted ? { background: 'var(--xn-sage-200)' } : { background: 'var(--bg-2)' }}
+                style={
+                  day.isCompleted
+                    ? { background: 'var(--xn-sage-200)' }
+                    : day.status === 'Rest'
+                    ? { background: 'var(--xn-clay-200)' }
+                    : day.status === 'Missed'
+                    ? { background: 'rgba(239,68,68,0.07)' }
+                    : { background: 'var(--bg-2)' }
+                }
               >
                 <Link
                   to={`/days/${day.id}`}
-                  state={{ canEdit, weeklyWorkoutId: day.weeklyWorkoutId }}
+                  state={{ canEdit, canComplete, weeklyWorkoutId: day.weeklyWorkoutId }}
                   className="flex flex-col h-full min-h-36 p-3 transition-opacity hover:opacity-80"
                 >
                   {/* Date number */}
@@ -260,6 +343,10 @@ export function WeekDetailPage() {
                       <AlertTriangle size={15} style={{ color: 'var(--color-warning)', flexShrink: 0 }} />
                     ) : day.isCompleted ? (
                       <CheckCircle2 size={15} style={{ color: 'var(--xn-success)', flexShrink: 0 }} />
+                    ) : day.status === 'Rest' ? (
+                      <BedDouble size={15} style={{ color: 'var(--xn-clay-600)', flexShrink: 0 }} />
+                    ) : day.status === 'Missed' ? (
+                      <XCircle size={15} style={{ color: 'var(--color-danger)', flexShrink: 0 }} />
                     ) : day.totalExercises > 0 ? (
                       <Badge variant="warning">
                         {day.completedExercises}/{day.totalExercises}
@@ -278,7 +365,27 @@ export function WeekDetailPage() {
                     </p>
                   )}
 
-                  {!day.isCompleted && day.totalExercises > 0 && (
+                  {!day.isCompleted && day.status === 'Rest' && (
+                    <div
+                      className="mt-auto flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium"
+                      style={{ background: 'var(--xn-clay-300)', color: 'var(--xn-clay-800)' }}
+                    >
+                      <BedDouble size={11} />
+                      Rest Day
+                    </div>
+                  )}
+
+                  {!day.isCompleted && day.status === 'Missed' && (
+                    <div
+                      className="mt-auto flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium"
+                      style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--color-danger)' }}
+                    >
+                      <XCircle size={11} />
+                      Missed
+                    </div>
+                  )}
+
+                  {!day.isCompleted && day.status === 'Normal' && day.totalExercises > 0 && (
                     <div
                       className="mt-auto flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium"
                       style={{ background: 'var(--xn-clay-200)', color: 'var(--xn-clay-800)' }}

@@ -35,19 +35,7 @@ export function ExerciseTrackingPage() {
 
   const exercises = Array.isArray(prs) ? prs : []
 
-  useEffect(() => {
-    if (!selectedExerciseId && exercises.length > 0) {
-      setSelectedExerciseId(exercises[0]!.exerciseTemplateId)
-    }
-  }, [exercises, selectedExerciseId])
-
   const selectedPr = exercises.find((pr) => pr.exerciseTemplateId === selectedExerciseId)
-
-  useEffect(() => {
-    if (selectedPr && !searchOpen) {
-      setSearch(selectedPr.exerciseName)
-    }
-  }, [searchOpen, selectedPr])
 
   const filteredExercises = useMemo(
     () =>
@@ -128,7 +116,7 @@ export function ExerciseTrackingPage() {
             </Card>
           )}
 
-          <Card>
+          {selectedPr && <Card>
             <div className="mb-4">
               <h2 className="text-lg font-semibold text-text">PR Progress</h2>
               <p className="text-sm text-muted">Best weight by achieved date</p>
@@ -178,7 +166,7 @@ export function ExerciseTrackingPage() {
             ) : (
               <p className="text-sm text-muted">No PR history found for this exercise.</p>
             )}
-          </Card>
+          </Card>}
         </>
       )}
     </div>

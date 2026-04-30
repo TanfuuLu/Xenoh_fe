@@ -11,6 +11,7 @@ const DashboardPage    = lazy(() => import('@/features/dashboard/pages/Dashboard
 const PlansPage        = lazy(() => import('@/features/plans/pages/PlansPage').then((m) => ({ default: m.PlansPage })))
 const PlanDetailPage   = lazy(() => import('@/features/plans/pages/PlanDetailPage').then((m) => ({ default: m.PlanDetailPage })))
 const WeekDetailPage   = lazy(() => import('@/features/workouts/pages/WeekDetailPage').then((m) => ({ default: m.WeekDetailPage })))
+const WeekAnalyzePage  = lazy(() => import('@/features/workouts/pages/WeekAnalyzePage').then((m) => ({ default: m.WeekAnalyzePage })))
 const DayWorkoutPage   = lazy(() => import('@/features/workouts/pages/DayWorkoutPage').then((m) => ({ default: m.DayWorkoutPage })))
 const ProfilePage      = lazy(() => import('@/features/profile/pages/ProfilePage').then((m) => ({ default: m.ProfilePage })))
 const ExerciseTrackingPage = lazy(() => import('@/features/exercise-tracking/pages/ExerciseTrackingPage').then((m) => ({ default: m.ExerciseTrackingPage })))
@@ -109,6 +110,14 @@ export const router = createBrowserRouter([
             element: (
               <Suspense fallback={<SuspenseFallback />}>
                 <WeekDetailPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'plans/:planId/weeks/:weekId/analyze',
+            element: (
+              <Suspense fallback={<SuspenseFallback />}>
+                <WeekAnalyzePage />
               </Suspense>
             ),
           },

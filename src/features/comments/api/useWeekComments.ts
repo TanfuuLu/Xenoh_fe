@@ -7,6 +7,12 @@ export const weekCommentKeys = {
   byWeek: (weekId: string) => ['week-comments', weekId] as const,
 }
 
+function appendComment(old: CommentResponse[] | undefined, comment: CommentResponse) {
+  const comments = old ?? []
+  if (comments.some((c) => c.id === comment.id)) return comments
+  return [...comments, comment]
+}
+
 export function useWeekComments(weekId: string) {
   return useQuery({
     queryKey: weekCommentKeys.byWeek(weekId),
@@ -24,8 +30,10 @@ export function useAddWeekComment(weekId: string) {
       api
         .post<CommentResponse>(ENDPOINTS.weekComments.create(weekId), { content })
         .then((r) => r.data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: weekCommentKeys.byWeek(weekId) })
+    onSuccess: (newComment) => {
+      qc.setQueryData<CommentResponse[]>(weekCommentKeys.byWeek(weekId), (old) =>
+        appendComment(old, newComment),
+      )
     },
   })
 }
@@ -35,8 +43,10 @@ export function useDeleteWeekComment(weekId: string) {
   return useMutation({
     mutationFn: (commentId: string) =>
       api.delete(ENDPOINTS.weekComments.delete(weekId, commentId)),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: weekCommentKeys.byWeek(weekId) })
+    onSuccess: (_, commentId) => {
+      qc.setQueryData<CommentResponse[]>(weekCommentKeys.byWeek(weekId), (old = []) =>
+        old.filter((c) => c.id !== commentId),
+      )
     },
   })
 }

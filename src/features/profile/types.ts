@@ -17,6 +17,21 @@ export interface UserProfileResponse {
   dotsScore: number | null
 }
 
+export interface PublicUserProfileResponse {
+  id: string
+  fullName: string
+  email: string
+  avatarUrl: string | null
+  bio: string | null
+  gender: string | null
+  height: number | null
+  latestBodyweight: number | null
+  bmi: number | null
+  bmiCategory: string | null
+  currentStreak: number
+  dotsScore: number | null
+}
+
 export interface UpdateProfileRequest {
   bio?: string
   height?: number

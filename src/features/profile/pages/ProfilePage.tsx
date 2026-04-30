@@ -11,6 +11,7 @@ import { format, isValid } from 'date-fns'
 import { Card } from '@/shared/components/Card'
 import { Button } from '@/shared/components/Button'
 import { Input } from '@/shared/components/Input'
+import { DatePicker } from '@/shared/components/DatePicker'
 import { Select } from '@/shared/components/Select'
 import { Spinner } from '@/shared/components/Spinner'
 import { UserAvatar } from '@/shared/components/UserAvatar'
@@ -144,7 +145,7 @@ export function ProfilePage() {
 
       {/* Profile info */}
       <Card>
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-3">
             <div className="relative shrink-0">
               <UserAvatar
@@ -183,7 +184,7 @@ export function ProfilePage() {
               <p className="truncate text-sm text-muted">{profile?.email}</p>
             </div>
           </div>
-          <Button variant="secondary" size="sm" onClick={() => setEditMode((e) => !e)}>
+          <Button variant="secondary" size="sm" className="w-full sm:w-auto" onClick={() => setEditMode((e) => !e)}>
             {editMode ? tp.cancelBtn : tp.editBtn}
           </Button>
         </div>
@@ -197,7 +198,7 @@ export function ProfilePage() {
               error={profileErrors.bio?.message}
               {...regProfile('bio')}
             />
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               <Input
                 label={tp.heightLabel}
                 type="number"
@@ -223,17 +224,23 @@ export function ProfilePage() {
                 )}
               />
             </div>
-            <Input
-              label={tp.dobLabel}
-              type="date"
-              {...regProfile('dateOfBirth', { setValueAs: (value) => value || undefined })}
+            <Controller
+              name="dateOfBirth"
+              control={profileControl}
+              render={({ field }) => (
+                <DatePicker
+                  label={tp.dobLabel}
+                  value={field.value ?? ''}
+                  onChange={(val) => field.onChange(val || undefined)}
+                />
+              )}
             />
             {apiError && <p className="text-sm text-danger">{apiError}</p>}
-            <Button type="submit" loading={saving}>{tp.saveBtn}</Button>
+            <Button type="submit" className="w-full sm:w-auto" loading={saving}>{tp.saveBtn}</Button>
           </form>
         ) : (
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            <div className="col-span-2 md:col-span-4">
+          <div className="grid gap-4 min-[390px]:grid-cols-2 md:grid-cols-4">
+            <div className="min-[390px]:col-span-2 md:col-span-4">
               <p className="text-xs text-muted">{tp.bioStat}</p>
               <p className="whitespace-pre-line text-sm font-medium text-text">
                 {profile?.bio?.trim() ? profile.bio : tp.noBio}
@@ -253,16 +260,16 @@ export function ProfilePage() {
       <Card>
         <h2 className="mb-4 text-lg font-semibold text-text">{tp.weightSection}</h2>
 
-        <form onSubmit={handleWeightSubmit(onLogWeight)} className="mb-4 flex items-start gap-2">
+        <form onSubmit={handleWeightSubmit(onLogWeight)} className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start">
           <Input
             placeholder="70.5"
             type="number"
             step="0.1"
             error={weightErrors.weight?.message}
-            className="max-w-32"
+            className="sm:max-w-32"
             {...regWeight('weight')}
           />
-          <Button type="submit" loading={logging} size="sm">{tp.logToday}</Button>
+          <Button type="submit" className="w-full sm:w-auto" loading={logging} size="sm">{tp.logToday}</Button>
         </form>
 
         {chartData.length > 0 ? (
@@ -289,7 +296,7 @@ export function ProfilePage() {
         {bodyweightHistory.length > 0 && (
           <div className="mt-4 max-h-48 overflow-y-auto space-y-1">
             {bodyweightHistory.slice(0, 10).map((b) => (
-              <div key={b.id} className="flex items-center justify-between rounded-lg px-3 py-2 hover:bg-panel">
+              <div key={b.id} className="flex items-center justify-between gap-2 rounded-lg px-3 py-2 hover:bg-panel">
                 <span className="text-sm text-text">{formatDisplayDate(b.date)}</span>
                 <span className="text-sm font-medium text-text">{b.weight} kg</span>
                 <Button

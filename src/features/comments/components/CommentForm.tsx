@@ -25,12 +25,12 @@ export function CommentForm({ onSubmit, isPending }: Props) {
 
   return (
     <form onSubmit={handleSubmit(submit)} className="flex flex-col gap-2">
-      <div className="flex gap-2 items-end">
+      <div className="flex min-w-0 gap-2 items-end">
         <textarea
           {...register('content')}
           placeholder="Viết bình luận..."
           rows={2}
-          className="flex-1 resize-none rounded-lg text-sm transition-colors"
+          className="min-w-0 flex-1 resize-none rounded-lg text-sm transition-colors"
           style={{
             background: 'var(--bg-3)',
             border: '1px solid var(--border-1)',

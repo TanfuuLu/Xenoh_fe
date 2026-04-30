@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { Bell } from 'lucide-react'
 import { useNotificationStore } from '../store/notificationStore'
@@ -8,11 +8,23 @@ import { NotificationPanel } from './NotificationPanel'
 export function NotificationBell() {
   const [open, setOpen] = useState(false)
   const unreadCount = useNotificationStore((s) => s.unreadCount)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   useNotifications()
 
+  useEffect(() => {
+    if (!open) return
+    function handleMouseDown(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleMouseDown)
+    return () => document.removeEventListener('mousedown', handleMouseDown)
+  }, [open])
+
   return (
-    <div className="relative">
+    <div className="relative" ref={containerRef}>
       <button
         onClick={() => setOpen((v) => !v)}
         className="relative flex items-center justify-center rounded-lg transition-colors"
@@ -45,12 +57,9 @@ export function NotificationBell() {
 
       <AnimatePresence>
         {open && (
-          <>
-            <div className="fixed inset-0 z-20" onClick={() => setOpen(false)} />
-            <div className="relative z-30">
-              <NotificationPanel onClose={() => setOpen(false)} />
-            </div>
-          </>
+          <div className="relative z-30">
+            <NotificationPanel onClose={() => setOpen(false)} />
+          </div>
         )}
       </AnimatePresence>
     </div>

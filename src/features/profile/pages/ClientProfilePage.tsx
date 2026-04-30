@@ -1,6 +1,6 @@
 import { Link, useParams } from 'react-router'
 import { motion } from 'framer-motion'
-import { ChevronLeft, Activity, Flame, Scale, Dumbbell, Ruler, CalendarDays, Users } from 'lucide-react'
+import { ChevronLeft, Activity, Flame, Scale, Dumbbell, Ruler, CalendarDays, Users, ClipboardList } from 'lucide-react'
 import { format } from 'date-fns'
 import {
   CartesianGrid,
@@ -16,12 +16,14 @@ import { Card } from '@/shared/components/Card'
 import { Spinner } from '@/shared/components/Spinner'
 import { slideUp, staggerContainer } from '@/shared/utils/motion'
 import { useT } from '@/shared/i18n'
+import { useCoachPlanOverview } from '@/features/plans'
 import { useClientBodyweightHistory, useClientProfile } from '../index'
 
 export function ClientProfilePage() {
   const { clientId = '' } = useParams()
   const { data: profile, isLoading } = useClientProfile(clientId)
   const { data: bodyweightHistory = [] } = useClientBodyweightHistory(clientId)
+  const { data: coachPlans = [], isLoading: plansLoading } = useCoachPlanOverview()
   const t   = useT()
   const tp  = t.profile
   const tcp = t.clientProfile
@@ -43,18 +45,25 @@ export function ClientProfilePage() {
     profile.gender === 'Other'  ? tp.other  : tcp.noData
   const weightAnalytics = getWeightAnalytics(bodyweightHistory)
 
+  const today = new Date()
+  const clientPlans = coachPlans.filter((p) => p.ownerId === clientId)
+  const activePlan = clientPlans.find(
+    (p) => today >= new Date(p.startDate) && today <= new Date(p.endDate)
+  )
+  const otherPlans = clientPlans.filter((p) => p.id !== activePlan?.id)
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-start gap-2">
         <Link to="/coach/clients">
           <Button variant="ghost" size="sm"><ChevronLeft size={16} /></Button>
         </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-text">
+        <div className="min-w-0">
+          <h1 className="break-words text-2xl font-bold text-text">
             {profile.firstName} {profile.lastName}
           </h1>
-          <p className="text-sm text-muted">{profile.email}</p>
+          <p className="truncate text-sm text-muted">{profile.email}</p>
         </div>
       </div>
 
@@ -63,7 +72,7 @@ export function ClientProfilePage() {
         initial="hidden"
         animate="visible"
         variants={staggerContainer}
-        className="grid grid-cols-2 gap-3 md:grid-cols-4"
+        className="grid gap-3 min-[390px]:grid-cols-2 md:grid-cols-4"
       >
         <StatCard
           icon={<Flame size={18} style={{ color: 'var(--color-warning)' }} />}
@@ -97,7 +106,7 @@ export function ClientProfilePage() {
           initial="hidden"
           animate="visible"
           variants={staggerContainer}
-          className="grid grid-cols-2 gap-4 md:grid-cols-3"
+          className="grid gap-4 min-[390px]:grid-cols-2 md:grid-cols-3"
         >
           <motion.div variants={slideUp}>
             <InfoRow
@@ -127,6 +136,67 @@ export function ClientProfilePage() {
         </motion.div>
       </Card>
 
+      {/* Training plan */}
+      <Card>
+        <div className="mb-4 flex items-center gap-2 text-muted">
+          <ClipboardList size={14} />
+          <h2 className="text-sm font-semibold uppercase tracking-wide">Training Plan</h2>
+        </div>
+        {plansLoading ? (
+          <Spinner size="sm" />
+        ) : clientPlans.length === 0 ? (
+          <p className="text-sm text-muted">No plan assigned yet.</p>
+        ) : (
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={staggerContainer}
+            className="space-y-3"
+          >
+            {activePlan && (
+              <Link to={`/plans/${activePlan.id}`}>
+                <motion.div
+                  variants={slideUp}
+                  className="rounded-xl border p-4 transition-opacity hover:opacity-80"
+                  style={{ borderColor: 'var(--color-primary)', background: 'color-mix(in srgb, var(--color-primary) 8%, transparent)' }}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 space-y-0.5">
+                      <p className="break-words font-semibold text-text">{activePlan.name}</p>
+                      <p className="text-xs text-muted">
+                        {format(new Date(activePlan.startDate), 'dd/MM/yyyy')} – {format(new Date(activePlan.endDate), 'dd/MM/yyyy')}
+                      </p>
+                      <p className="text-xs text-muted">{activePlan.totalWeeks} weeks</p>
+                    </div>
+                    <span
+                      className="shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                      style={{ background: 'color-mix(in srgb, var(--color-primary) 15%, transparent)', color: 'var(--color-primary)' }}
+                    >
+                      Active
+                    </span>
+                  </div>
+                </motion.div>
+              </Link>
+            )}
+            {otherPlans.map((plan) => (
+              <Link key={plan.id} to={`/plans/${plan.id}`}>
+                <motion.div
+                  variants={slideUp}
+                  className="rounded-xl border border-border p-4 transition-opacity hover:opacity-80"
+                  style={{ background: 'var(--bg-2)' }}
+                >
+                  <p className="break-words font-medium text-text">{plan.name}</p>
+                  <p className="mt-0.5 text-xs text-muted">
+                    {format(new Date(plan.startDate), 'dd/MM/yyyy')} – {format(new Date(plan.endDate), 'dd/MM/yyyy')}
+                  </p>
+                  <p className="mt-0.5 text-xs text-muted">{plan.totalWeeks} weeks</p>
+                </motion.div>
+              </Link>
+            ))}
+          </motion.div>
+        )}
+      </Card>
+
       <Card>
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -140,7 +210,7 @@ export function ClientProfilePage() {
 
         {weightAnalytics.chartData.length > 0 ? (
           <div className="space-y-4">
-            <div className="grid gap-3 md:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-3">
               <AnalysisStat label="Entries" value={weightAnalytics.entryCount.toString()} />
               <AnalysisStat
                 label="Total change"

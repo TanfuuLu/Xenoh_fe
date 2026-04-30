@@ -1,12 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" fill="none">
-  <title>Xenoh mark — monochrome</title>
-  <g stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none">
-    <path d="M 20 14 L 32 26 L 44 14"></path>
-    <path d="M 20 50 L 32 38 L 44 50"></path>
-  </g>
-  <rect x="12" y="30.5" width="40" height="3" rx="1.5" fill="currentColor" opacity="0.6"></rect>
-  <rect x="6" y="26" width="3.5" height="12" rx="1" fill="currentColor"></rect>
-  <rect x="54.5" y="26" width="3.5" height="12" rx="1" fill="currentColor"></rect>
-  <rect x="10" y="28" width="2.5" height="8" rx="0.8" fill="currentColor"></rect>
-  <rect x="51.5" y="28" width="2.5" height="8" rx="0.8" fill="currentColor"></rect>
+  <title>Xenoh mark monochrome</title>
+  <path d="M12 12H52V52H12V12Z" fill="currentColor"/>
+  <path d="M20 16H34L44 29H30L20 16Z" fill="#fff"/>
+  <path d="M44 16H52L36 38L28 38L44 16Z" fill="#fff" opacity="0.58"/>
+  <path d="M12 48L28 26H36L20 48H12Z" fill="#fff" opacity="0.58"/>
+  <path d="M30 35H44L52 48H38L30 35Z" fill="#fff"/>
 </svg>

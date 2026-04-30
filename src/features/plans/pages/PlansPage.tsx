@@ -9,6 +9,7 @@ import { format } from 'date-fns'
 import { Card } from '@/shared/components/Card'
 import { Button } from '@/shared/components/Button'
 import { Input } from '@/shared/components/Input'
+import { DateRangePicker } from '@/shared/components/DateRangePicker'
 import { Modal } from '@/shared/components/Modal'
 import { Badge } from '@/shared/components/Badge'
 import { Spinner } from '@/shared/components/Spinner'
@@ -85,6 +86,7 @@ export function PlansPage() {
 
   const {
     register,
+    control,
     handleSubmit,
     reset,
     formState: { errors },
@@ -135,9 +137,9 @@ export function PlansPage() {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
+    <div className="space-y-6 sm:space-y-8">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold text-text">Plans</h1>
           <p className="mt-1 text-sm text-muted">
             {(plans?.length ?? 0)}/3 {isCoach ? 'personal plans' : 'plans'}
@@ -145,7 +147,7 @@ export function PlansPage() {
           </p>
         </div>
         {(plans?.length ?? 0) < 3 && (
-          <Button onClick={() => setShowCreate(true)} size="sm">
+          <Button onClick={() => setShowCreate(true)} size="sm" className="w-full sm:w-auto">
             <Plus size={16} /> {tp.createPlan}
           </Button>
         )}
@@ -183,13 +185,13 @@ export function PlansPage() {
 
       {isCoach && (
         <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
               <h2 className="text-lg font-semibold text-text">{tcp.title}</h2>
               <p className="mt-1 text-sm text-muted">{clientPlans?.length ?? 0} {tcp.subtitle}</p>
             </div>
             {activeClients.length > 0 && (
-              <Button size="sm" onClick={() => setShowCreateClientPlan(true)}>
+              <Button size="sm" className="w-full sm:w-auto" onClick={() => setShowCreateClientPlan(true)}>
                 <Plus size={16} /> {tcp.createPlan}
               </Button>
             )}
@@ -227,24 +229,34 @@ export function PlansPage() {
             error={errors.name?.message}
             {...register('name')}
           />
-          <Input
-            label={tp.startDateLabel}
-            type="date"
-            error={errors.startDate?.message}
-            {...register('startDate')}
-          />
-          <Input
-            label={tp.endDateLabel}
-            type="date"
-            error={errors.endDate?.message}
-            {...register('endDate')}
+          <Controller
+            name="startDate"
+            control={control}
+            render={({ field: startField }) => (
+              <Controller
+                name="endDate"
+                control={control}
+                render={({ field: endField }) => (
+                  <DateRangePicker
+                    startLabel={tp.startDateLabel}
+                    endLabel={tp.endDateLabel}
+                    startValue={startField.value}
+                    endValue={endField.value}
+                    onStartChange={startField.onChange}
+                    onEndChange={endField.onChange}
+                    startError={errors.startDate?.message}
+                    endError={errors.endDate?.message}
+                  />
+                )}
+              />
+            )}
           />
           {apiError && <p className="text-sm text-danger">{apiError}</p>}
-          <div className="flex gap-2 justify-end">
-            <Button variant="secondary" type="button" onClick={() => setShowCreate(false)}>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variant="secondary" type="button" className="w-full sm:w-auto" onClick={() => setShowCreate(false)}>
               {tc.cancel}
             </Button>
-            <Button type="submit" loading={creating}>
+            <Button type="submit" className="w-full sm:w-auto" loading={creating}>
               {tp.create}
             </Button>
           </div>
@@ -277,24 +289,34 @@ export function PlansPage() {
             error={clientPlanErrors.name?.message}
             {...registerClientPlan('name')}
           />
-          <Input
-            label={tcp.startDateLabel}
-            type="date"
-            error={clientPlanErrors.startDate?.message}
-            {...registerClientPlan('startDate')}
-          />
-          <Input
-            label={tcp.endDateLabel}
-            type="date"
-            error={clientPlanErrors.endDate?.message}
-            {...registerClientPlan('endDate')}
+          <Controller
+            name="startDate"
+            control={clientPlanControl}
+            render={({ field: startField }) => (
+              <Controller
+                name="endDate"
+                control={clientPlanControl}
+                render={({ field: endField }) => (
+                  <DateRangePicker
+                    startLabel={tcp.startDateLabel}
+                    endLabel={tcp.endDateLabel}
+                    startValue={startField.value}
+                    endValue={endField.value}
+                    onStartChange={startField.onChange}
+                    onEndChange={endField.onChange}
+                    startError={clientPlanErrors.startDate?.message}
+                    endError={clientPlanErrors.endDate?.message}
+                  />
+                )}
+              />
+            )}
           />
           {clientPlanApiError && <p className="text-sm text-danger">{clientPlanApiError}</p>}
-          <div className="flex gap-2 justify-end">
-            <Button variant="secondary" type="button" onClick={() => setShowCreateClientPlan(false)}>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variant="secondary" type="button" className="w-full sm:w-auto" onClick={() => setShowCreateClientPlan(false)}>
               {tc.cancel}
             </Button>
-            <Button type="submit" loading={creatingClientPlan}>
+            <Button type="submit" className="w-full sm:w-auto" loading={creatingClientPlan}>
               {tcp.create}
             </Button>
           </div>
@@ -325,7 +347,7 @@ function PlanRow({ plan, onOpen, onActivate, onDeactivate, onDelete }: PlanRowPr
       className="rounded-xl border border-border bg-surface p-4 cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-md"
       style={{ borderColor: 'var(--border-1)', background: 'var(--bg-2)' }}
     >
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <h3 className="font-semibold text-text truncate">{plan.name}</h3>
@@ -340,7 +362,7 @@ function PlanRow({ plan, onOpen, onActivate, onDeactivate, onDelete }: PlanRowPr
           </p>
         </div>
 
-        <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+        <div className="flex flex-shrink-0 items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
           {plan.isActive ? (
             <Button variant="ghost" size="sm" onClick={onDeactivate}>
               <ZapOff size={15} />
@@ -376,10 +398,10 @@ function ClientPlanRow({ plan, onOpen, onDelete }: ClientPlanRowProps) {
       onClick={onOpen}
       className="group cursor-pointer rounded-xl border border-border bg-surface transition-colors hover:border-primary/40"
     >
-      <div className="flex items-center gap-3 p-4">
+      <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-text group-hover:text-primary transition-colors">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <h3 className="min-w-0 truncate font-semibold text-text transition-colors group-hover:text-primary">
               {plan.name}
             </h3>
             <Badge variant="primary">Coach</Badge>
@@ -393,7 +415,7 @@ function ClientPlanRow({ plan, onOpen, onDelete }: ClientPlanRowProps) {
           </p>
         </div>
 
-        <div className="flex flex-shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
+        <div className="flex flex-shrink-0 items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
           <Button variant="ghost" size="sm" onClick={onOpen}>
             <ChevronRight size={18} />
           </Button>

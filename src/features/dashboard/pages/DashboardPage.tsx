@@ -71,7 +71,7 @@ export function DashboardPage() {
         initial={shouldReduce ? false : 'hidden'}
         animate="visible"
         variants={staggerContainer}
-        className="grid grid-cols-2 gap-3 md:grid-cols-4"
+        className="grid gap-3 min-[390px]:grid-cols-2 md:grid-cols-4"
       >
         <StatCard icon={<Flame size={20} className="text-warning" />}      label={td.streak} value={`${profile?.currentStreak ?? 0} ${tc.days}`} />
         <StatCard icon={<TrendingUp size={20} className="text-success" />}  label={td.weight} value={profile?.latestBodyweight ? `${profile.latestBodyweight} kg` : '—'} />
@@ -372,10 +372,10 @@ function TodayTrainingCard({ todayDay, td, tc, dateLocale }: TodayTrainingCardPr
 
   return (
     <Card className="space-y-3">
-      <div className="flex items-start justify-between gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted">{td.todayTraining}</p>
-          <div className="mt-1 flex items-baseline gap-2">
+          <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
             <h2 className="text-lg font-semibold text-text">{todayDay.dayOfWeek}</h2>
             <span className="text-sm text-muted">
               {format(new Date(todayDay.date), 'd MMM', { locale: dateLocale })}
@@ -391,7 +391,7 @@ function TodayTrainingCard({ todayDay, td, tc, dateLocale }: TodayTrainingCardPr
         </div>
 
         {todayDay.isCompleted ? (
-          <div className="flex flex-shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium" style={{ background: 'var(--xn-sage-200)', color: 'var(--xn-success)' }}>
+          <div className="flex flex-shrink-0 items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium" style={{ background: 'var(--xn-sage-200)', color: 'var(--xn-success)' }}>
             <CheckCircle2 size={15} />
             {td.dayCompleted}
           </div>
@@ -399,7 +399,7 @@ function TodayTrainingCard({ todayDay, td, tc, dateLocale }: TodayTrainingCardPr
           <Link
             to={`/days/${todayDay.id}`}
             state={{ canEdit: true, weeklyWorkoutId: todayDay.weeklyWorkoutId }}
-            className="flex flex-shrink-0 items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-opacity hover:opacity-80"
+            className="flex w-full flex-shrink-0 items-center justify-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-opacity hover:opacity-80 sm:w-auto sm:py-1.5"
             style={{ background: 'var(--accent)', color: 'var(--fg-on-clay)' }}
           >
             {todayDay.completedExercises > 0 ? td.continueWorkout : td.startWorkout}

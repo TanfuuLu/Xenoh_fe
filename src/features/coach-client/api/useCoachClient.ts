@@ -2,12 +2,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/shared/api/axios'
 import { ENDPOINTS } from '@/shared/api/endpoints'
 import { coachKeys } from '@/features/coaches/api/useCoaches'
-import type { ClientResponse, CoachRelationshipResponse, RequestCoachRequest } from '../types'
+import type { ClientResponse, CoachClientDashboardResponse, CoachRelationshipResponse, RequestCoachRequest } from '../types'
 
 export const coachClientKeys = {
   pendingRequests: ['coach-client', 'pending'] as const,
   myCoach: ['coach-client', 'my-coach'] as const,
   myClients: ['coach-client', 'my-clients'] as const,
+  dashboard: ['coach-client', 'dashboard'] as const,
 }
 
 export function usePendingRequests() {
@@ -35,6 +36,15 @@ export function useMyCoach() {
       if (data?.status === 'Pending') return 8_000
       return false
     },
+  })
+}
+
+export function useCoachDashboard(enabled = true) {
+  return useQuery({
+    queryKey: coachClientKeys.dashboard,
+    queryFn: () =>
+      api.get<CoachClientDashboardResponse[]>(ENDPOINTS.coachClient.dashboard).then((r) => r.data),
+    enabled,
   })
 }
 

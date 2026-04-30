@@ -1,4 +1,4 @@
-import type { MuscleGroup } from '@/shared/types/api'
+import type { DayStatus, MuscleGroup } from '@/shared/types/api'
 
 export interface WeeklyWorkoutResponse {
   id: string
@@ -21,6 +21,7 @@ export interface DailyWorkoutResponse {
   totalExercises: number
   completedExercises: number
   hasWarning: boolean
+  status: DayStatus
 }
 
 export interface ExerciseSetResponse {

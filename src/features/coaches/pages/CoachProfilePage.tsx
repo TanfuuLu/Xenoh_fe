@@ -1,6 +1,6 @@
 import { Link, useParams } from 'react-router'
 import { motion } from 'framer-motion'
-import { ChevronLeft, Users, Mail } from 'lucide-react'
+import { ChevronLeft, Users, Mail, FileText } from 'lucide-react'
 import { Button } from '@/shared/components/Button'
 import { Card } from '@/shared/components/Card'
 import { Spinner } from '@/shared/components/Spinner'
@@ -28,11 +28,11 @@ export function CoachProfilePage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-start gap-2">
         <Link to="/coaches">
           <Button variant="ghost" size="sm"><ChevronLeft size={16} /></Button>
         </Link>
-        <h1 className="text-2xl font-bold text-text">{coach.fullName}</h1>
+        <h1 className="min-w-0 break-words text-2xl font-bold text-text">{coach.fullName}</h1>
       </div>
 
       <motion.div
@@ -44,7 +44,7 @@ export function CoachProfilePage() {
         {/* Coach card */}
         <motion.div variants={slideUp}>
           <Card className="space-y-4">
-            <div className="flex items-center gap-4">
+            <div className="flex min-w-0 items-center gap-4">
               <UserAvatar
                 name={coach.fullName}
                 email={coach.email}
@@ -52,8 +52,8 @@ export function CoachProfilePage() {
                 size={64}
                 variant="primary"
               />
-              <div>
-                <h2 className="text-xl font-bold text-text">{coach.fullName}</h2>
+              <div className="min-w-0">
+                <h2 className="break-words text-xl font-bold text-text">{coach.fullName}</h2>
                 <p className="text-sm text-muted">Coach</p>
               </div>
             </div>
@@ -61,7 +61,15 @@ export function CoachProfilePage() {
             {/* Contact */}
             <div className="flex items-center gap-2 text-muted">
               <Mail size={15} />
-              <span className="text-sm">{coach.email}</span>
+              <span className="min-w-0 truncate text-sm">{coach.email}</span>
+            </div>
+
+            {/* Bio */}
+            <div className="flex gap-2 text-muted">
+              <FileText size={15} className="mt-0.5 flex-shrink-0" />
+              <p className="break-words text-sm leading-relaxed">
+                {coach.bio ?? 'No bio added yet.'}
+              </p>
             </div>
           </Card>
         </motion.div>

@@ -26,30 +26,29 @@ export function NotificationPanel({ onClose }: Props) {
   return (
     <motion.div
       {...motionProps.scaleIn}
-      className="xn-card absolute right-0 top-full z-30 mt-2"
+      className="xn-card fixed left-3 right-3 top-16 z-30 sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:w-[360px]"
       style={{
-        width: 360,
         padding: 0,
         overflow: 'hidden',
         borderRadius: 14,
-        maxHeight: '80vh',
+        maxHeight: 'min(80vh, calc(100dvh - 80px))',
         display: 'flex',
         flexDirection: 'column',
       }}
     >
       {/* Header */}
       <div
-        className="flex items-center justify-between"
+        className="flex items-center justify-between gap-3"
         style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-1)', flexShrink: 0 }}
       >
-        <h3 className="text-sm font-semibold" style={{ color: 'var(--fg-1)', margin: 0 }}>
+        <h3 className="shrink-0 text-sm font-semibold" style={{ color: 'var(--fg-1)', margin: 0 }}>
           Thông báo {unreadCount > 0 && <span style={{ color: 'var(--color-primary)' }}>({unreadCount})</span>}
         </h3>
         {unreadCount > 0 && (
           <button
             onClick={handleMarkAll}
             disabled={markingAll}
-            className="text-xs transition-colors"
+            className="min-w-0 text-right text-xs transition-colors"
             style={{ color: 'var(--color-primary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
           >
             Đánh dấu tất cả đã đọc

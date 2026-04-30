@@ -1,5 +1,5 @@
 export { useWeeklyWorkouts, useUpdateWeeklyWorkout } from './api/useWeeklyWorkouts'
-export { useDailyWorkouts, useCopyDay } from './api/useDailyWorkouts'
+export { useDailyWorkouts, useCopyDay, useMarkDayStatus } from './api/useDailyWorkouts'
 export {
   useExercises,
   useCreateExercise,

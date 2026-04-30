@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/shared/api/axios'
 import { ENDPOINTS } from '@/shared/api/endpoints'
+import type { DayStatus } from '@/shared/types/api'
 import type { CopyDayRequest, CopyDayResponse, DailyWorkoutResponse } from '../types'
 
 export const dayKeys = {
@@ -15,6 +16,21 @@ export function useDailyWorkouts(weeklyWorkoutId: string) {
         .get<DailyWorkoutResponse[]>(ENDPOINTS.days.byWeek(weeklyWorkoutId))
         .then((r) => r.data),
     enabled: !!weeklyWorkoutId,
+    retry: (count, error) => {
+      const status = (error as { response?: { status?: number } })?.response?.status
+      return status !== 404 && count < 3
+    },
+  })
+}
+
+export function useMarkDayStatus(weeklyWorkoutId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ dailyWorkoutId, status }: { dailyWorkoutId: string; status: DayStatus }) =>
+      api.patch(ENDPOINTS.days.markStatus(dailyWorkoutId), { status }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: dayKeys.byWeek(weeklyWorkoutId) })
+    },
   })
 }
 

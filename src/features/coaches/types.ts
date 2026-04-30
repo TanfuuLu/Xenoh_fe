@@ -10,5 +10,6 @@ export interface CoachProfileResponse {
   fullName: string
   email: string
   avatarUrl: string | null
+  bio: string | null
   totalClients: number
 }

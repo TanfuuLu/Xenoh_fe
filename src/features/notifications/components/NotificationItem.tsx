@@ -1,14 +1,16 @@
 import { formatDistanceToNow } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import { useNavigate } from 'react-router'
-import { Bell, MessageSquare, ClipboardList, AlertTriangle } from 'lucide-react'
+import { Bell, MessageSquare, ClipboardList, AlertTriangle, UserPlus, UserCheck } from 'lucide-react'
 import { cn } from '@/shared/utils/cn'
 import type { NotificationResponse } from '../types'
 
 const TYPE_CONFIG: Record<string, { icon: React.ComponentType<{ size?: number }>, label: string }> = {
-  NewComment: { icon: MessageSquare, label: 'Bình luận mới' },
-  PlanAssigned: { icon: ClipboardList, label: 'Kế hoạch mới' },
+  NewComment:      { icon: MessageSquare, label: 'Bình luận mới' },
+  PlanAssigned:    { icon: ClipboardList, label: 'Kế hoạch mới' },
   ExerciseWarning: { icon: AlertTriangle, label: 'Cảnh báo' },
+  CoachRequest:    { icon: UserPlus,      label: 'Yêu cầu kết nối' },
+  CoachAccepted:   { icon: UserCheck,     label: 'Kết nối thành công' },
 }
 
 function resolveLink(notification: NotificationResponse): string | null {
@@ -73,7 +75,11 @@ export function NotificationItem({ notification, onMarkRead, onClose }: Props) {
         style={{
           width: 32, height: 32,
           background: 'var(--bg-3)',
-          color: notification.type === 'ExerciseWarning' ? 'var(--color-warning)' : 'var(--color-primary)',
+          color: notification.type === 'ExerciseWarning'
+            ? 'var(--color-warning)'
+            : notification.type === 'CoachAccepted'
+            ? 'var(--color-success)'
+            : 'var(--color-primary)',
         }}
       >
         <Icon size={15} />

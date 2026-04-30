@@ -20,15 +20,15 @@ export function CommentItem({ comment, onDelete, isDeleting }: Props) {
       <UserAvatar name={comment.authorName} size={32} />
 
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-sm font-medium" style={{ color: 'var(--fg-1)' }}>
+        <div className="mb-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
+          <span className="min-w-0 truncate text-sm font-medium" style={{ color: 'var(--fg-1)' }}>
             {comment.authorName}
           </span>
           <span className="text-xs" style={{ color: 'var(--fg-3)' }}>
             {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true, locale: vi })}
           </span>
         </div>
-        <p className="text-sm leading-relaxed" style={{ color: 'var(--fg-2)', margin: 0 }}>
+        <p className="break-words text-sm leading-relaxed" style={{ color: 'var(--fg-2)', margin: 0 }}>
           {comment.content}
         </p>
       </div>

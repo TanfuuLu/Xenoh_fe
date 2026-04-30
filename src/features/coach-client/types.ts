@@ -23,3 +23,20 @@ export interface ClientResponse {
 export interface RequestCoachRequest {
   coachId: string
 }
+
+export interface BigThreePRs {
+  squat: number | null
+  bench: number | null
+  deadlift: number | null
+}
+
+export interface CoachClientDashboardResponse {
+  clientId: string
+  fullName: string
+  email: string
+  avatarUrl: string | null
+  lastWorkoutDate: string | null
+  planProgressPercent: number | null
+  latestBodyweightKg: number | null
+  bigThreePRs: BigThreePRs
+}

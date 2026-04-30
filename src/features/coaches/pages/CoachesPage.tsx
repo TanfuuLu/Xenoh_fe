@@ -88,10 +88,11 @@ export function CoachesPage() {
                 </div>
               </div>
 
-              <div className="flex shrink-0 items-center gap-2">
+              <div className="flex w-full shrink-0 flex-col gap-2 min-[390px]:flex-row sm:w-auto sm:items-center">
                 <Button
                   variant="ghost"
                   size="sm"
+                  className="w-full min-[390px]:w-auto"
                   onClick={() => openCoachProfile(myCoach.coachId)}
                 >
                   <User size={15} /> {tcp.viewProfile}
@@ -99,6 +100,7 @@ export function CoachesPage() {
                 <Button
                   variant="danger"
                   size="sm"
+                  className="w-full min-[390px]:w-auto"
                   loading={terminating}
                   onClick={() => {
                     if (confirm(tco.disconnectConfirm)) {
@@ -167,7 +169,7 @@ export function CoachesPage() {
                     tabIndex={0}
                     onClick={() => openCoachProfile(coach.id)}
                     onKeyDown={(event) => handleCoachCardKeyDown(event, coach.id)}
-                    className="flex cursor-pointer items-center justify-between rounded-xl border border-border bg-surface px-4 py-3 transition-shadow hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/35"
+                    className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-border bg-surface px-4 py-3 transition-shadow hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/35"
                   >
                     <div className="flex min-w-0 items-center gap-3">
                       <UserAvatar
