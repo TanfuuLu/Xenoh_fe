@@ -11,6 +11,7 @@ import { Spinner } from '@/shared/components/Spinner'
 import { UserAvatar } from '@/shared/components/UserAvatar'
 import { staggerContainer, slideUp } from '@/shared/utils/motion'
 import { useT } from '@/shared/i18n'
+import { useConfirm } from '@/shared/components/ConfirmModal'
 import { useCoaches, useCoachProfile } from '../index'
 import { useMyCoach, useRequestCoach, useTerminateRelationship } from '@/features/coach-client'
 import type { AxiosError } from 'axios'
@@ -34,6 +35,7 @@ export function CoachesPage() {
   )
   const { mutate: requestCoach, isPending: requesting, error: reqError } = useRequestCoach()
   const { mutate: terminate, isPending: terminating } = useTerminateRelationship()
+  const { confirm, ConfirmDialog } = useConfirm()
 
   const apiError = (reqError as AxiosError<ApiError>)?.response?.data?.message
   const currentCoach = coachProfile ?? coaches?.find((coach) => coach.id === myCoach?.coachId)
@@ -50,6 +52,8 @@ export function CoachesPage() {
   }
 
   return (
+    <>
+    {ConfirmDialog}
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-text">{hasCoach ? tco.coachTitle : tco.title}</h1>
@@ -102,8 +106,8 @@ export function CoachesPage() {
                   size="sm"
                   className="w-full min-[390px]:w-auto"
                   loading={terminating}
-                  onClick={() => {
-                    if (confirm(tco.disconnectConfirm)) {
+                  onClick={async () => {
+                    if (await confirm(tco.disconnectConfirm, { confirmLabel: tco.disconnect, danger: true })) {
                       terminate(myCoach.id)
                     }
                   }}
@@ -205,5 +209,6 @@ export function CoachesPage() {
         </>
       )}
     </div>
+    </>
   )
 }

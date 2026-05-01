@@ -13,6 +13,7 @@ import { Button } from '@/shared/components/Button'
 import { Badge } from '@/shared/components/Badge'
 import { Spinner } from '@/shared/components/Spinner'
 import { Modal } from '@/shared/components/Modal'
+import { useConfirm } from '@/shared/components/ConfirmModal'
 import { staggerContainer, slideUp } from '@/shared/utils/motion'
 import { useT } from '@/shared/i18n'
 import { usePublicUserProfile } from '@/features/profile'
@@ -277,6 +278,7 @@ export function ClientsPage() {
   const { data: dashboardData, isLoading: dashboardLoading } = useCoachDashboard()
   const { mutate: accept, isPending: accepting } = useAcceptRequest()
   const { mutate: terminate, isPending: terminating } = useTerminateRelationship()
+  const { confirm, ConfirmDialog } = useConfirm()
   const t   = useT()
   const tcl = t.clients
 
@@ -307,6 +309,8 @@ export function ClientsPage() {
   }).length
 
   return (
+    <>
+    {ConfirmDialog}
     <div className="space-y-6 sm:space-y-8">
       {/* Page header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
@@ -401,8 +405,8 @@ export function ClientsPage() {
                 client={client}
                 stats={statsMap.get(client.clientId)}
                 onView={() => navigate(`/coach/clients/${client.clientId}`)}
-                onDisconnect={() => {
-                  if (confirm(tcl.disconnectConfirm.replace('{name}', client.fullName))) {
+                onDisconnect={async () => {
+                  if (await confirm(tcl.disconnectConfirm.replace('{name}', client.fullName), { confirmLabel: tcl.disconnect, danger: true })) {
                     terminate(client.relationshipId)
                   }
                 }}
@@ -428,5 +432,6 @@ export function ClientsPage() {
         />
       )}
     </div>
+    </>
   )
 }

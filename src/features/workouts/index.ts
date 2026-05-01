@@ -7,6 +7,8 @@ export {
   useDeleteExercise,
   useReorderExercises,
   useCompleteSet,
+  useStartExerciseTimer,
+  useFinishExerciseTimer,
 } from './api/useExercises'
 export { useExerciseTemplates } from './api/useExerciseTemplates'
 export type {

@@ -1,7 +1,7 @@
 import { useParams, Link } from 'react-router'
 import { useQueries } from '@tanstack/react-query'
 import { motion, useReducedMotion } from 'framer-motion'
-import { ChevronLeft, CheckCircle2, AlertTriangle, Dumbbell, TrendingUp, Calendar, Zap, BedDouble, XCircle } from 'lucide-react'
+import { ChevronLeft, CheckCircle2, AlertTriangle, Dumbbell, TrendingUp, Calendar, Zap, BedDouble, XCircle, Flame } from 'lucide-react'
 import { format } from 'date-fns'
 import { vi as viLocale, enUS } from 'date-fns/locale'
 import {
@@ -33,6 +33,10 @@ function calcPlannedVolume(exercises: ExerciseResponse[]): number {
   return exercises.reduce((total, ex) => {
     return total + ex.plannedSets * ex.plannedReps * (ex.plannedWeight ?? 0)
   }, 0)
+}
+
+function calcEstimatedCalories(exercises: ExerciseResponse[]): number {
+  return exercises.reduce((total, ex) => total + (ex.estimatedCalories ?? 0), 0)
 }
 
 function collectMuscleGroups(exercises: ExerciseResponse[]): Map<string, number> {
@@ -165,6 +169,7 @@ export function WeekAnalyzePage() {
       day: dayLabel,
       planned: Math.round(calcPlannedVolume(exs)),
       actual: Math.round(calcActualVolume(exs)),
+      calories: Math.round(calcEstimatedCalories(exs)),
       isCompleted: day.isCompleted,
       hasWarning: day.hasWarning,
       isRest: day.totalExercises === 0,
@@ -178,6 +183,7 @@ export function WeekAnalyzePage() {
   const missedDays = orderedDays.filter((d) => d.status === 'Missed').length
   const totalActualVol = chartData.reduce((s, d) => s + d.actual, 0)
   const totalPlannedVol = chartData.reduce((s, d) => s + d.planned, 0)
+  const totalEstimatedCalories = chartData.reduce((s, d) => s + d.calories, 0)
   const completionPct = currentWeek && currentWeek.totalDays > 0
     ? Math.round((currentWeek.completedDays / currentWeek.totalDays) * 100)
     : 0
@@ -228,7 +234,7 @@ export function WeekAnalyzePage() {
         initial={shouldReduce ? false : 'hidden'}
         animate="visible"
         variants={staggerContainer}
-        className="grid gap-3 min-[390px]:grid-cols-2 sm:grid-cols-3 xl:grid-cols-6"
+        className="grid gap-3 min-[390px]:grid-cols-2 sm:grid-cols-3 xl:grid-cols-7"
       >
         <StatCard
           icon={<Calendar size={18} />}
@@ -247,6 +253,12 @@ export function WeekAnalyzePage() {
           label="Volume vs Plan"
           value={`${volumeRatio}%`}
           sub={totalPlannedVol > 0 ? `of ${totalPlannedVol.toLocaleString()} planned` : 'No plan set'}
+        />
+        <StatCard
+          icon={<Flame size={18} />}
+          label="Estimated Calories"
+          value={totalEstimatedCalories > 0 ? totalEstimatedCalories.toLocaleString() : '—'}
+          sub={totalEstimatedCalories > 0 ? 'kcal this week' : 'No timed exercises'}
         />
         <StatCard
           icon={<AlertTriangle size={18} />}
@@ -375,6 +387,41 @@ export function WeekAnalyzePage() {
               />
               <Bar dataKey="planned" name="Planned" fill="var(--border-1)" radius={[4, 4, 0, 0]} maxBarSize={32} />
               <Bar dataKey="actual" name="Actual" fill="var(--color-primary)" radius={[4, 4, 0, 0]} maxBarSize={32} />
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </motion.div>
+
+      {/* Calories chart */}
+      <motion.div
+        {...motionProps.slideUp}
+        className="rounded-xl p-4 space-y-3"
+        style={{ background: 'var(--bg-2)', border: '1px solid var(--border-1)' }}
+      >
+        <h2 className="text-sm font-semibold text-text">Estimated Calories per Day</h2>
+        {totalEstimatedCalories === 0 ? (
+          <p className="py-8 text-center text-sm text-muted">No calorie estimates for this week.</p>
+        ) : (
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border-1)" vertical={false} />
+              <XAxis
+                dataKey="day"
+                tick={{ fontSize: 11, fill: 'var(--fg-3)' }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis
+                tick={{ fontSize: 11, fill: 'var(--fg-3)' }}
+                axisLine={false}
+                tickLine={false}
+                width={48}
+              />
+              <Tooltip
+                formatter={(value) => [`${Number(value ?? 0).toLocaleString()} kcal`, 'Estimated']}
+                cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+              />
+              <Bar dataKey="calories" name="Estimated" fill="var(--color-primary)" radius={[4, 4, 0, 0]} maxBarSize={36} />
             </BarChart>
           </ResponsiveContainer>
         )}

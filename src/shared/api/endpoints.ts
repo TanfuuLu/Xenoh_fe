@@ -5,6 +5,12 @@ export const ENDPOINTS = {
     login: '/api/auth/login',
     refreshToken: '/api/auth/refresh-token',
     logout: '/api/auth/logout',
+    changePassword: '/api/auth/change-password',
+    forgotPasswordSendCode: '/api/auth/forgot-password/send-code',
+    forgotPasswordReset: '/api/auth/forgot-password/reset',
+    externalLogin: (provider: 'google' | 'facebook') => `/api/auth/external/${provider}`,
+    externalExchange: '/api/auth/external/exchange',
+    externalCompleteRegistration: '/api/auth/external/complete-registration',
   },
 
   // Users
@@ -47,6 +53,7 @@ export const ENDPOINTS = {
     delete: (id: string) => `/api/plans/${id}`,
     activate: (id: string) => `/api/plans/${id}/activate`,
     deactivate: (id: string) => `/api/plans/${id}/deactivate`,
+    analytics: (id: string) => `/api/plans/${id}/analytics`,
     coachOverview: '/api/plans/coach-overview',
     forUser: '/api/plans/for-user',
   },
@@ -71,6 +78,8 @@ export const ENDPOINTS = {
     update: (id: string) => `/api/exercises/${id}`,
     delete: (id: string) => `/api/exercises/${id}`,
     completeSet: (setId: string) => `/api/exercises/sets/${setId}/complete`,
+    startTimer: (id: string) => `/api/exercises/${id}/timer/start`,
+    finishTimer: (id: string) => `/api/exercises/${id}/timer/finish`,
     reorderByDay: (dailyWorkoutId: string) => `/api/exercises/by-day/${dailyWorkoutId}/reorder`,
   },
 

@@ -1,12 +1,13 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Link, useNavigate } from 'react-router'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import { Mail, Lock, Check } from 'lucide-react'
 import { Input } from '@/shared/components/Input'
 import { LanguageSwitcher } from '@/shared/components/LanguageSwitcher'
 import { useT } from '@/shared/i18n'
 import { useLogin } from '../index'
+import { AuthDivider, SocialLoginButtons } from '../components/SocialLoginButtons'
 import type { AxiosError } from 'axios'
 import type { ApiError } from '@/shared/types/api'
 
@@ -19,6 +20,7 @@ type FormData = z.infer<typeof schema>
 
 export function LoginPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { mutate: login, isPending, error } = useLogin()
   const t = useT()
   const tl = t.login
@@ -32,6 +34,7 @@ export function LoginPage() {
   }
 
   const apiError = (error as AxiosError<ApiError>)?.response?.data?.message
+  const externalError = searchParams.get('externalError')
 
   return (
     <div className="flex min-h-screen" style={{ background: 'var(--xn-paper)' }}>
@@ -75,6 +78,9 @@ export function LoginPage() {
               {tl.subtitle}
             </p>
 
+            <SocialLoginButtons />
+            <AuthDivider />
+
             <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <Input
                 label={tl.emailLabel}
@@ -92,8 +98,16 @@ export function LoginPage() {
                 error={errors.password?.message}
                 {...register('password')}
               />
-              {apiError && (
-                <p style={{ fontSize: 13, color: 'var(--xn-danger)', margin: 0 }}>{apiError}</p>
+              <div style={{ textAlign: 'right', marginTop: -4 }}>
+                <Link
+                  to="/forgot-password"
+                  style={{ color: 'var(--xn-clay-700)', fontWeight: 600, fontSize: 13, textDecoration: 'none' }}
+                >
+                  {(tl as typeof tl & { forgotPasswordLink?: string }).forgotPasswordLink ?? 'Forgot password?'}
+                </Link>
+              </div>
+              {(apiError || externalError) && (
+                <p style={{ fontSize: 13, color: 'var(--xn-danger)', margin: 0 }}>{apiError ?? externalError}</p>
               )}
               <AuthSubmitButton loading={isPending} label={tl.submit} />
             </form>

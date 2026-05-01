@@ -150,6 +150,7 @@ export function AboutPage() {
           <h2 style={{ ...heading2, textAlign: 'center' }}>How everything connects.</h2>
         </div>
 
+        <div style={{ display: 'grid', gap: 20 }}>
         {[
           {
             title: 'Plans',
@@ -172,8 +173,22 @@ export function AboutPage() {
             detail: 'The coach dashboard shows each client\'s Big 3 PRs (squat, bench, deadlift) at a glance, plus last workout date, plan compliance %, and current bodyweight.',
           },
         ].map((item, i) => (
-          <a key={i} href="/#features" className="mk-card-link" style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: 40, padding: '36px 0', borderTop: '1px solid var(--border-1)' }}>
-            <div>
+          <a
+            key={i}
+            href="/#features"
+            className="mk-card-link"
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '200px 1fr',
+              gap: 40,
+              padding: '34px 36px',
+              border: '1px solid var(--xn-clay-300)',
+              borderRadius: 8,
+              background: 'var(--xn-paper)',
+              boxShadow: '0 10px 28px rgba(60, 39, 24, 0.08)',
+            }}
+          >
+            <div style={{ paddingTop: 4 }}>
               <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 22, letterSpacing: '-0.01em', margin: 0, color: 'var(--fg-1)' }}>{item.title}</h3>
             </div>
             <div>
@@ -182,6 +197,7 @@ export function AboutPage() {
             </div>
           </a>
         ))}
+        </div>
       </section>
 
       {/* Tech stack note */}

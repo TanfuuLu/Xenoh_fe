@@ -42,6 +42,8 @@ export interface ExerciseResponse {
   name: string
   primaryMuscleGroup: MuscleGroup
   secondaryMuscleGroups: MuscleGroup[]
+  exerciseKind: 'Strength' | 'Cardio'
+  estimatedMet: number
   plannedSets: number
   plannedReps: number
   plannedWeight: number | null
@@ -52,6 +54,11 @@ export interface ExerciseResponse {
   sortOrder: number
   sets: ExerciseSetResponse[]
   personalRecordWeight: number | null
+  startedAtUtc: string | null
+  endedAtUtc: string | null
+  durationSeconds: number | null
+  estimatedCalories: number | null
+  calorieEstimateStatus: 'Ready' | 'MissingDuration' | 'MissingBodyweight'
 }
 
 export interface ExerciseTemplateResponse {
@@ -60,6 +67,8 @@ export interface ExerciseTemplateResponse {
   description: string | null
   primaryMuscleGroup: MuscleGroup
   secondaryMuscleGroups: MuscleGroup[]
+  exerciseKind: 'Strength' | 'Cardio'
+  estimatedMet: number
 }
 
 export interface CreateExerciseRequest {

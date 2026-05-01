@@ -30,6 +30,8 @@ import type { AxiosError } from 'axios'
 import type { ApiError } from '@/shared/types/api'
 
 type ProfileForm = {
+  firstName: string
+  lastName: string
   bio?: string
   height?: number
   gender?: 'Male' | 'Female' | 'Other'
@@ -64,6 +66,8 @@ export function ProfilePage() {
 
   // Build schemas inside component for translated error messages
   const profileSchema = z.object({
+    firstName: z.string().trim().min(1, 'First name is required').max(100),
+    lastName: z.string().trim().min(1, 'Last name is required').max(100),
     bio: z.string().max(500, tp.bioMaxError).optional(),
     height: z.coerce.number().min(50).max(300).optional(),
     gender: z.enum(['Male', 'Female', 'Other']).optional(),
@@ -82,6 +86,8 @@ export function ProfilePage() {
   } = useForm<z.input<typeof profileSchema>, unknown, ProfileForm>({
     resolver: zodResolver(profileSchema),
     values: {
+      firstName: profile?.firstName ?? '',
+      lastName: profile?.lastName ?? '',
       bio: profile?.bio ?? '',
       height: profile?.height ?? undefined,
       gender: profile?.gender ?? undefined,
@@ -101,6 +107,8 @@ export function ProfilePage() {
   function onSaveProfile(data: ProfileForm) {
     updateProfile({
       ...data,
+      firstName: data.firstName.trim(),
+      lastName: data.lastName.trim(),
       bio: data.bio?.trim() || undefined,
       dateOfBirth: data.dateOfBirth || undefined,
     }, { onSuccess: () => setEditMode(false) })
@@ -191,6 +199,18 @@ export function ProfilePage() {
 
         {editMode ? (
           <form onSubmit={handleProfileSubmit(onSaveProfile)} className="space-y-4">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Input
+                label={(tp as typeof tp & { firstNameLabel?: string }).firstNameLabel ?? 'First name'}
+                error={profileErrors.firstName?.message}
+                {...regProfile('firstName')}
+              />
+              <Input
+                label={(tp as typeof tp & { lastNameLabel?: string }).lastNameLabel ?? 'Last name'}
+                error={profileErrors.lastName?.message}
+                {...regProfile('lastName')}
+              />
+            </div>
             <Textarea
               label={tp.bioLabel}
               rows={4}

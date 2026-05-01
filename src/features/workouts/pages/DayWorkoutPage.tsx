@@ -2,7 +2,7 @@ import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useSta
 import type { DragEvent, ReactNode } from 'react'
 import { useParams, Link, useLocation } from 'react-router'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
-import { ChevronLeft, Plus, Trash2, CheckCircle2, Circle, Trophy, Dumbbell, Search, X, Copy, AlertTriangle, TriangleAlert, Activity, GripVertical, BedDouble, XCircle } from 'lucide-react'
+import { ChevronLeft, Plus, Trash2, CheckCircle2, Circle, Trophy, Dumbbell, Search, X, Copy, AlertTriangle, TriangleAlert, Activity, GripVertical, BedDouble, XCircle, Play, Square, Timer, Flame } from 'lucide-react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -20,12 +20,15 @@ import { cn } from '@/shared/utils/cn'
 import { useT, useLangStore } from '@/shared/i18n'
 import { MuscleGroup, type DayStatus, type MuscleGroup as MuscleGroupValue } from '@/shared/types/api'
 import { NotFoundPage } from '@/shared/components/NotFoundPage'
+import { useConfirm } from '@/shared/components/ConfirmModal'
 import {
   useExercises,
   useCreateExercise,
   useDeleteExercise,
   useReorderExercises,
   useCompleteSet,
+  useStartExerciseTimer,
+  useFinishExerciseTimer,
   useExerciseTemplates,
   useDailyWorkouts,
   useCopyDay,
@@ -69,11 +72,14 @@ export function DayWorkoutPage() {
   const { mutate: createExercise, isPending: adding } = useCreateExercise(dailyWorkoutId)
   const { mutate: deleteExercise } = useDeleteExercise(dailyWorkoutId)
   const { mutate: completeSet } = useCompleteSet(dailyWorkoutId)
+  const { mutate: startTimer, isPending: startingTimer } = useStartExerciseTimer(dailyWorkoutId)
+  const { mutate: finishTimer, isPending: finishingTimer } = useFinishExerciseTimer(dailyWorkoutId)
   const { mutate: reorderExercises } = useReorderExercises(dailyWorkoutId)
 
   const { data: siblingDays } = useDailyWorkouts(weeklyWorkoutId)
   const { mutate: copyDay, isPending: copying } = useCopyDay(weeklyWorkoutId)
   const { mutate: markDayStatus, isPending: markingStatus } = useMarkDayStatus(weeklyWorkoutId)
+  const { confirm, ConfirmDialog } = useConfirm()
 
   const currentDay = siblingDays?.find((d) => d.id === dailyWorkoutId)
   const dayStatus: DayStatus = currentDay?.status ?? 'Normal'
@@ -86,9 +92,10 @@ export function DayWorkoutPage() {
 
   const addSchema = z.object({
     exerciseTemplateId: z.string().min(1, tdw.selectExerciseError),
-    plannedSets: z.coerce.number().int().min(1).max(100),
-    plannedReps: z.coerce.number().int().min(1).max(1000),
+    plannedSets: z.coerce.number().int().min(1).max(100).optional(),
+    plannedReps: z.coerce.number().int().min(1).max(1000).optional(),
     plannedWeight: z.coerce.number().min(0).max(10000).optional(),
+    plannedDuration: z.coerce.number().int().min(1).max(600).optional(),
     notes: z.string().optional(),
   })
   type AddForm = z.output<typeof addSchema>
@@ -98,17 +105,34 @@ export function DayWorkoutPage() {
     defaultValues: { plannedSets: 3, plannedReps: 8 },
   })
 
+  const selectedTemplateId = addForm.watch('exerciseTemplateId')
+  const selectedTemplate = templates.find((t) => t.id === selectedTemplateId)
+  const isCardio = selectedTemplate?.exerciseKind === 'Cardio'
+
   function onAdd(data: AddForm) {
-    createExercise(
-      { ...data, dailyWorkoutId },
-      {
-        onSuccess: () => {
-          addForm.reset({ plannedSets: 3, plannedReps: 8 })
-          setSelectedMuscleGroup('')
-          setShowAdd(false)
-        },
+    const payload = isCardio
+      ? {
+          dailyWorkoutId,
+          exerciseTemplateId: data.exerciseTemplateId,
+          plannedSets: 1,
+          plannedReps: data.plannedDuration ?? 30,
+          notes: data.notes,
+        }
+      : {
+          dailyWorkoutId,
+          exerciseTemplateId: data.exerciseTemplateId,
+          plannedSets: data.plannedSets ?? 3,
+          plannedReps: data.plannedReps ?? 8,
+          plannedWeight: data.plannedWeight,
+          notes: data.notes,
+        }
+    createExercise(payload, {
+      onSuccess: () => {
+        addForm.reset({ plannedSets: 3, plannedReps: 8, plannedDuration: undefined })
+        setSelectedMuscleGroup('')
+        setShowAdd(false)
       },
-    )
+    })
   }
 
   function handleCompleteSet(setId: string, actualReps: number, actualWeight: number, rpe?: number) {
@@ -219,8 +243,11 @@ export function DayWorkoutPage() {
   const isDayCompleted = (exercises?.length ?? 0) > 0 && completedExercises === exercises?.length
   const warningExercises = exercises?.filter(hasWarningExercise) ?? []
   const dayVolume = exercises?.reduce((sum, exercise) => sum + getExerciseVolume(exercise), 0) ?? 0
+  const estimatedCalories = exercises?.reduce((sum, exercise) => sum + (exercise.estimatedCalories ?? 0), 0) ?? 0
 
   return (
+    <>
+    {ConfirmDialog}
     <div className="space-y-5">
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -284,6 +311,7 @@ export function DayWorkoutPage() {
           exerciseCount={exercises?.length ?? 0}
           warningCount={warningExercises.length}
           volume={dayVolume}
+          estimatedCalories={estimatedCalories}
         />
       )}
 
@@ -320,8 +348,11 @@ export function DayWorkoutPage() {
                 setDraggedExerciseId(null)
               }}
               onCompleteSet={handleCompleteSet}
-              onDelete={() => {
-                if (confirm(tdw.deleteExerciseConfirm.replace('{name}', exercise.name))) {
+              onStartTimer={() => startTimer(exercise.id)}
+              onFinishTimer={() => finishTimer(exercise.id)}
+              timerPending={startingTimer || finishingTimer}
+              onDelete={async () => {
+                if (await confirm(tdw.deleteExerciseConfirm.replace('{name}', exercise.name), { confirmLabel: tc.delete, danger: true })) {
                   deleteExercise(exercise.id)
                 }
               }}
@@ -340,7 +371,7 @@ export function DayWorkoutPage() {
       {/* Modal: Add exercise */}
       <Modal
         open={canEdit && showAdd}
-        onClose={() => { setShowAdd(false); setSelectedMuscleGroup(''); addForm.reset({ plannedSets: 3, plannedReps: 8 }) }}
+        onClose={() => { setShowAdd(false); setSelectedMuscleGroup(''); addForm.reset({ plannedSets: 3, plannedReps: 8, plannedDuration: undefined }) }}
         title={tdw.modalTitle}
         className="max-w-lg"
       >
@@ -362,12 +393,22 @@ export function DayWorkoutPage() {
             )}
           />
 
-          {/* Sets / Reps / Weight */}
-          <div className="grid gap-3 sm:grid-cols-3">
-            <Input label="Sets"        type="number"             error={addForm.formState.errors.plannedSets?.message}  {...addForm.register('plannedSets')} />
-            <Input label="Reps"        type="number"             error={addForm.formState.errors.plannedReps?.message}  {...addForm.register('plannedReps')} />
-            <Input label="Weight (kg)" type="number" step="0.5"                                                         {...addForm.register('plannedWeight')} />
-          </div>
+          {/* Sets / Reps / Weight — or Duration for cardio */}
+          {isCardio ? (
+            <Input
+              label="How long (minutes)"
+              type="number"
+              min={1}
+              error={addForm.formState.errors.plannedDuration?.message}
+              {...addForm.register('plannedDuration')}
+            />
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Input label="Sets"        type="number"             error={addForm.formState.errors.plannedSets?.message}  {...addForm.register('plannedSets')} />
+              <Input label="Reps"        type="number"             error={addForm.formState.errors.plannedReps?.message}  {...addForm.register('plannedReps')} />
+              <Input label="Weight (kg)" type="number" step="0.5"                                                         {...addForm.register('plannedWeight')} />
+            </div>
+          )}
 
           <Input label={tdw.notesLabel} placeholder="Focus on depth…" {...addForm.register('notes')} />
 
@@ -376,7 +417,7 @@ export function DayWorkoutPage() {
               variant="secondary"
               type="button"
               className="w-full sm:w-auto"
-              onClick={() => { setShowAdd(false); setSelectedMuscleGroup(''); addForm.reset({ plannedSets: 3, plannedReps: 8 }) }}
+              onClick={() => { setShowAdd(false); setSelectedMuscleGroup(''); addForm.reset({ plannedSets: 3, plannedReps: 8, plannedDuration: undefined }) }}
             >
               {tc.cancel}
             </Button>
@@ -525,6 +566,7 @@ export function DayWorkoutPage() {
         )}
       </AnimatePresence>
     </div>
+    </>
   )
 }
 
@@ -534,9 +576,10 @@ interface DayResultCardProps {
   exerciseCount: number
   warningCount: number
   volume: number
+  estimatedCalories: number
 }
 
-function DayResultCard({ exerciseCount, warningCount, volume }: DayResultCardProps) {
+function DayResultCard({ exerciseCount, warningCount, volume, estimatedCalories }: DayResultCardProps) {
   const status = warningCount > 0 ? 'Warning' : 'Good'
   const isWarning = warningCount > 0
   const formattedVolume = new Intl.NumberFormat(undefined, {
@@ -566,7 +609,7 @@ function DayResultCard({ exerciseCount, warningCount, volume }: DayResultCardPro
         <Badge variant={isWarning ? 'warning' : 'success'}>{status}</Badge>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-4">
         <ResultMetric label="Exercises" value={exerciseCount.toString()} />
         <ResultMetric
           label="Status"
@@ -578,6 +621,12 @@ function DayResultCard({ exerciseCount, warningCount, volume }: DayResultCardPro
           value={`${formattedVolume} kg`}
           sub="sets x reps x weight"
           icon={<Activity size={16} />}
+        />
+        <ResultMetric
+          label="Estimated Calories"
+          value={estimatedCalories > 0 ? `${Math.round(estimatedCalories)} kcal` : '—'}
+          sub={estimatedCalories > 0 ? 'MET x bodyweight x duration' : 'No timed exercises'}
+          icon={<Flame size={16} />}
         />
       </div>
     </Card>
@@ -799,14 +848,17 @@ const ExerciseTemplateOption = memo(function ExerciseTemplateOption({
       style={isSelected ? { background: 'var(--xn-clay-200)', color: 'var(--xn-clay-800)' } : undefined}
     >
       <span className="truncate">{template.name}</span>
-      <span
-        className="ml-3 flex-shrink-0 rounded-md px-1.5 py-0.5 text-xs"
-        style={{
-          background: isSelected ? 'rgba(139,100,60,0.15)' : 'var(--bg-3)',
-          color: isSelected ? 'var(--xn-clay-700)' : 'var(--fg-3)',
-        }}
-      >
-        {template.primaryMuscleGroup}
+      <span className="ml-3 flex flex-shrink-0 items-center gap-1">
+        {template.exerciseKind === 'Cardio' && <Badge variant="primary">Cardio</Badge>}
+        <span
+          className="rounded-md px-1.5 py-0.5 text-xs"
+          style={{
+            background: isSelected ? 'rgba(139,100,60,0.15)' : 'var(--bg-3)',
+            color: isSelected ? 'var(--xn-clay-700)' : 'var(--fg-3)',
+          }}
+        >
+          {template.primaryMuscleGroup}
+        </span>
       </span>
     </div>
   )
@@ -830,6 +882,9 @@ interface ExerciseCardProps {
   onDrop: () => void
   onDragEnd: () => void
   onCompleteSet: (setId: string, actualReps: number, actualWeight: number, rpe?: number) => void
+  onStartTimer: () => void
+  onFinishTimer: () => void
+  timerPending: boolean
   onDelete: () => void
 }
 
@@ -845,6 +900,9 @@ function ExerciseCard({
   onDrop,
   onDragEnd,
   onCompleteSet,
+  onStartTimer,
+  onFinishTimer,
+  timerPending,
   onDelete,
 }: ExerciseCardProps) {
   const pct = exercise.sets.length > 0
@@ -852,6 +910,7 @@ function ExerciseCard({
     : 0
 
   const hasUnderperformed = hasWarningExercise(exercise)
+  const isCardio = exercise.exerciseKind === 'Cardio'
 
   return (
     <motion.div
@@ -898,6 +957,7 @@ function ExerciseCard({
               </button>
             )}
             <h3 className="break-words font-semibold text-text">{exercise.name}</h3>
+            {isCardio && <Badge variant="primary">Cardio</Badge>}
             {exercise.isCompleted && !hasUnderperformed && <Badge variant="success">Done ✓</Badge>}
             {hasUnderperformed && (
               <span className="inline-flex items-center gap-1 text-xs font-medium text-warning">
@@ -910,10 +970,15 @@ function ExerciseCard({
               </span>
             )}
           </div>
-          <p className="mt-0.5 text-sm text-muted">
+          <p className={cn('mt-0.5 text-sm text-muted', isCardio && 'hidden')}>
             {exercise.plannedSets}×{exercise.plannedReps}
             {exercise.plannedWeight ? ` @ ${exercise.plannedWeight} kg` : ''} · {exercise.primaryMuscleGroup}
           </p>
+          {isCardio && (
+            <p className="mt-0.5 text-sm text-muted">
+              {formatDuration(exercise.durationSeconds)} · {exercise.estimatedMet} MET · {exercise.primaryMuscleGroup}
+            </p>
+          )}
           {exercise.notes && <p className="mt-1 text-xs italic text-muted">{exercise.notes}</p>}
         </div>
         {canEdit && (
@@ -928,8 +993,16 @@ function ExerciseCard({
         )}
       </div>
 
+      <ExerciseTimerControls
+        exercise={exercise}
+        canComplete={canComplete}
+        pending={timerPending}
+        onStart={onStartTimer}
+        onFinish={onFinishTimer}
+      />
+
       {/* Per-exercise progress bar */}
-      <div className="flex items-center gap-2">
+      <div className={cn('flex items-center gap-2', isCardio && 'opacity-60')}>
         <div className="h-1 flex-1 overflow-hidden rounded-full" style={{ background: 'var(--border-1)' }}>
           <div
             className="h-full rounded-full bg-success transition-all duration-300 ease-out"
@@ -942,9 +1015,9 @@ function ExerciseCard({
       </div>
 
       {/* Sets */}
-      <div className="space-y-1.5">
+      <div className={cn('space-y-1.5', isCardio && 'opacity-70')}>
         {exercise.sets.map((set) => (
-          <SetRow key={set.id} set={set} canComplete={canComplete} onComplete={onCompleteSet} />
+          <SetRow key={set.id} set={set} canComplete={canComplete} onComplete={onCompleteSet} isCardio={isCardio} />
         ))}
       </div>
     </motion.div>
@@ -953,13 +1026,87 @@ function ExerciseCard({
 
 // ─── SetRow ───────────────────────────────────────────────────────────────────
 
+function formatDuration(seconds: number | null | undefined) {
+  const total = Math.max(0, seconds ?? 0)
+  const mins = Math.floor(total / 60)
+  const secs = total % 60
+  const hours = Math.floor(mins / 60)
+  const remMins = mins % 60
+
+  if (hours > 0) return `${hours}:${String(remMins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+  return `${remMins}:${String(secs).padStart(2, '0')}`
+}
+
+function ExerciseTimerControls({
+  exercise,
+  canComplete,
+  pending,
+  onStart,
+  onFinish,
+}: {
+  exercise: ExerciseResponse
+  canComplete: boolean
+  pending: boolean
+  onStart: () => void
+  onFinish: () => void
+}) {
+  const [now, setNow] = useState(() => Date.now())
+  const isRunning = exercise.startedAtUtc != null && exercise.endedAtUtc == null
+
+  useEffect(() => {
+    if (!isRunning) return undefined
+    const id = window.setInterval(() => setNow(Date.now()), 1000)
+    return () => window.clearInterval(id)
+  }, [isRunning])
+
+  const elapsedSeconds = isRunning && exercise.startedAtUtc
+    ? Math.max(0, Math.floor((now - new Date(exercise.startedAtUtc).getTime()) / 1000))
+    : exercise.durationSeconds
+  const caloriesText = exercise.estimatedCalories != null
+    ? `${Math.round(exercise.estimatedCalories)} kcal`
+    : exercise.calorieEstimateStatus === 'MissingBodyweight'
+    ? 'Missing bodyweight'
+    : 'No estimate yet'
+
+  return (
+    <div
+      className="flex flex-col gap-2 rounded-lg border px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
+      style={{ borderColor: 'var(--border-1)', background: exercise.exerciseKind === 'Cardio' ? 'rgba(20,184,166,0.08)' : 'var(--bg-1)' }}
+    >
+      <div className="flex flex-wrap items-center gap-3 text-sm">
+        <span className="inline-flex items-center gap-1.5 font-medium text-text">
+          <Timer size={15} /> {formatDuration(elapsedSeconds)}
+        </span>
+        <span className="inline-flex items-center gap-1.5 text-muted">
+          <Flame size={14} /> {caloriesText}
+        </span>
+      </div>
+
+      {canComplete && (
+        <div className="flex gap-2">
+          {exercise.startedAtUtc == null ? (
+            <Button type="button" size="sm" variant="secondary" disabled={pending} onClick={onStart}>
+              <Play size={14} /> Start
+            </Button>
+          ) : exercise.endedAtUtc == null ? (
+            <Button type="button" size="sm" variant="secondary" disabled={pending} onClick={onFinish}>
+              <Square size={14} /> End
+            </Button>
+          ) : null}
+        </div>
+      )}
+    </div>
+  )
+}
+
 interface SetRowProps {
   set: ExerciseSetResponse
   canComplete: boolean
+  isCardio?: boolean
   onComplete: (setId: string, actualReps: number, actualWeight: number, rpe?: number) => void
 }
 
-function SetRow({ set, canComplete, onComplete }: SetRowProps) {
+function SetRow({ set, canComplete, isCardio = false, onComplete }: SetRowProps) {
   const [reps, setReps]     = useState(String(set.plannedReps))
   const [weight, setWeight] = useState(String(set.plannedWeight ?? 0))
   const [rpe, setRpe]       = useState('')
@@ -988,7 +1135,9 @@ function SetRow({ set, canComplete, onComplete }: SetRowProps) {
         <CheckCircle2 size={17} className="flex-shrink-0" />
         <span className="shrink-0 font-medium">Set {set.setNumber}</span>
         <span className="min-w-0 flex-1">
-          {set.actualReps ?? set.plannedReps} reps @ {set.actualWeight ?? set.plannedWeight ?? 0} kg
+          {isCardio
+            ? `${set.actualReps ?? set.plannedReps} min`
+            : `${set.actualReps ?? set.plannedReps} reps @ ${set.actualWeight ?? set.plannedWeight ?? 0} kg`}
           {set.rpe != null && (
             <span
               className="ml-2 rounded-md px-1.5 py-0.5 text-xs font-medium"
@@ -1009,44 +1158,48 @@ function SetRow({ set, canComplete, onComplete }: SetRowProps) {
     >
       <span className="shrink-0 text-sm font-medium text-muted">Set {set.setNumber}</span>
 
-      {/* Reps */}
+      {/* Reps / Duration */}
       <div className="flex shrink-0 items-center gap-1">
         <input
-          type="number" min={1} max={1000}
+          type="number" min={1} max={isCardio ? 600 : 1000}
           value={reps}
           onChange={(e) => setReps(e.target.value)}
           className="w-12 rounded-md border border-border px-1.5 py-1 text-center text-sm text-text focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40 sm:w-14 sm:px-2"
           style={{ background: 'var(--bg-2)' }}
         />
-        <span className="text-xs text-muted">reps</span>
+        <span className="text-xs text-muted">{isCardio ? 'min' : 'reps'}</span>
       </div>
 
-      <span className="shrink-0 text-muted/40">@</span>
+      {!isCardio && (
+        <>
+          <span className="shrink-0 text-muted/40">@</span>
 
-      {/* Weight */}
-      <div className="flex shrink-0 items-center gap-1">
-        <input
-          type="number" min={0} max={10000} step={0.5}
-          value={weight}
-          onChange={(e) => setWeight(e.target.value)}
-          className="w-14 rounded-md border border-border px-1.5 py-1 text-center text-sm text-text focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40 sm:w-16 sm:px-2"
-          style={{ background: 'var(--bg-2)' }}
-        />
-        <span className="text-xs text-muted">kg</span>
-      </div>
+          {/* Weight */}
+          <div className="flex shrink-0 items-center gap-1">
+            <input
+              type="number" min={0} max={10000} step={0.5}
+              value={weight}
+              onChange={(e) => setWeight(e.target.value)}
+              className="w-14 rounded-md border border-border px-1.5 py-1 text-center text-sm text-text focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40 sm:w-16 sm:px-2"
+              style={{ background: 'var(--bg-2)' }}
+            />
+            <span className="text-xs text-muted">kg</span>
+          </div>
 
-      {/* RPE — optional */}
-      <div className="flex shrink-0 items-center gap-1">
-        <input
-          type="number" min={1} max={10} step={0.5}
-          value={rpe}
-          placeholder="—"
-          onChange={(e) => setRpe(e.target.value)}
-          className="w-11 rounded-md border border-border px-1.5 py-1 text-center text-sm text-muted focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40 sm:w-12 sm:px-2"
-          style={{ background: 'var(--bg-2)' }}
-        />
-        <span className="text-xs text-muted">{t.dayWorkout.rpeLabel}</span>
-      </div>
+          {/* RPE — optional */}
+          <div className="flex shrink-0 items-center gap-1">
+            <input
+              type="number" min={1} max={10} step={0.5}
+              value={rpe}
+              placeholder="—"
+              onChange={(e) => setRpe(e.target.value)}
+              className="w-11 rounded-md border border-border px-1.5 py-1 text-center text-sm text-muted focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40 sm:w-12 sm:px-2"
+              style={{ background: 'var(--bg-2)' }}
+            />
+            <span className="text-xs text-muted">{t.dayWorkout.rpeLabel}</span>
+          </div>
+        </>
+      )}
 
       {/* Complete button — owner only */}
       {canComplete && (

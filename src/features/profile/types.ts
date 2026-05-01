@@ -33,6 +33,8 @@ export interface PublicUserProfileResponse {
 }
 
 export interface UpdateProfileRequest {
+  firstName?: string
+  lastName?: string
   bio?: string
   height?: number
   gender?: Gender

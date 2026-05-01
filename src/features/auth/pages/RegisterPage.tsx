@@ -7,6 +7,7 @@ import { Input } from '@/shared/components/Input'
 import { LanguageSwitcher } from '@/shared/components/LanguageSwitcher'
 import { useT } from '@/shared/i18n'
 import { useRegister } from '../index'
+import { AuthDivider, SocialLoginButtons } from '../components/SocialLoginButtons'
 import type { AxiosError } from 'axios'
 import type { ApiError } from '@/shared/types/api'
 
@@ -100,6 +101,9 @@ export function RegisterPage() {
             <p style={{ fontFamily: 'var(--font-sans)', fontSize: 14, color: 'var(--fg-3)', margin: '0 0 22px', lineHeight: 1.55 }}>
               {tr.subtitle}
             </p>
+
+            <SocialLoginButtons />
+            <AuthDivider />
 
             {/* ── Role toggle ── */}
             <div style={{

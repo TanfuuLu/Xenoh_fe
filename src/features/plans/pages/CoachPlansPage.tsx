@@ -15,6 +15,7 @@ import { Badge } from '@/shared/components/Badge'
 import { Spinner } from '@/shared/components/Spinner'
 import { staggerContainer, slideUp } from '@/shared/utils/motion'
 import { useT } from '@/shared/i18n'
+import { useConfirm } from '@/shared/components/ConfirmModal'
 import { useCoachPlanOverview, useCreatePlanForUser, useDeletePlan } from '../index'
 import { useMyClients } from '@/features/coach-client'
 import type { AxiosError } from 'axios'
@@ -27,6 +28,7 @@ export function CoachPlansPage() {
   const { data: clients } = useMyClients()
   const { mutate: createPlan, isPending: creating, error } = useCreatePlanForUser()
   const { mutate: deletePlan } = useDeletePlan()
+  const { confirm, ConfirmDialog } = useConfirm()
   const t   = useT()
   const tcp = t.coachPlans
   const tc  = t.common
@@ -49,8 +51,8 @@ export function CoachPlansPage() {
     createPlan(data, { onSuccess: () => { reset(); setShowCreate(false) } })
   }
 
-  function handleDelete(id: string, name: string) {
-    if (confirm(tcp.deleteConfirm.replace('{name}', name))) {
+  async function handleDelete(id: string, name: string) {
+    if (await confirm(tcp.deleteConfirm.replace('{name}', name), { confirmLabel: tc.delete, danger: true })) {
       deletePlan(id)
     }
   }
@@ -66,6 +68,8 @@ export function CoachPlansPage() {
   }
 
   return (
+    <>
+    {ConfirmDialog}
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
@@ -167,5 +171,6 @@ export function CoachPlansPage() {
         </form>
       </Modal>
     </div>
+    </>
   )
 }

@@ -156,3 +156,37 @@ export function useCompleteSet(dailyWorkoutId: string) {
     },
   })
 }
+
+export function useStartExerciseTimer(dailyWorkoutId: string) {
+  const qc = useQueryClient()
+  const key = exerciseKeys.byDay(dailyWorkoutId)
+
+  return useMutation({
+    mutationFn: (exerciseId: string) =>
+      api.patch<ExerciseResponse>(ENDPOINTS.exercises.startTimer(exerciseId)).then((r) => r.data),
+    onSuccess: (updated) => {
+      qc.setQueryData<ExerciseResponse[]>(key, (old) =>
+        old?.map((exercise) => (exercise.id === updated.id ? updated : exercise)),
+      )
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: key }),
+  })
+}
+
+export function useFinishExerciseTimer(dailyWorkoutId: string) {
+  const qc = useQueryClient()
+  const key = exerciseKeys.byDay(dailyWorkoutId)
+
+  return useMutation({
+    mutationFn: (exerciseId: string) =>
+      api.patch<ExerciseResponse>(ENDPOINTS.exercises.finishTimer(exerciseId)).then((r) => r.data),
+    onSuccess: (updated) => {
+      qc.setQueryData<ExerciseResponse[]>(key, (old) =>
+        old?.map((exercise) => (exercise.id === updated.id ? updated : exercise)),
+      )
+      qc.invalidateQueries({ queryKey: ['days'] })
+      qc.invalidateQueries({ queryKey: ['weeks'] })
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: key }),
+  })
+}

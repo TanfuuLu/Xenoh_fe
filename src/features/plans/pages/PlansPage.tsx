@@ -14,6 +14,7 @@ import { Modal } from '@/shared/components/Modal'
 import { Badge } from '@/shared/components/Badge'
 import { Spinner } from '@/shared/components/Spinner'
 import { Select } from '@/shared/components/Select'
+import { useConfirm } from '@/shared/components/ConfirmModal'
 import { staggerContainer, slideUp } from '@/shared/utils/motion'
 import { useT } from '@/shared/i18n'
 import { useAuthStore } from '@/features/auth'
@@ -46,6 +47,7 @@ export function PlansPage() {
   const { mutate: activate } = useActivatePlan()
   const { mutate: deactivate } = useDeactivatePlan()
   const { mutate: deletePlan } = useDeletePlan()
+  const { confirm, ConfirmDialog } = useConfirm()
 
   const t = useT()
   const tp = t.plans
@@ -118,8 +120,8 @@ export function PlansPage() {
     })
   }
 
-  function handleClientPlanDelete(id: string, name: string) {
-    if (confirm(tcp.deleteConfirm.replace('{name}', name))) {
+  async function handleClientPlanDelete(id: string, name: string) {
+    if (await confirm(tcp.deleteConfirm.replace('{name}', name), { confirmLabel: t.common.delete, danger: true })) {
       deletePlan(id)
     }
   }
@@ -137,6 +139,8 @@ export function PlansPage() {
   }
 
   return (
+    <>
+    {ConfirmDialog}
     <div className="space-y-6 sm:space-y-8">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
@@ -168,8 +172,8 @@ export function PlansPage() {
                 onOpen={() => navigate(`/plans/${plan.id}`)}
                 onActivate={() => activate(plan.id)}
                 onDeactivate={() => deactivate(plan.id)}
-                onDelete={() => {
-                  if (confirm(tp.deleteConfirm)) deletePlan(plan.id)
+                onDelete={async () => {
+                  if (await confirm(tp.deleteConfirm, { confirmLabel: t.common.delete, danger: true })) deletePlan(plan.id)
                 }}
               />
             ))}
@@ -323,6 +327,7 @@ export function PlansPage() {
         </form>
       </Modal>
     </div>
+    </>
   )
 }
 

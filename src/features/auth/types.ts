@@ -22,3 +22,28 @@ export interface LoginRequest {
   email: string
   password: string
 }
+
+export type ExternalLoginProvider = 'google' | 'facebook'
+
+export interface ExchangeExternalLoginTicketRequest {
+  ticket: string
+}
+
+export interface CompleteExternalRegistrationRequest {
+  role: Extract<UserRole, 'Individual' | 'Coach'>
+}
+
+export interface ChangePasswordRequest {
+  oldPassword: string
+  newPassword: string
+}
+
+export interface SendForgotPasswordCodeRequest {
+  email: string
+}
+
+export interface ResetPasswordRequest {
+  email: string
+  code: string
+  newPassword: string
+}

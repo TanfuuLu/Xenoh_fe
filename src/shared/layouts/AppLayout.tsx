@@ -5,7 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, ClipboardList, User, Users,
   UserCheck, Menu, X, LogOut, ChevronDown,
-  PanelLeftClose, PanelLeftOpen, ChartNoAxesCombined,
+  PanelLeftClose, PanelLeftOpen, ChartNoAxesCombined, TrendingUp,
+  LockKeyhole,
 } from 'lucide-react'
 import { cn } from '@/shared/utils/cn'
 import { useAuthStore } from '@/features/auth'
@@ -32,6 +33,7 @@ export function AppLayout() {
   const location  = useLocation()
   const t         = useT()
   const tn        = t.nav
+  const changePasswordLabel = (tn as typeof tn & { changePassword?: string }).changePassword ?? 'Change password'
   const isWeekDetailPage = /^\/plans\/[^/]+\/weeks\/[^/]+$/.test(location.pathname)
 
   useNotificationHub()
@@ -40,6 +42,7 @@ export function AppLayout() {
     { to: '/dashboard',    icon: LayoutDashboard, label: tn.dashboard },
     { to: '/plans',        icon: ClipboardList,   label: tn.myPlans },
     { to: '/exercise-tracking', icon: ChartNoAxesCombined, label: tn.exerciseTracking },
+    { to: '/progress',     icon: TrendingUp,      label: tn.progress },
     { to: '/coaches',      icon: Users,           label: tn.findCoach },
     { to: '/profile',      icon: User,            label: tn.profile },
   ]
@@ -47,6 +50,7 @@ export function AppLayout() {
   const coachNav = [
     { to: '/dashboard',     icon: LayoutDashboard, label: tn.overview },
     { to: '/plans',         icon: ClipboardList,   label: tn.myPlans },
+    { to: '/progress',      icon: TrendingUp,      label: tn.progress },
     { to: '/coach/clients', icon: UserCheck,       label: tn.clients },
     { to: '/profile',       icon: User,            label: tn.profile },
   ]
@@ -199,6 +203,15 @@ export function AppLayout() {
                         >
                           <User size={15} />
                           {tn.profile}
+                        </NavLink>
+                        <NavLink
+                          to="/change-password"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="xn-nav-item"
+                          style={{ fontSize: 13 }}
+                        >
+                          <LockKeyhole size={15} />
+                          {changePasswordLabel}
                         </NavLink>
                         <button
                           onClick={handleLogout}

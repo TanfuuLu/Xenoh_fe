@@ -1,3 +1,24 @@
-export { useLogin, useRegister, useLogout } from './api/useAuth'
+export {
+  useLogin,
+  useRegister,
+  useLogout,
+  exchangeExternalLoginTicketOnce,
+  startExternalLogin,
+  useCompleteExternalRegistration,
+  useExchangeExternalLoginTicket,
+  useChangePassword,
+  useSendForgotPasswordCode,
+  useResetPassword,
+} from './api/useAuth'
 export { useAuthStore } from './store/authStore'
-export type { AuthResponse, LoginRequest, RegisterRequest } from './types'
+export type {
+  AuthResponse,
+  ChangePasswordRequest,
+  CompleteExternalRegistrationRequest,
+  ExchangeExternalLoginTicketRequest,
+  ExternalLoginProvider,
+  LoginRequest,
+  RegisterRequest,
+  ResetPasswordRequest,
+  SendForgotPasswordCodeRequest,
+} from './types'

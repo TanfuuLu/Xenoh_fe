@@ -66,106 +66,111 @@ export function DashboardPage() {
         </p>
       </div>
 
-      {/* Stat cards */}
-      <motion.div
-        initial={shouldReduce ? false : 'hidden'}
-        animate="visible"
-        variants={staggerContainer}
-        className="grid gap-3 min-[390px]:grid-cols-2 md:grid-cols-4"
-      >
-        <StatCard icon={<Flame size={20} className="text-warning" />}      label={td.streak} value={`${profile?.currentStreak ?? 0} ${tc.days}`} />
-        <StatCard icon={<TrendingUp size={20} className="text-success" />}  label={td.weight} value={profile?.latestBodyweight ? `${profile.latestBodyweight} kg` : '—'} />
-        <StatCard icon={<Calendar size={20} className="text-primary" />}   label="BMI"        value={profile?.bmi ? profile.bmi.toFixed(1) : '—'} sub={profile?.bmiCategory ?? undefined} />
-        <StatCard icon={<Dumbbell size={20} className="text-muted" />}      label="DOTS"       value={profile?.dotsScore ? profile.dotsScore.toFixed(1) : '—'} />
-      </motion.div>
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Left column: stats + plate calculator */}
+        <div className="space-y-6">
+          <motion.div
+            initial={shouldReduce ? false : 'hidden'}
+            animate="visible"
+            variants={staggerContainer}
+            className="grid grid-cols-2 gap-3"
+          >
+            <StatCard icon={<Flame size={20} className="text-warning" />}      label={td.streak} value={`${profile?.currentStreak ?? 0} ${tc.days}`} />
+            <StatCard icon={<TrendingUp size={20} className="text-success" />}  label={td.weight} value={profile?.latestBodyweight ? `${profile.latestBodyweight} kg` : '—'} />
+            <StatCard icon={<Calendar size={20} className="text-primary" />}   label="BMI"        value={profile?.bmi ? profile.bmi.toFixed(1) : '—'} sub={profile?.bmiCategory ?? undefined} />
+            <StatCard icon={<Dumbbell size={20} className="text-muted" />}      label="DOTS"       value={profile?.dotsScore ? profile.dotsScore.toFixed(1) : '—'} />
+          </motion.div>
 
-      <PlateCalculatorCard
-        input={plateInput}
-        onInputChange={setPlateInput}
-        calculator={plateCalculator}
-      />
-
-      {/* Today's training */}
-      {activePlan && (
-        <motion.div variants={slideUp} initial={shouldReduce ? false : 'hidden'} animate="visible">
-          <TodayTrainingCard
-            todayDay={todayDay ?? null}
-            td={td}
-            tc={tc}
-            dateLocale={dateLocale}
+          <PlateCalculatorCard
+            input={plateInput}
+            onInputChange={setPlateInput}
+            calculator={plateCalculator}
           />
-        </motion.div>
-      )}
+        </div>
 
-      {/* Active plan */}
-      {activePlan ? (
-        <Card className="space-y-3">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-muted">{td.activePlanLabel}</p>
-              <h2 className="mt-1 text-lg font-semibold text-text">{activePlan.name}</h2>
-              <p className="text-sm text-muted">
-                {format(new Date(activePlan.startDate), 'dd/MM/yyyy')} → {format(new Date(activePlan.endDate), 'dd/MM/yyyy')}
-              </p>
-            </div>
-            <Badge variant="success">{tc.active}</Badge>
-          </div>
-
-          {/* Plan overall progress */}
-          <div>
-            <div className="mb-1 flex justify-between text-xs text-muted">
-              <span>{activePlan.completedDays} / {activePlan.totalDays} {tc.days}</span>
-              <span>{progressPct}%</span>
-            </div>
-            <div className="h-2 w-full overflow-hidden rounded-full" style={{ background: 'var(--border-1)' }}>
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${progressPct}%` }}
-                transition={{ duration: 0.8, ease: 'easeOut' }}
-                className="h-full rounded-full bg-primary"
+        {/* Right column: today's training + active plan */}
+        <div className="space-y-6">
+          {activePlan && (
+            <motion.div variants={slideUp} initial={shouldReduce ? false : 'hidden'} animate="visible">
+              <TodayTrainingCard
+                todayDay={todayDay ?? null}
+                td={td}
+                tc={tc}
+                dateLocale={dateLocale}
               />
-            </div>
-          </div>
+            </motion.div>
+          )}
 
-          {/* This week's progress */}
-          {currentWeek && currentWeek.totalDays > 0 && (() => {
-            const weekPct  = Math.round((currentWeek.completedDays / currentWeek.totalDays) * 100)
-            const weekDone = currentWeek.completedDays === currentWeek.totalDays
-            return (
-              <div
-                className="rounded-lg px-3 py-2.5 space-y-1.5"
-                style={{ background: 'var(--bg-3)', border: '1px solid var(--border-1)' }}
-              >
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-medium text-muted">{td.thisWeek}</span>
-                  <span className="font-bold" style={{ color: weekDone ? 'var(--xn-success)' : 'var(--color-primary)' }}>
-                    {currentWeek.completedDays}/{currentWeek.totalDays} {tc.days} · {weekPct}%
-                  </span>
+          {activePlan ? (
+            <Card className="space-y-3">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted">{td.activePlanLabel}</p>
+                  <h2 className="mt-1 text-lg font-semibold text-text">{activePlan.name}</h2>
+                  <p className="text-sm text-muted">
+                    {format(new Date(activePlan.startDate), 'dd/MM/yyyy')} → {format(new Date(activePlan.endDate), 'dd/MM/yyyy')}
+                  </p>
                 </div>
-                <div className="h-1.5 w-full overflow-hidden rounded-full" style={{ background: 'var(--border-1)' }}>
+                <Badge variant="success">{tc.active}</Badge>
+              </div>
+
+              {/* Plan overall progress */}
+              <div>
+                <div className="mb-1 flex justify-between text-xs text-muted">
+                  <span>{activePlan.completedDays} / {activePlan.totalDays} {tc.days}</span>
+                  <span>{progressPct}%</span>
+                </div>
+                <div className="h-2 w-full overflow-hidden rounded-full" style={{ background: 'var(--border-1)' }}>
                   <motion.div
                     initial={{ width: 0 }}
-                    animate={{ width: `${weekPct}%` }}
-                    transition={{ duration: 0.6, ease: 'easeOut' }}
-                    className="h-full rounded-full"
-                    style={{ background: weekDone ? 'var(--xn-success)' : 'var(--color-primary)' }}
+                    animate={{ width: `${progressPct}%` }}
+                    transition={{ duration: 0.8, ease: 'easeOut' }}
+                    className="h-full rounded-full bg-primary"
                   />
                 </div>
               </div>
-            )
-          })()}
 
-          <Link to={`/plans/${activePlan.id}`} className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
-            {td.viewDetails} <ChevronRight size={14} />
-          </Link>
-        </Card>
-      ) : (
-        <Card className="flex flex-col items-center gap-3 py-10 text-center">
-          <Dumbbell size={40} className="text-muted/40" />
-          <p className="text-muted">{td.noActivePlan}</p>
-          <Link to="/plans" className="text-sm font-medium text-primary hover:underline">{td.createPlanLink}</Link>
-        </Card>
-      )}
+              {/* This week's progress */}
+              {currentWeek && currentWeek.totalDays > 0 && (() => {
+                const weekPct  = Math.round((currentWeek.completedDays / currentWeek.totalDays) * 100)
+                const weekDone = currentWeek.completedDays === currentWeek.totalDays
+                return (
+                  <div
+                    className="rounded-lg px-3 py-2.5 space-y-1.5"
+                    style={{ background: 'var(--bg-3)', border: '1px solid var(--border-1)' }}
+                  >
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-medium text-muted">{td.thisWeek}</span>
+                      <span className="font-bold" style={{ color: weekDone ? 'var(--xn-success)' : 'var(--color-primary)' }}>
+                        {currentWeek.completedDays}/{currentWeek.totalDays} {tc.days} · {weekPct}%
+                      </span>
+                    </div>
+                    <div className="h-1.5 w-full overflow-hidden rounded-full" style={{ background: 'var(--border-1)' }}>
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${weekPct}%` }}
+                        transition={{ duration: 0.6, ease: 'easeOut' }}
+                        className="h-full rounded-full"
+                        style={{ background: weekDone ? 'var(--xn-success)' : 'var(--color-primary)' }}
+                      />
+                    </div>
+                  </div>
+                )
+              })()}
+
+              <Link to={`/plans/${activePlan.id}`} className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
+                {td.viewDetails} <ChevronRight size={14} />
+              </Link>
+            </Card>
+          ) : (
+            <Card className="flex flex-col items-center gap-3 py-10 text-center">
+              <Dumbbell size={40} className="text-muted/40" />
+              <p className="text-muted">{td.noActivePlan}</p>
+              <Link to="/plans" className="text-sm font-medium text-primary hover:underline">{td.createPlanLink}</Link>
+            </Card>
+          )}
+        </div>
+      </div>
     </div>
   )
 }

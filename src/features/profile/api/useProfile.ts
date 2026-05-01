@@ -24,10 +24,20 @@ export function useMyProfile() {
 
 export function useUpdateProfile() {
   const qc = useQueryClient()
+  const setUser = useAuthStore((s) => s.setUser)
+
   return useMutation({
     mutationFn: (data: UpdateProfileRequest) =>
       api.put<UserProfileResponse>(ENDPOINTS.users.me, data).then((r) => r.data),
-    onSuccess: (data) => qc.setQueryData(profileKeys.me, data),
+    onSuccess: (data) => {
+      qc.setQueryData(profileKeys.me, data)
+      setUser({
+        id: data.id,
+        email: data.email,
+        fullName: `${data.firstName} ${data.lastName}`.trim(),
+        avatarUrl: data.avatarUrl,
+      })
+    },
   })
 }
 
