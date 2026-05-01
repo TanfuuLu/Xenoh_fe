@@ -89,7 +89,7 @@
   --fg-2: var(--xn-ink-700);
   --fg-3: var(--xn-ink-600);  /* was ink-500 — darker for readability */
   --fg-4: var(--xn-ink-500);  /* was ink-400 */
-  --fg-on-clay: #fefbf4;
+  --fg-on-clay: #ffffff;
 
   --bg-1: var(--xn-paper);
   --bg-2: #fffaf3;

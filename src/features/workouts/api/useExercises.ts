@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/shared/api/axios'
 import { ENDPOINTS } from '@/shared/api/endpoints'
+import { profileKeys } from '@/features/profile/api/useProfile'
 import type {
   CompleteSetRequest,
   CreateExerciseRequest,
@@ -148,11 +149,12 @@ export function useCompleteSet(dailyWorkoutId: string) {
       if (ctx?.previous) qc.setQueryData(key, ctx.previous)
     },
 
-    // Sync server truth after settle — also invalidate days and weeks for cascade updates
+    // Sync server truth after settle — also invalidate days, weeks, and profile (XP update)
     onSettled: () => {
       qc.invalidateQueries({ queryKey: key })
       qc.invalidateQueries({ queryKey: ['days'] })
       qc.invalidateQueries({ queryKey: ['weeks'] })
+      qc.invalidateQueries({ queryKey: profileKeys.me })
     },
   })
 }

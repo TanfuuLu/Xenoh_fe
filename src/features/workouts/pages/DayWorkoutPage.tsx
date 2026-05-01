@@ -960,6 +960,21 @@ function ExerciseCard({
             <h3 className="break-words font-semibold text-text">{exercise.name}</h3>
             {isCardio && <Badge variant="primary">Cardio</Badge>}
             {exercise.isCompleted && !hasUnderperformed && <Badge variant="success">Done ✓</Badge>}
+            {exercise.isCompleted && !isCardio && (() => {
+              const xp = exercise.sets
+                .filter(s => s.isCompleted)
+                .reduce((sum, s) => {
+                  const w = s.actualWeight ?? s.plannedWeight ?? 0
+                  const r = s.actualReps ?? s.plannedReps
+                  const base = Math.max(1, Math.floor(w / 2.5)) * r
+                  return sum + (exercise.isCompetitionLift ? base * 2 : base)
+                }, 0)
+              return (
+                <span className="inline-flex items-center gap-1 text-xs font-semibold" style={{ color: 'var(--xn-clay-700)' }}>
+                  +{xp.toLocaleString()} XP
+                </span>
+              )
+            })()}
             {hasUnderperformed && (
               <span className="inline-flex items-center gap-1 text-xs font-medium text-warning">
                 <TriangleAlert size={12} /> Below target

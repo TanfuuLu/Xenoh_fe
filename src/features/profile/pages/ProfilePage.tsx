@@ -18,6 +18,7 @@ import { UserAvatar } from '@/shared/components/UserAvatar'
 import { cn } from '@/shared/utils/cn'
 import { slideUp } from '@/shared/utils/motion'
 import { useT } from '@/shared/i18n'
+import { LevelCard } from '@/features/dashboard/components/LevelCard'
 import {
   useMyProfile,
   useUpdateAvatar,
@@ -151,6 +152,8 @@ export function ProfilePage() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-text">{tp.title}</h1>
 
+      {profile && <LevelCard profile={profile} />}
+
       {/* Profile info */}
       <Card>
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -280,16 +283,22 @@ export function ProfilePage() {
       <Card>
         <h2 className="mb-4 text-lg font-semibold text-text">{tp.weightSection}</h2>
 
-        <form onSubmit={handleWeightSubmit(onLogWeight)} className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start">
-          <Input
-            placeholder="70.5"
-            type="number"
-            step="0.1"
-            error={weightErrors.weight?.message}
-            className="sm:max-w-32"
-            {...regWeight('weight')}
-          />
-          <Button type="submit" className="w-full sm:w-auto" loading={logging} size="sm">{tp.logToday}</Button>
+        <form onSubmit={handleWeightSubmit(onLogWeight)} className="mb-4">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <input
+              placeholder="70.5"
+              type="number"
+              step="0.1"
+              className={cn('xn-input sm:max-w-32', weightErrors.weight && 'error')}
+              {...regWeight('weight')}
+            />
+            <Button type="submit" className="w-full sm:w-auto" loading={logging}>{tp.logToday}</Button>
+          </div>
+          {weightErrors.weight?.message && (
+            <span className="mt-1.5 block text-xs" style={{ color: 'var(--xn-danger)' }}>
+              {weightErrors.weight.message}
+            </span>
+          )}
         </form>
 
         {chartData.length > 0 ? (

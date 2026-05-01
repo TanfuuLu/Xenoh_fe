@@ -15,6 +15,10 @@ export interface UserProfileResponse {
   bmi: number | null
   bmiCategory: string | null
   dotsScore: number | null
+  level: number
+  totalXp: number
+  xpToNextLevel: number
+  title: string
 }
 
 export interface PublicUserProfileResponse {

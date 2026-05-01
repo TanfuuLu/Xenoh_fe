@@ -59,6 +59,7 @@ export interface ExerciseResponse {
   durationSeconds: number | null
   estimatedCalories: number | null
   calorieEstimateStatus: 'Ready' | 'MissingDuration' | 'MissingBodyweight'
+  isCompetitionLift: boolean
 }
 
 export interface ExerciseTemplateResponse {
