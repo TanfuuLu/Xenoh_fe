@@ -69,6 +69,17 @@ export interface ExerciseTemplateResponse {
   secondaryMuscleGroups: MuscleGroup[]
   exerciseKind: 'Strength' | 'Cardio'
   estimatedMet: number
+  isCustom: boolean
+  ownerId: string | null
+}
+
+export interface CustomExerciseTemplateRequest {
+  id?: string
+  name: string
+  description?: string
+  primaryMuscleGroup: MuscleGroup
+  secondaryMuscleGroups: MuscleGroup[]
+  exerciseKind: 'Strength' | 'Cardio'
 }
 
 export interface CreateExerciseRequest {

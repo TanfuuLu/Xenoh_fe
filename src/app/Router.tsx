@@ -17,6 +17,7 @@ const PlanDetailPage = lazy(() => import('@/features/plans/pages/PlanDetailPage'
 const WeekDetailPage = lazy(() => import('@/features/workouts/pages/WeekDetailPage').then((m) => ({ default: m.WeekDetailPage })))
 const WeekAnalyzePage = lazy(() => import('@/features/workouts/pages/WeekAnalyzePage').then((m) => ({ default: m.WeekAnalyzePage })))
 const DayWorkoutPage = lazy(() => import('@/features/workouts/pages/DayWorkoutPage').then((m) => ({ default: m.DayWorkoutPage })))
+const ExerciseLibraryPage = lazy(() => import('@/features/workouts/pages/ExerciseLibraryPage').then((m) => ({ default: m.ExerciseLibraryPage })))
 const ProfilePage = lazy(() => import('@/features/profile/pages/ProfilePage').then((m) => ({ default: m.ProfilePage })))
 const ChangePasswordPage = lazy(() => import('@/features/profile/pages/ChangePasswordPage').then((m) => ({ default: m.ChangePasswordPage })))
 const ExerciseTrackingPage = lazy(() => import('@/features/exercise-tracking/pages/ExerciseTrackingPage').then((m) => ({ default: m.ExerciseTrackingPage })))
@@ -119,6 +120,10 @@ export const router = createBrowserRouter([
               {
                 path: 'days/:dailyWorkoutId',
                 element: <Suspended><DayWorkoutPage /></Suspended>,
+              },
+              {
+                path: 'exercise-library',
+                element: <Suspended><ExerciseLibraryPage /></Suspended>,
               },
               {
                 path: 'profile',

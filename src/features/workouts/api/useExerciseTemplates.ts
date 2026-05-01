@@ -1,8 +1,8 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/shared/api/axios'
 import { ENDPOINTS } from '@/shared/api/endpoints'
 import type { MuscleGroup } from '@/shared/types/api'
-import type { ExerciseTemplateResponse } from '../types'
+import type { CustomExerciseTemplateRequest, ExerciseTemplateResponse } from '../types'
 
 interface Filters {
   muscleGroup?: MuscleGroup
@@ -17,5 +17,37 @@ export function useExerciseTemplates(filters?: Filters) {
           params: { muscleGroup: filters?.muscleGroup },
         })
         .then((r) => r.data),
+  })
+}
+
+function invalidateExerciseTemplates(qc: ReturnType<typeof useQueryClient>) {
+  void qc.invalidateQueries({ queryKey: ['exercise-templates'] })
+}
+
+export function useCreateCustomExerciseTemplate() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: CustomExerciseTemplateRequest) =>
+      api.post<ExerciseTemplateResponse>(ENDPOINTS.exerciseTemplates.custom, data).then((r) => r.data),
+    onSuccess: () => invalidateExerciseTemplates(qc),
+  })
+}
+
+export function useUpdateCustomExerciseTemplate() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: CustomExerciseTemplateRequest }) =>
+      api
+        .put<ExerciseTemplateResponse>(ENDPOINTS.exerciseTemplates.customById(id), { ...data, id })
+        .then((r) => r.data),
+    onSuccess: () => invalidateExerciseTemplates(qc),
+  })
+}
+
+export function useDeleteCustomExerciseTemplate() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => api.delete(ENDPOINTS.exerciseTemplates.customById(id)).then(() => undefined),
+    onSuccess: () => invalidateExerciseTemplates(qc),
   })
 }

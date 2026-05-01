@@ -847,8 +847,9 @@ const ExerciseTemplateOption = memo(function ExerciseTemplateOption({
       )}
       style={isSelected ? { background: 'var(--xn-clay-200)', color: 'var(--xn-clay-800)' } : undefined}
     >
-      <span className="truncate">{template.name}</span>
+      <span className="min-w-0 truncate">{template.name}</span>
       <span className="ml-3 flex flex-shrink-0 items-center gap-1">
+        {template.isCustom && <Badge>Custom</Badge>}
         {template.exerciseKind === 'Cardio' && <Badge variant="primary">Cardio</Badge>}
         <span
           className="rounded-md px-1.5 py-0.5 text-xs"

@@ -75,10 +75,10 @@ export function DashboardPage() {
             variants={staggerContainer}
             className="grid grid-cols-2 gap-3"
           >
-            <StatCard icon={<Flame size={20} className="text-warning" />}      label={td.streak} value={`${profile?.currentStreak ?? 0} ${tc.days}`} />
-            <StatCard icon={<TrendingUp size={20} className="text-success" />}  label={td.weight} value={profile?.latestBodyweight ? `${profile.latestBodyweight} kg` : '—'} />
-            <StatCard icon={<Calendar size={20} className="text-primary" />}   label="BMI"        value={profile?.bmi ? profile.bmi.toFixed(1) : '—'} sub={profile?.bmiCategory ?? undefined} />
-            <StatCard icon={<Dumbbell size={20} className="text-muted" />}      label="DOTS"       value={profile?.dotsScore ? profile.dotsScore.toFixed(1) : '—'} />
+            <StatCard icon={<Flame size={20} className="text-warning" />}     iconBg="var(--xn-warning-bg)" label={td.streak} value={`${profile?.currentStreak ?? 0} ${tc.days}`} />
+            <StatCard icon={<TrendingUp size={20} className="text-success" />} iconBg="var(--xn-success-bg)" label={td.weight} value={profile?.latestBodyweight ? `${profile.latestBodyweight} kg` : '—'} />
+            <StatCard icon={<Calendar size={20} className="text-primary" />}  iconBg="var(--xn-clay-100)"   label="BMI"        value={profile?.bmi ? profile.bmi.toFixed(1) : '—'} sub={profile?.bmiCategory ?? undefined} />
+            <StatCard icon={<Dumbbell size={20} className="text-muted" />}     iconBg="var(--xn-ink-100)"    label="DOTS"       value={profile?.dotsScore ? profile.dotsScore.toFixed(1) : '—'} />
           </motion.div>
 
           <PlateCalculatorCard
@@ -432,11 +432,16 @@ function TodayTrainingCard({ todayDay, td, tc, dateLocale }: TodayTrainingCardPr
 
 // ─── Stat card ────────────────────────────────────────────────────────────────
 
-interface StatCardProps { icon: React.ReactNode; label: string; value: string; sub?: string }
-function StatCard({ icon, label, value, sub }: StatCardProps) {
+interface StatCardProps { icon: React.ReactNode; label: string; value: string; sub?: string; iconBg?: string }
+function StatCard({ icon, label, value, sub, iconBg }: StatCardProps) {
   return (
     <motion.div variants={slideUp} className={cn('rounded-xl border border-border bg-surface p-4')}>
-      <div className="mb-2">{icon}</div>
+      <div
+        className="mb-3 w-fit rounded-lg p-2"
+        style={{ background: iconBg ?? 'var(--xn-clay-100)' }}
+      >
+        {icon}
+      </div>
       <p className="text-xs text-muted">{label}</p>
       <p className="text-lg font-bold text-text">{value}</p>
       {sub && <p className="text-xs text-muted">{sub}</p>}

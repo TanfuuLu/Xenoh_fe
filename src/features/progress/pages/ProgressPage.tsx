@@ -82,7 +82,6 @@ function IndividualProgressView({
       isError={isError}
       analytics={analytics}
       tp={tp}
-      tc={tc}
       planSelector={
         plans && plans.length > 0 ? (
           <PlanSelect
@@ -158,7 +157,6 @@ function CoachProgressView({
       isError={isError}
       analytics={analytics}
       tp={tp}
-      tc={tc}
       planSelector={
         activeClients.length > 0 ? (
           <div className="flex flex-wrap gap-2">
@@ -210,7 +208,6 @@ function ProgressShell({
   isError,
   analytics,
   tp,
-  tc,
   planSelector,
   emptyNode,
 }: {
@@ -221,7 +218,6 @@ function ProgressShell({
   isError: boolean
   analytics: import('../types').PlanAnalyticsResponse | undefined
   tp: Record<string, string>
-  tc: Record<string, string>
   planSelector?: React.ReactNode
   emptyNode?: React.ReactNode
 }) {
@@ -320,7 +316,7 @@ function ProgressShell({
                         contentStyle={CHART_TOOLTIP_STYLE}
                         labelStyle={{ color: 'var(--fg-1)' }}
                         itemStyle={{ color: 'var(--color-primary)' }}
-                        formatter={(value: number) => [`${value.toLocaleString()} kg`, 'Volume']}
+                        formatter={(value) => [`${Number(value ?? 0).toLocaleString()} kg`, 'Volume']}
                       />
                       <Line type="monotone" dataKey="totalVolume" stroke="var(--color-primary)" strokeWidth={2} dot={{ fill: 'var(--color-primary)', r: 3 }} activeDot={{ r: 5 }} name="Volume" />
                     </LineChart>
@@ -347,7 +343,7 @@ function ProgressShell({
                         contentStyle={CHART_TOOLTIP_STYLE}
                         labelStyle={{ color: 'var(--fg-1)' }}
                         itemStyle={{ color: 'var(--color-primary)' }}
-                        formatter={(value: number) => [`${value} sets`, 'Sets']}
+                        formatter={(value) => [`${Number(value ?? 0)} sets`, 'Sets']}
                       />
                       <Bar dataKey="completedSets" radius={[0, 4, 4, 0]} name="completedSets">
                         {analytics.muscleGroupVolume.map((_, i) => (

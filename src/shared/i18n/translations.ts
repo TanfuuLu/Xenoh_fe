@@ -69,8 +69,8 @@ export const translations = {
       submit: 'Create account',
       hasAccount: 'Already have an account?',
       loginLink: 'Sign in',
-      roleIndividual: '🏋️ Individual · Self-training',
-      roleCoach: '🎯 Coach · Trainer',
+      roleIndividual: '🏋️ Individual',
+      roleCoach: '🎯 Coach',
       panel: {
         Individual: {
           badge: '🏋️ For Individuals',
@@ -101,6 +101,7 @@ export const translations = {
     nav: {
       dashboard: 'Dashboard',
       myPlans: 'Plans',
+      exerciseLibrary: 'Exercise Library',
       findCoach: 'Find a coach',
       profile: 'Profile',
       overview: 'Overview',
@@ -246,6 +247,7 @@ export const translations = {
       decline: 'Decline',
       activeHeader: 'Active clients',
       connectedSince: 'Connected since',
+      disconnect: 'Disconnect',
       disconnectConfirm: 'Disconnect from {name}?',
       noActive: 'No active clients yet.',
     },
@@ -415,6 +417,7 @@ export const translations = {
     nav: {
       dashboard: 'Dashboard',
       myPlans: 'Kế hoạch',
+      exerciseLibrary: 'Thư viện bài tập',
       findCoach: 'Tìm HLV',
       profile: 'Hồ sơ',
       overview: 'Tổng quan',
@@ -552,6 +555,7 @@ export const translations = {
       decline: 'Từ chối',
       activeHeader: 'Clients đang kết nối',
       connectedSince: 'Kết nối từ',
+      disconnect: 'Hủy kết nối',
       disconnectConfirm: 'Hủy kết nối với {name}?',
       noActive: 'Chưa có client nào đang kết nối.',
     },

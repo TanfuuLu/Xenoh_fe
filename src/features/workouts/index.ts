@@ -10,13 +10,19 @@ export {
   useStartExerciseTimer,
   useFinishExerciseTimer,
 } from './api/useExercises'
-export { useExerciseTemplates } from './api/useExerciseTemplates'
+export {
+  useExerciseTemplates,
+  useCreateCustomExerciseTemplate,
+  useUpdateCustomExerciseTemplate,
+  useDeleteCustomExerciseTemplate,
+} from './api/useExerciseTemplates'
 export type {
   WeeklyWorkoutResponse,
   DailyWorkoutResponse,
   ExerciseResponse,
   ExerciseSetResponse,
   ExerciseTemplateResponse,
+  CustomExerciseTemplateRequest,
   CreateExerciseRequest,
   UpdateExerciseRequest,
   CompleteSetRequest,

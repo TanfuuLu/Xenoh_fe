@@ -6,7 +6,7 @@ import {
   LayoutDashboard, ClipboardList, User, Users,
   UserCheck, Menu, X, LogOut, ChevronDown,
   PanelLeftClose, PanelLeftOpen, ChartNoAxesCombined, TrendingUp,
-  LockKeyhole,
+  LockKeyhole, BookOpen,
 } from 'lucide-react'
 import { cn } from '@/shared/utils/cn'
 import { useAuthStore } from '@/features/auth'
@@ -34,6 +34,7 @@ export function AppLayout() {
   const t         = useT()
   const tn        = t.nav
   const changePasswordLabel = (tn as typeof tn & { changePassword?: string }).changePassword ?? 'Change password'
+  const exerciseLibraryLabel = (tn as typeof tn & { exerciseLibrary?: string }).exerciseLibrary ?? 'Exercise Library'
   const isWeekDetailPage = /^\/plans\/[^/]+\/weeks\/[^/]+$/.test(location.pathname)
 
   useNotificationHub()
@@ -41,6 +42,7 @@ export function AppLayout() {
   const individualNav = [
     { to: '/dashboard',    icon: LayoutDashboard, label: tn.dashboard },
     { to: '/plans',        icon: ClipboardList,   label: tn.myPlans },
+    { to: '/exercise-library', icon: BookOpen, label: exerciseLibraryLabel },
     { to: '/exercise-tracking', icon: ChartNoAxesCombined, label: tn.exerciseTracking },
     { to: '/progress',     icon: TrendingUp,      label: tn.progress },
     { to: '/coaches',      icon: Users,           label: tn.findCoach },
@@ -50,6 +52,7 @@ export function AppLayout() {
   const coachNav = [
     { to: '/dashboard',     icon: LayoutDashboard, label: tn.overview },
     { to: '/plans',         icon: ClipboardList,   label: tn.myPlans },
+    { to: '/exercise-library', icon: BookOpen, label: exerciseLibraryLabel },
     { to: '/progress',      icon: TrendingUp,      label: tn.progress },
     { to: '/coach/clients', icon: UserCheck,       label: tn.clients },
     { to: '/profile',       icon: User,            label: tn.profile },

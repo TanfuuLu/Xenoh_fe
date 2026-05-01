@@ -86,6 +86,8 @@ export const ENDPOINTS = {
   // Exercise Templates
   exerciseTemplates: {
     list: '/api/exercise-templates',
+    custom: '/api/exercise-templates/custom',
+    customById: (id: string) => `/api/exercise-templates/custom/${id}`,
   },
 
   // Leaderboard
