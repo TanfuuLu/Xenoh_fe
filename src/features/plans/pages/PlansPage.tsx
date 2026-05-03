@@ -255,7 +255,22 @@ export function PlansPage() {
               />
             )}
           />
-          {apiError && <p className="text-sm text-danger">{apiError}</p>}
+          {apiError && (
+            apiError.toLowerCase().includes('limit') || apiError.toLowerCase().includes('upgrade') ? (
+              <div
+                className="flex flex-col items-center gap-2 rounded-xl p-4 text-center"
+                style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid var(--color-primary)' }}
+              >
+                <p className="text-sm font-semibold" style={{ color: 'var(--fg-1)' }}>Plan limit reached</p>
+                <p className="text-xs" style={{ color: 'var(--fg-3)' }}>Upgrade to Pro for unlimited plans.</p>
+                <Button size="sm" onClick={() => { setShowCreate(false); navigate('/subscription') }}>
+                  View Plans
+                </Button>
+              </div>
+            ) : (
+              <p className="text-sm text-danger">{apiError}</p>
+            )
+          )}
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <Button variant="secondary" type="button" className="w-full sm:w-auto" onClick={() => setShowCreate(false)}>
               {tc.cancel}

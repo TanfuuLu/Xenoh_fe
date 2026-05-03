@@ -847,7 +847,16 @@ const ExerciseTemplateOption = memo(function ExerciseTemplateOption({
       )}
       style={isSelected ? { background: 'var(--xn-clay-200)', color: 'var(--xn-clay-800)' } : undefined}
     >
-      <span className="min-w-0 truncate">{template.name}</span>
+      <span className="flex min-w-0 items-center gap-2">
+        {template.imageUrl && (
+          <img
+            src={`${import.meta.env.VITE_API_URL}${template.imageUrl}`}
+            alt={template.name}
+            className="h-7 w-7 shrink-0 rounded-md object-cover"
+          />
+        )}
+        <span className="truncate">{template.name}</span>
+      </span>
       <span className="ml-3 flex flex-shrink-0 items-center gap-1">
         {template.isCustom && <Badge>Custom</Badge>}
         {template.exerciseKind === 'Cardio' && <Badge variant="primary">Cardio</Badge>}
@@ -937,7 +946,15 @@ function ExerciseCard({
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
+        <div className="flex min-w-0 items-start gap-2">
+          {exercise.imageUrl && (
+            <img
+              src={`${import.meta.env.VITE_API_URL}${exercise.imageUrl}`}
+              alt={exercise.name}
+              className="mt-0.5 h-10 w-10 shrink-0 rounded-lg object-cover"
+            />
+          )}
+          <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             {canEdit && (
               <button
@@ -996,6 +1013,7 @@ function ExerciseCard({
             </p>
           )}
           {exercise.notes && <p className="mt-1 text-xs italic text-muted">{exercise.notes}</p>}
+          </div>
         </div>
         {canEdit && (
           <button

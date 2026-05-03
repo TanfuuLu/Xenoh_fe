@@ -21,6 +21,7 @@ import { useT } from '@/shared/i18n'
 import { useAuthStore } from '@/features/auth'
 import { usePlans, useCoachPlanOverview } from '@/features/plans'
 import { useMyClients } from '@/features/coach-client'
+import { RequireTier } from '@/features/billing/components/RequireTier'
 import { usePlanAnalytics } from '../api/usePlanAnalytics'
 
 const CHART_TOOLTIP_STYLE = {
@@ -39,10 +40,14 @@ export function ProgressPage() {
 
   const isCoach = useAuthStore((s) => s.user?.roles?.includes('Coach') ?? false)
 
-  return isCoach ? (
-    <CoachProgressView shouldReduce={!!shouldReduce} tp={tp} tc={tc} />
-  ) : (
-    <IndividualProgressView shouldReduce={!!shouldReduce} tp={tp} tc={tc} />
+  return (
+    <RequireTier feature="Progress & Analytics">
+      {isCoach ? (
+        <CoachProgressView shouldReduce={!!shouldReduce} tp={tp} tc={tc} />
+      ) : (
+        <IndividualProgressView shouldReduce={!!shouldReduce} tp={tp} tc={tc} />
+      )}
+    </RequireTier>
   )
 }
 

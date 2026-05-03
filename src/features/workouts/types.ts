@@ -60,6 +60,7 @@ export interface ExerciseResponse {
   estimatedCalories: number | null
   calorieEstimateStatus: 'Ready' | 'MissingDuration' | 'MissingBodyweight'
   isCompetitionLift: boolean
+  imageUrl: string | null
 }
 
 export interface ExerciseTemplateResponse {
@@ -72,6 +73,7 @@ export interface ExerciseTemplateResponse {
   estimatedMet: number
   isCustom: boolean
   ownerId: string | null
+  imageUrl: string | null
 }
 
 export interface CustomExerciseTemplateRequest {

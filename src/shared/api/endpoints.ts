@@ -109,6 +109,12 @@ export const ENDPOINTS = {
     delete: (weekId: string, commentId: string) => `/api/weeks/${weekId}/comments/${commentId}`,
   },
 
+  // Subscriptions
+  subscriptions: {
+    me: '/api/subscriptions/me',
+    createOrder: '/api/subscriptions/payment-orders',
+  },
+
   // Notifications
   notifications: {
     list: '/api/notifications',

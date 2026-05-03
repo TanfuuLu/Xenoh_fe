@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { BookOpen, Dumbbell, Pencil, Plus, Search, Trash2, X } from 'lucide-react'
+import { BookOpen, Dumbbell, Lock, Pencil, Plus, Search, Trash2, X } from 'lucide-react'
 import { Button } from '@/shared/components/Button'
 import { Badge } from '@/shared/components/Badge'
 import { Card } from '@/shared/components/Card'
@@ -12,6 +13,7 @@ import { Select } from '@/shared/components/Select'
 import { Spinner } from '@/shared/components/Spinner'
 import { useConfirm } from '@/shared/components/ConfirmModal'
 import { MuscleGroup, type MuscleGroup as MuscleGroupValue } from '@/shared/types/api'
+import { useSubscription } from '@/features/billing/api/useSubscription'
 import {
   useCreateCustomExerciseTemplate,
   useDeleteCustomExerciseTemplate,
@@ -33,6 +35,10 @@ const customTemplateSchema = z.object({
 type CustomTemplateForm = z.output<typeof customTemplateSchema>
 
 export function ExerciseLibraryPage() {
+  const navigate = useNavigate()
+  const { data: subscription } = useSubscription()
+  const isActivePro = (subscription?.tier ?? 'Free') !== 'Free' && (subscription?.isActive ?? false)
+
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<MuscleGroupValue | ''>('')
   const [selectedType, setSelectedType] = useState<ExerciseKindFilter>('')
   const [search, setSearch] = useState('')
@@ -172,9 +178,15 @@ export function ExerciseLibraryPage() {
               Browse Xenoh exercises, filter by muscle group or type, and manage up to 5 custom exercises for your own library.
             </p>
           </div>
-          <Button disabled={customCount >= 5} onClick={openCreateModal}>
-            <Plus size={16} /> Create custom
-          </Button>
+          {isActivePro ? (
+            <Button disabled={customCount >= 5} onClick={openCreateModal}>
+              <Plus size={16} /> Create custom
+            </Button>
+          ) : (
+            <Button variant="secondary" onClick={() => navigate('/subscription')}>
+              <Lock size={16} /> Create custom
+            </Button>
+          )}
         </div>
       </section>
 
@@ -241,6 +253,7 @@ export function ExerciseLibraryPage() {
               onEdit={openEditModal}
               onDelete={onDelete}
               deleting={deletingCustom}
+              isActivePro={isActivePro}
             />
           ))}
         </div>
@@ -345,22 +358,33 @@ function ExerciseLibraryCard({
   onEdit,
   onDelete,
   deleting,
+  isActivePro,
 }: {
   template: ExerciseTemplateResponse
   onEdit: (template: ExerciseTemplateResponse) => void
   onDelete: (template: ExerciseTemplateResponse) => void
   deleting: boolean
+  isActivePro: boolean
 }) {
+  const navigate = useNavigate()
   return (
     <Card className="flex min-h-48 flex-col">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
-          <span
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl"
-            style={{ background: template.isCustom ? 'var(--xn-clay-200)' : 'var(--xn-sage-200)', color: 'var(--xn-clay-800)' }}
-          >
-            <Dumbbell size={20} />
-          </span>
+          {template.imageUrl ? (
+            <img
+              src={`${import.meta.env.VITE_API_URL}${template.imageUrl}`}
+              alt={template.name}
+              className="h-11 w-11 shrink-0 rounded-2xl object-cover"
+            />
+          ) : (
+            <span
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl"
+              style={{ background: template.isCustom ? 'var(--xn-clay-200)' : 'var(--xn-sage-200)', color: 'var(--xn-clay-800)' }}
+            >
+              <Dumbbell size={20} />
+            </span>
+          )}
           <div className="min-w-0">
             <h2 className="truncate text-lg font-semibold text-text">{template.name}</h2>
             <p className="text-sm text-muted">{formatMuscleGroup(template.primaryMuscleGroup)}</p>
@@ -388,9 +412,15 @@ function ExerciseLibraryCard({
 
       {template.isCustom ? (
         <div className="mt-auto flex gap-2">
-          <Button variant="secondary" size="sm" className="flex-1" onClick={() => onEdit(template)}>
-            <Pencil size={14} /> Edit
-          </Button>
+          {isActivePro ? (
+            <Button variant="secondary" size="sm" className="flex-1" onClick={() => onEdit(template)}>
+              <Pencil size={14} /> Edit
+            </Button>
+          ) : (
+            <Button variant="secondary" size="sm" className="flex-1" onClick={() => navigate('/subscription')}>
+              <Lock size={14} /> Edit
+            </Button>
+          )}
           <Button variant="danger" size="sm" className="flex-1" loading={deleting} onClick={() => onDelete(template)}>
             <Trash2 size={14} /> Delete
           </Button>

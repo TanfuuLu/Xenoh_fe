@@ -17,6 +17,7 @@ import { Spinner } from '@/shared/components/Spinner'
 import { cn } from '@/shared/utils/cn'
 import { slideUp } from '@/shared/utils/motion'
 import type { ExercisePrResponse } from '../types'
+import { RequireTier } from '@/features/billing/components/RequireTier'
 import { useExercisePrHistory, useExercisePrs } from '../index'
 
 function formatDate(value: string | null | undefined, pattern = 'dd/MM/yyyy') {
@@ -61,6 +62,7 @@ export function ExerciseTrackingPage() {
   }
 
   return (
+    <RequireTier feature="Exercise Tracking & Personal Records">
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-text">Exercise Tracking</h1>
@@ -276,6 +278,7 @@ function ExerciseSearchBox({
         )}
       </AnimatePresence>
     </div>
+    </RequireTier>
   )
 }
 

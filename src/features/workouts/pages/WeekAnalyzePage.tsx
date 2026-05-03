@@ -14,6 +14,7 @@ import { Spinner } from '@/shared/components/Spinner'
 import { NotFoundPage } from '@/shared/components/NotFoundPage'
 import { motionProps, staggerContainer, slideUp } from '@/shared/utils/motion'
 import { useLangStore } from '@/shared/i18n'
+import { RequireTier } from '@/features/billing/components/RequireTier'
 import { useDailyWorkouts, useWeeklyWorkouts } from '../index'
 import type { ExerciseResponse } from '../types'
 
@@ -202,6 +203,7 @@ export function WeekAnalyzePage() {
     : 0
 
   return (
+    <RequireTier feature="Week Analysis">
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-start gap-3">
@@ -475,5 +477,6 @@ export function WeekAnalyzePage() {
         </motion.div>
       )}
     </div>
+    </RequireTier>
   )
 }

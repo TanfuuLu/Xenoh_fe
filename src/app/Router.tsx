@@ -28,6 +28,7 @@ const CoachProfilePage = lazy(() => import('@/features/coaches/pages/CoachProfil
 const ProgressPage = lazy(() => import('@/features/progress/pages/ProgressPage').then((m) => ({ default: m.ProgressPage })))
 const LandingPage = lazy(() => import('@/features/marketing/pages/LandingPage').then((m) => ({ default: m.LandingPage })))
 const AboutPage = lazy(() => import('@/features/marketing/pages/AboutPage').then((m) => ({ default: m.AboutPage })))
+const SubscriptionPage = lazy(() => import('@/features/billing/pages/SubscriptionPage').then((m) => ({ default: m.SubscriptionPage })))
 
 function SuspenseFallback() {
   return (
@@ -140,6 +141,10 @@ export const router = createBrowserRouter([
               {
                 path: 'leaderboard',
                 element: <Navigate to="/dashboard" replace />,
+              },
+              {
+                path: 'subscription',
+                element: <Suspended><SubscriptionPage /></Suspended>,
               },
               {
                 element: <RoleRoute role="Individual" />,

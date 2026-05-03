@@ -6,7 +6,7 @@ import {
   LayoutDashboard, ClipboardList, User, Users,
   UserCheck, Menu, X, LogOut, ChevronDown,
   PanelLeftClose, PanelLeftOpen, ChartNoAxesCombined, TrendingUp,
-  LockKeyhole, BookOpen,
+  LockKeyhole, BookOpen, CreditCard,
 } from 'lucide-react'
 import { cn } from '@/shared/utils/cn'
 import { useAuthStore } from '@/features/auth'
@@ -47,6 +47,7 @@ export function AppLayout() {
     { to: '/progress',     icon: TrendingUp,      label: tn.progress },
     { to: '/coaches',      icon: Users,           label: tn.findCoach },
     { to: '/profile',      icon: User,            label: tn.profile },
+    { to: '/subscription', icon: CreditCard,      label: 'Subscription' },
   ]
 
   const coachNav = [
@@ -56,6 +57,7 @@ export function AppLayout() {
     { to: '/progress',      icon: TrendingUp,      label: tn.progress },
     { to: '/coach/clients', icon: UserCheck,       label: tn.clients },
     { to: '/profile',       icon: User,            label: tn.profile },
+    { to: '/subscription',  icon: CreditCard,      label: 'Subscription' },
   ]
 
   const navItems = isCoach ? coachNav : individualNav
