@@ -1,7 +1,7 @@
 import { formatDistanceToNow } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import { useNavigate } from 'react-router'
-import { Bell, MessageSquare, ClipboardList, AlertTriangle, UserPlus, UserCheck } from 'lucide-react'
+import { Bell, MessageSquare, ClipboardList, AlertTriangle, UserPlus, UserCheck, UserMinus, UserX } from 'lucide-react'
 import { cn } from '@/shared/utils/cn'
 import type { NotificationResponse } from '../types'
 
@@ -9,8 +9,12 @@ const TYPE_CONFIG: Record<string, { icon: React.ComponentType<{ size?: number }>
   NewComment:      { icon: MessageSquare, label: 'Bình luận mới' },
   PlanAssigned:    { icon: ClipboardList, label: 'Kế hoạch mới' },
   ExerciseWarning: { icon: AlertTriangle, label: 'Cảnh báo' },
-  CoachRequest:    { icon: UserPlus,      label: 'Yêu cầu kết nối' },
-  CoachAccepted:   { icon: UserCheck,     label: 'Kết nối thành công' },
+  CoachRequest:        { icon: UserPlus,    label: 'Yêu cầu kết nối' },
+  CoachAccepted:       { icon: UserCheck,   label: 'Kết nối thành công' },
+  DisconnectRequested: { icon: UserMinus,   label: 'Yêu cầu ngắt kết nối' },
+  DisconnectAccepted:  { icon: UserX,       label: 'Ngắt kết nối thành công' },
+  DisconnectRejected:  { icon: UserCheck,   label: 'Yêu cầu bị từ chối' },
+  DisconnectCancelled: { icon: UserCheck,   label: 'Yêu cầu đã hủy' },
 }
 
 function resolveLink(notification: NotificationResponse): string | null {
@@ -75,10 +79,12 @@ export function NotificationItem({ notification, onMarkRead, onClose }: Props) {
         style={{
           width: 32, height: 32,
           background: 'var(--bg-3)',
-          color: notification.type === 'ExerciseWarning'
+          color: notification.type === 'ExerciseWarning' || notification.type === 'DisconnectRequested'
             ? 'var(--color-warning)'
-            : notification.type === 'CoachAccepted'
+            : notification.type === 'CoachAccepted' || notification.type === 'DisconnectRejected' || notification.type === 'DisconnectCancelled'
             ? 'var(--color-success)'
+            : notification.type === 'DisconnectAccepted'
+            ? 'var(--color-danger)'
             : 'var(--color-primary)',
         }}
       >

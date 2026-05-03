@@ -1,7 +1,7 @@
 import { useParams, Link } from 'react-router'
 import { useQueries } from '@tanstack/react-query'
 import { motion, useReducedMotion } from 'framer-motion'
-import { ChevronLeft, CheckCircle2, AlertTriangle, Dumbbell, TrendingUp, Calendar, Zap, BedDouble, XCircle, Flame } from 'lucide-react'
+import { ChevronLeft, CheckCircle2, AlertTriangle, Dumbbell, TrendingUp, Calendar, Zap, BedDouble, XCircle, Flame, Timer, Activity } from 'lucide-react'
 import { format } from 'date-fns'
 import { vi as viLocale, enUS } from 'date-fns/locale'
 import {
@@ -38,6 +38,24 @@ function calcPlannedVolume(exercises: ExerciseResponse[]): number {
 
 function calcEstimatedCalories(exercises: ExerciseResponse[]): number {
   return exercises.reduce((total, ex) => total + (ex.estimatedCalories ?? 0), 0)
+}
+
+function calcTotalDuration(exercises: ExerciseResponse[]): number {
+  return exercises.reduce((total, ex) => total + (ex.durationSeconds ?? 0), 0)
+}
+
+function calcAverageRpe(exercises: ExerciseResponse[]): number | null {
+  const values = exercises.flatMap((ex) => ex.sets).filter((s) => s.isCompleted && s.rpe != null).map((s) => s.rpe as number)
+  return values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : null
+}
+
+function formatDuration(totalSeconds: number): string {
+  const h = Math.floor(totalSeconds / 3600)
+  const m = Math.floor((totalSeconds % 3600) / 60)
+  const s = totalSeconds % 60
+  if (h > 0) return `${h}h ${String(m).padStart(2, '0')}m`
+  if (m > 0) return `${m}m ${String(s).padStart(2, '0')}s`
+  return `${s}s`
 }
 
 function collectMuscleGroups(exercises: ExerciseResponse[]): Map<string, number> {
@@ -191,6 +209,8 @@ export function WeekAnalyzePage() {
 
   // Muscle group distribution (across whole week)
   const allExercises = [...exercisesByDayId.values()].flat()
+  const totalDurationSeconds = calcTotalDuration(allExercises)
+  const weekAverageRpe = calcAverageRpe(allExercises)
   const muscleCounts = collectMuscleGroups(allExercises)
   const muscleEntries = [...muscleCounts.entries()]
     .sort((a, b) => b[1] - a[1])
@@ -236,7 +256,7 @@ export function WeekAnalyzePage() {
         initial={shouldReduce ? false : 'hidden'}
         animate="visible"
         variants={staggerContainer}
-        className="grid gap-3 min-[390px]:grid-cols-2 sm:grid-cols-3 xl:grid-cols-7"
+        className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5"
       >
         <StatCard
           icon={<Calendar size={18} />}
@@ -263,6 +283,18 @@ export function WeekAnalyzePage() {
           sub={totalEstimatedCalories > 0 ? 'kcal this week' : 'No timed exercises'}
         />
         <StatCard
+          icon={<Timer size={18} />}
+          label="Total Time"
+          value={totalDurationSeconds > 0 ? formatDuration(totalDurationSeconds) : '—'}
+          sub={totalDurationSeconds > 0 ? 'timed exercises' : 'No timed exercises'}
+        />
+        <StatCard
+          icon={<Activity size={18} />}
+          label="Avg RPE"
+          value={weekAverageRpe != null ? weekAverageRpe.toFixed(1) : '—'}
+          sub={weekAverageRpe != null ? 'rate of perceived exertion' : 'No RPE logged'}
+        />
+        <StatCard
           icon={<AlertTriangle size={18} />}
           label="Below Target"
           value={warnDays}
@@ -272,7 +304,7 @@ export function WeekAnalyzePage() {
           icon={<BedDouble size={18} />}
           label="Rest Days"
           value={restDays}
-          sub={restDays === 1 ? 'intentional rest' : 'intentional rest'}
+          sub="intentional rest"
           accent="var(--xn-clay-200)"
         />
         <StatCard

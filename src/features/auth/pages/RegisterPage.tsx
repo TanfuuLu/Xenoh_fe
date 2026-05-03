@@ -1,4 +1,5 @@
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
+import { useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Link, useNavigate } from 'react-router'
@@ -6,10 +7,17 @@ import { Mail, Lock, User, Check } from 'lucide-react'
 import { Input } from '@/shared/components/Input'
 import { LanguageSwitcher } from '@/shared/components/LanguageSwitcher'
 import { useT } from '@/shared/i18n'
+import { api } from '@/shared/api/axios'
+import { ENDPOINTS } from '@/shared/api/endpoints'
 import { useRegister } from '../index'
 import { AuthDivider, SocialLoginButtons } from '../components/SocialLoginButtons'
 import type { AxiosError } from 'axios'
 import type { ApiError } from '@/shared/types/api'
+
+const optionalNumber = z.preprocess(
+  (v) => (v === '' || v == null ? undefined : Number(v)),
+  z.number().positive().optional(),
+)
 
 const schema = z.object({
   firstName: z.string().min(1),
@@ -17,6 +25,10 @@ const schema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
   role: z.enum(['Individual', 'Coach']),
+  gender: z.enum(['Male', 'Female']).optional(),
+  dateOfBirth: z.string().optional(),
+  height: optionalNumber,
+  bodyweight: optionalNumber,
 })
 
 type FormData = z.infer<typeof schema>
@@ -45,7 +57,7 @@ export function RegisterPage() {
   const t = useT()
   const tr = t.register
 
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, watch, control, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { role: 'Individual' },
   })
@@ -55,7 +67,28 @@ export function RegisterPage() {
   const panel = tr.panel[selectedRole] ?? tr.panel.Individual
 
   function onSubmit(data: FormData) {
-    register_(data, { onSuccess: () => navigate('/dashboard') })
+    register_(
+      { firstName: data.firstName, lastName: data.lastName, email: data.email, password: data.password, role: data.role },
+      {
+        onSuccess: async () => {
+          try {
+            if (data.gender || data.height || data.dateOfBirth) {
+              await api.put(ENDPOINTS.users.me, {
+                ...(data.gender && { gender: data.gender }),
+                ...(data.height && { height: data.height }),
+                ...(data.dateOfBirth && { dateOfBirth: data.dateOfBirth }),
+              })
+            }
+            if (data.bodyweight) {
+              await api.post(ENDPOINTS.users.bodyweight, { weight: data.bodyweight })
+            }
+          } catch {
+            // non-critical — profile data can be set later in settings
+          }
+          navigate('/dashboard')
+        },
+      },
+    )
   }
 
   const apiError = (error as AxiosError<ApiError>)?.response?.data?.message
@@ -178,6 +211,66 @@ export function RegisterPage() {
                 error={errors.password?.message}
                 {...register('password')}
               />
+
+              {/* ── Body metrics (optional) ── */}
+              <div style={{ borderTop: '1px solid var(--border-1)', paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: 'var(--fg-4)', textTransform: 'uppercase', margin: 0 }}>
+                  Body info <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(optional — helps personalize your plan)</span>
+                </p>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 10 }}>
+                  {/* Gender */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: 'var(--fg-2)', marginBottom: 4 }}>
+                      Gender
+                    </label>
+                    <select
+                      {...register('gender')}
+                      style={{
+                        width: '100%',
+                        padding: '8px 10px',
+                        background: 'var(--bg-3)',
+                        border: '1px solid var(--border-1)',
+                        borderRadius: 8,
+                        color: 'var(--fg-1)',
+                        fontSize: 13,
+                        fontFamily: 'var(--font-sans)',
+                        outline: 'none',
+                        cursor: 'pointer',
+                        appearance: 'none',
+                      }}
+                    >
+                      <option value="">Not specified</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                    </select>
+                  </div>
+
+                  {/* Date of birth */}
+                  <Controller
+                    name="dateOfBirth"
+                    control={control}
+                    render={({ field }) => (
+                      <DateOfBirthPicker value={field.value} onChange={field.onChange} />
+                    )}
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  <Input
+                    label="Height (cm)"
+                    type="number"
+                    placeholder="175"
+                    {...register('height')}
+                  />
+                  <Input
+                    label="Bodyweight (kg)"
+                    type="number"
+                    placeholder="70"
+                    {...register('bodyweight')}
+                  />
+                </div>
+              </div>
 
               {apiError && (
                 <p style={{ fontSize: 13, color: 'var(--xn-danger)', margin: 0 }}>{apiError}</p>
@@ -302,6 +395,77 @@ export function RegisterPage() {
             {panel.footer}
           </span>
         </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Date of birth picker ─────────────────────────────────────────────────────
+const MONTHS = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+]
+
+const SELECT_STYLE: React.CSSProperties = {
+  width: '100%',
+  padding: '8px 10px',
+  background: 'var(--bg-3)',
+  border: '1px solid var(--border-1)',
+  borderRadius: 8,
+  color: 'var(--fg-1)',
+  fontSize: 13,
+  fontFamily: 'var(--font-sans)',
+  outline: 'none',
+  cursor: 'pointer',
+  appearance: 'none',
+}
+
+interface DateOfBirthPickerProps {
+  value?: string
+  onChange: (v: string | undefined) => void
+}
+
+function DateOfBirthPicker({ value, onChange }: DateOfBirthPickerProps) {
+  const initial = value ? value.split('-') : []
+  const [selYear,  setSelYear]  = useState(initial[0] ? Number(initial[0]) : 0)
+  const [selMonth, setSelMonth] = useState(initial[1] ? Number(initial[1]) : 0)
+  const [selDay,   setSelDay]   = useState(initial[2] ? Number(initial[2]) : 0)
+
+  const currentYear = new Date().getFullYear()
+  const years = Array.from({ length: 91 }, (_, i) => currentYear - 10 - i)
+  const daysInMonth = selMonth && selYear ? new Date(selYear, selMonth, 0).getDate() : 31
+  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1)
+
+  function notify(y: number, m: number, d: number) {
+    if (y && m && d) {
+      onChange(`${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`)
+    } else {
+      onChange(undefined)
+    }
+  }
+
+  function onMonth(m: number) { setSelMonth(m); notify(selYear, m, selDay) }
+  function onDay(d: number)   { setSelDay(d);   notify(selYear, selMonth, d) }
+  function onYear(y: number)  { setSelYear(y);  notify(y, selMonth, selDay) }
+
+  return (
+    <div>
+      <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: 'var(--fg-2)', marginBottom: 4 }}>
+        Date of birth
+      </label>
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.2fr 1.5fr', gap: 5 }}>
+        <select value={selMonth || ''} onChange={(e) => onMonth(Number(e.target.value))} style={SELECT_STYLE}>
+          <option value="">Month</option>
+          {MONTHS.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
+        </select>
+        <select value={selDay || ''} onChange={(e) => onDay(Number(e.target.value))} style={SELECT_STYLE}>
+          <option value="">Day</option>
+          {days.map((d) => <option key={d} value={d}>{d}</option>)}
+        </select>
+        <select value={selYear || ''} onChange={(e) => onYear(Number(e.target.value))} style={SELECT_STYLE}>
+          <option value="">Year</option>
+          {years.map((y) => <option key={y} value={y}>{y}</option>)}
+        </select>
       </div>
     </div>
   )

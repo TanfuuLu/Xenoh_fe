@@ -23,6 +23,7 @@ import { usePlans, useCoachPlanOverview } from '@/features/plans'
 import { useMyClients } from '@/features/coach-client'
 import { RequireTier } from '@/features/billing/components/RequireTier'
 import { usePlanAnalytics } from '../api/usePlanAnalytics'
+import type { MuscleGroupPoint, PlanAnalyticsResponse } from '../types'
 
 const CHART_TOOLTIP_STYLE = {
   background: 'var(--bg-2)',
@@ -221,7 +222,7 @@ function ProgressShell({
   shouldReduce: boolean
   isLoading: boolean
   isError: boolean
-  analytics: import('../types').PlanAnalyticsResponse | undefined
+  analytics: PlanAnalyticsResponse | undefined
   tp: Record<string, string>
   planSelector?: React.ReactNode
   emptyNode?: React.ReactNode
@@ -331,36 +332,55 @@ function ProgressShell({
             </Card>
           </motion.div>
 
-          {/* Muscle Group Distribution */}
+          {/* Muscle Group Analytics */}
           <motion.div {...(shouldReduce ? {} : slideUp)}>
             <Card>
-              <h2 className="mb-4 text-base font-semibold text-text">{tp.muscleGroups}</h2>
+              <h2 className="mb-4 text-base font-semibold text-text">{tp.muscleGroupVolume}</h2>
               {analytics.muscleGroupVolume.length === 0 ? (
                 <p className="text-sm text-muted">{tp.noData}</p>
               ) : (
-                <div style={{ height: Math.max(160, analytics.muscleGroupVolume.length * 36) }}>
+                <div style={{ height: 260 }}>
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={analytics.muscleGroupVolume} layout="vertical" margin={{ left: 8, right: 16 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border-1)" horizontal={false} />
-                      <XAxis type="number" tick={TICK_STYLE} tickLine={false} axisLine={false} allowDecimals={false} />
-                      <YAxis type="category" dataKey="muscleGroup" tick={TICK_STYLE} tickLine={false} axisLine={false} width={80} />
+                    <BarChart data={analytics.muscleGroupVolume} margin={{ top: 4, right: 8, left: 8, bottom: 32 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border-1)" vertical={false} />
+                      <XAxis
+                        type="category"
+                        dataKey="muscleGroup"
+                        tick={{ ...TICK_STYLE, angle: -35, textAnchor: 'end', dy: 8 }}
+                        tickLine={false}
+                        axisLine={false}
+                        interval={0}
+                      />
+                      <YAxis
+                        type="number"
+                        tick={TICK_STYLE}
+                        tickLine={false}
+                        axisLine={false}
+                        allowDecimals={false}
+                        tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(1)}t` : `${v}`}
+                        width={44}
+                      />
                       <Tooltip
                         contentStyle={CHART_TOOLTIP_STYLE}
                         labelStyle={{ color: 'var(--fg-1)' }}
                         itemStyle={{ color: 'var(--color-primary)' }}
-                        formatter={(value) => [`${Number(value ?? 0)} sets`, 'Sets']}
+                        formatter={(value) => [`${Number(value ?? 0).toLocaleString()} kg`, tp.weightedVolume]}
                       />
-                      <Bar dataKey="completedSets" radius={[0, 4, 4, 0]} name="completedSets">
+                      <Bar dataKey="totalVolume" radius={[4, 4, 0, 0]} name="totalVolume">
                         {analytics.muscleGroupVolume.map((_, i) => (
-                          <Cell key={i} fill="var(--color-primary)" fillOpacity={1 - i * 0.06} />
+                          <Cell key={i} fill="var(--color-primary)" fillOpacity={Math.max(0.35, 1 - i * 0.06)} />
                         ))}
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
               )}
+              {analytics.muscleGroupVolume.length > 0 && (
+                <MuscleGroupVolumeList data={analytics.muscleGroupVolume} tp={tp} />
+              )}
             </Card>
           </motion.div>
+
         </>
       )}
     </div>
@@ -368,6 +388,41 @@ function ProgressShell({
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function MuscleGroupVolumeList({
+  data,
+  tp,
+}: {
+  data: MuscleGroupPoint[]
+  tp: Record<string, string>
+}) {
+  return (
+    <div className="mt-4 grid gap-2 md:grid-cols-2">
+      {data.slice(0, 8).map((item) => (
+        <div
+          key={item.muscleGroup}
+          className="rounded-xl px-3 py-2"
+          style={{ background: 'var(--bg-3)', border: '1px solid var(--border-1)' }}
+        >
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-sm font-medium text-text">{item.muscleGroup}</span>
+            <span className="text-xs text-muted">{item.percentOfTotal.toFixed(1)}%</span>
+          </div>
+          <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted">
+            <span>{formatKg(item.totalVolume)}</span>
+            <span>{item.completedSets} {tp.sets}</span>
+            <span>{tp.primary}: {formatKg(item.primaryVolume)}</span>
+            <span>{tp.secondary}: {formatKg(item.secondaryVolume)}</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function formatKg(value: number) {
+  return `${Math.round(value).toLocaleString()} kg`
+}
 
 function PlanSelect({
   plans,

@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Check, ChevronDown } from 'lucide-react'
 import { cn } from '@/shared/utils/cn'
@@ -35,18 +36,38 @@ const dropdownVariants = {
   },
 }
 
+interface DropdownPos {
+  top: number
+  left: number
+  width: number
+}
+
 export function Select({ label, error, options, placeholder, value, onChange, disabled, className }: Props) {
   const [open, setOpen] = useState(false)
-  const containerRef = useRef<HTMLDivElement>(null)
+  const [pos, setPos] = useState<DropdownPos | null>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
   const id = useId()
 
   const selected = options.find((o) => o.value === value)
+
+  function openDropdown() {
+    if (disabled) return
+    if (!open && triggerRef.current) {
+      const r = triggerRef.current.getBoundingClientRect()
+      setPos({ top: r.bottom + window.scrollY + 4, left: r.left + window.scrollX, width: r.width })
+    }
+    setOpen((o) => !o)
+  }
 
   // Close on outside click
   useEffect(() => {
     if (!open) return
     function onDown(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        triggerRef.current && !triggerRef.current.contains(e.target as Node) &&
+        dropdownRef.current && !dropdownRef.current.contains(e.target as Node)
+      ) {
         setOpen(false)
       }
     }
@@ -64,28 +85,42 @@ export function Select({ label, error, options, placeholder, value, onChange, di
     return () => document.removeEventListener('keydown', onKey)
   }, [open])
 
+  // Reposition on scroll/resize while open
+  useEffect(() => {
+    if (!open) return
+    function reposition() {
+      if (triggerRef.current) {
+        const r = triggerRef.current.getBoundingClientRect()
+        setPos({ top: r.bottom + window.scrollY + 4, left: r.left + window.scrollX, width: r.width })
+      }
+    }
+    window.addEventListener('scroll', reposition, true)
+    window.addEventListener('resize', reposition)
+    return () => {
+      window.removeEventListener('scroll', reposition, true)
+      window.removeEventListener('resize', reposition)
+    }
+  }, [open])
+
   function pick(val: string) {
     onChange?.(val)
     setOpen(false)
   }
 
   return (
-    <div ref={containerRef} className={cn('relative flex flex-col gap-1.5', className)}>
+    <div className={cn('relative flex flex-col gap-1.5', className)}>
       {label && (
-        <label
-          htmlFor={id}
-          className="text-sm font-medium"
-          style={{ color: 'var(--fg-1)' }}
-        >
+        <label htmlFor={id} className="text-sm font-medium" style={{ color: 'var(--fg-1)' }}>
           {label}
         </label>
       )}
 
       <button
+        ref={triggerRef}
         id={id}
         type="button"
         disabled={disabled}
-        onClick={() => !disabled && setOpen((o) => !o)}
+        onClick={openDropdown}
         aria-haspopup="listbox"
         aria-expanded={open}
         className={cn(
@@ -108,42 +143,40 @@ export function Select({ label, error, options, placeholder, value, onChange, di
         </motion.span>
       </button>
 
-      <AnimatePresence>
-        {open && (
+      {open && pos && createPortal(
+        <AnimatePresence>
           <motion.div
+            ref={dropdownRef}
             role="listbox"
             initial="hidden"
             animate="visible"
             exit="exit"
             variants={dropdownVariants}
-            className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-xl border"
             style={{
+              position: 'absolute',
+              top: pos.top,
+              left: pos.left,
+              width: pos.width,
+              zIndex: 9999,
               background: 'var(--bg-3)',
-              borderColor: 'var(--border-1)',
+              border: '1px solid var(--border-1)',
+              borderRadius: 12,
               boxShadow: '0 8px 32px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.2)',
+              overflow: 'hidden',
             }}
           >
             <div className="max-h-52 overflow-y-auto p-1.5 space-y-0.5">
               {placeholder && (
-                <OptionRow
-                  label={placeholder}
-                  selected={!value || value === ''}
-                  muted
-                  onClick={() => pick('')}
-                />
+                <OptionRow label={placeholder} selected={!value || value === ''} muted onClick={() => pick('')} />
               )}
               {options.map((opt) => (
-                <OptionRow
-                  key={opt.value}
-                  label={opt.label}
-                  selected={opt.value === value}
-                  onClick={() => pick(opt.value)}
-                />
+                <OptionRow key={opt.value} label={opt.label} selected={opt.value === value} onClick={() => pick(opt.value)} />
               ))}
             </div>
           </motion.div>
-        )}
-      </AnimatePresence>
+        </AnimatePresence>,
+        document.body,
+      )}
 
       <AnimatePresence>
         {error && (
@@ -178,9 +211,7 @@ function OptionRow({ label, selected, onClick, muted }: OptionRowProps) {
       onClick={onClick}
       className={cn(
         'flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors select-none',
-        selected
-          ? 'font-medium'
-          : 'hover:bg-white/6',
+        selected ? 'font-medium' : 'hover:bg-white/6',
         muted && !selected && 'text-muted',
       )}
       style={selected ? { background: 'var(--xn-clay-200)', color: 'var(--xn-clay-800)' } : undefined}

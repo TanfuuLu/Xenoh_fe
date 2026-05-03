@@ -2,7 +2,7 @@ import { useState, type KeyboardEvent } from 'react'
 import { useNavigate } from 'react-router'
 import { useDebounce } from '@/shared/hooks/useDebounce'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
-import { Mail, Search, User, UserPlus, Users } from 'lucide-react'
+import { Mail, Search, Star, User, UserMinus, UserPlus, Users } from 'lucide-react'
 import { Input } from '@/shared/components/Input'
 import { Button } from '@/shared/components/Button'
 import { Badge } from '@/shared/components/Badge'
@@ -13,7 +13,8 @@ import { staggerContainer, slideUp } from '@/shared/utils/motion'
 import { useT } from '@/shared/i18n'
 import { useConfirm } from '@/shared/components/ConfirmModal'
 import { useCoaches, useCoachProfile } from '../index'
-import { useMyCoach, useRequestCoach, useTerminateRelationship } from '@/features/coach-client'
+import { useMyCoach, useRequestCoach, useTerminateRelationship, useRequestTermination, useAcceptTermination, useRejectTermination } from '@/features/coach-client'
+import { useAuthStore } from '@/features/auth'
 import type { AxiosError } from 'axios'
 import type { ApiError } from '@/shared/types/api'
 
@@ -33,9 +34,18 @@ export function CoachesPage() {
     { name: debouncedSearch || undefined },
     !loadingMyCoach && !hasCoach,
   )
+  const currentUserId = useAuthStore((s) => s.user?.id ?? '')
   const { mutate: requestCoach, isPending: requesting, error: reqError } = useRequestCoach()
   const { mutate: terminate, isPending: terminating } = useTerminateRelationship()
+  const { mutate: requestTermination, isPending: requestingTermination } = useRequestTermination()
+  const { mutate: acceptTermination, isPending: acceptingTermination } = useAcceptTermination()
+  const { mutate: rejectTermination, isPending: rejectingTermination } = useRejectTermination()
   const { confirm, ConfirmDialog } = useConfirm()
+
+  const isPendingTermination = myCoach?.status === 'PendingTermination'
+  const iInitiatedTermination = isPendingTermination && myCoach?.terminationRequestedBy === currentUserId
+  const coachInitiatedTermination = isPendingTermination && myCoach?.terminationRequestedBy !== currentUserId
+  const anyTerminationPending = requestingTermination || acceptingTermination || rejectingTermination
 
   const apiError = (reqError as AxiosError<ApiError>)?.response?.data?.message
   const currentCoach = coachProfile ?? coaches?.find((coach) => coach.id === myCoach?.coachId)
@@ -87,7 +97,11 @@ export function CoachesPage() {
                     {currentCoach?.fullName ?? myCoach.coachName}
                   </h2>
                   <Badge variant={myCoach.status === 'Active' ? 'success' : 'warning'}>
-                    {myCoach.status === 'Active' ? tco.connected : tco.pending}
+                    {myCoach.status === 'Active'
+                      ? tco.connected
+                      : myCoach.status === 'PendingTermination'
+                      ? (iInitiatedTermination ? tco.disconnectPendingByYou : tco.disconnectPendingByOther)
+                      : tco.pending}
                   </Badge>
                 </div>
               </div>
@@ -101,19 +115,65 @@ export function CoachesPage() {
                 >
                   <User size={15} /> {tcp.viewProfile}
                 </Button>
-                <Button
-                  variant="danger"
-                  size="sm"
-                  className="w-full min-[390px]:w-auto"
-                  loading={terminating}
-                  onClick={async () => {
-                    if (await confirm(tco.disconnectConfirm, { confirmLabel: tco.disconnect, danger: true })) {
-                      terminate(myCoach.id)
-                    }
-                  }}
-                >
-                  {tco.disconnect}
-                </Button>
+                {myCoach.status === 'Pending' && (
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    className="w-full min-[390px]:w-auto"
+                    loading={terminating}
+                    onClick={() => terminate(myCoach.id)}
+                  >
+                    {tco.cancelRequest}
+                  </Button>
+                )}
+                {myCoach.status === 'Active' && (
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    className="w-full min-[390px]:w-auto"
+                    loading={terminating}
+                    onClick={async () => {
+                      if (await confirm(tco.disconnectConfirm, { confirmLabel: tco.disconnect, danger: true })) {
+                        requestTermination(myCoach.id)
+                      }
+                    }}
+                  >
+                    <UserMinus size={15} /> {tco.disconnect}
+                  </Button>
+                )}
+                {iInitiatedTermination && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full min-[390px]:w-auto"
+                    loading={anyTerminationPending}
+                    onClick={() => rejectTermination(myCoach.id)}
+                  >
+                    {tco.cancelDisconnect}
+                  </Button>
+                )}
+                {coachInitiatedTermination && (
+                  <>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      className="w-full min-[390px]:w-auto"
+                      loading={anyTerminationPending}
+                      onClick={() => acceptTermination(myCoach.id)}
+                    >
+                      {tco.acceptDisconnect}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full min-[390px]:w-auto"
+                      loading={anyTerminationPending}
+                      onClick={() => rejectTermination(myCoach.id)}
+                    >
+                      {tco.rejectDisconnect}
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
 
@@ -136,7 +196,11 @@ export function CoachesPage() {
           <Card animate={false} className="flex flex-col justify-center gap-2">
             <p className="text-xs font-medium uppercase tracking-wide text-muted">{tco.relationshipStatus}</p>
             <p className="text-3xl font-black text-text">
-              {myCoach.status === 'Active' ? tco.connected : tco.pending}
+              {myCoach.status === 'Active'
+                ? tco.connected
+                : myCoach.status === 'PendingTermination'
+                ? (iInitiatedTermination ? tco.disconnectPendingByYou : tco.disconnectPendingByOther)
+                : tco.pending}
             </p>
             <p className="text-sm text-muted">{tco.connectedSince} {new Date(myCoach.createdAt).toLocaleDateString()}</p>
           </Card>
@@ -161,7 +225,7 @@ export function CoachesPage() {
               initial={shouldReduce ? false : 'hidden'}
               animate="visible"
               variants={staggerContainer}
-              className="space-y-3"
+              className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
             >
               <AnimatePresence>
                 {coaches?.map((coach) => (
@@ -173,36 +237,43 @@ export function CoachesPage() {
                     tabIndex={0}
                     onClick={() => openCoachProfile(coach.id)}
                     onKeyDown={(event) => handleCoachCardKeyDown(event, coach.id)}
-                    className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-border bg-surface px-4 py-3 transition-shadow hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/35"
+                    className="flex cursor-pointer flex-col gap-4 rounded-xl border border-border bg-surface p-5 transition-shadow hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/35"
                   >
-                    <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex items-center gap-3">
                       <UserAvatar
                         name={coach.fullName}
                         email={coach.email}
                         imageUrl={coach.avatarUrl}
-                        size={44}
+                        size={52}
                         variant="clay"
                       />
                       <div className="min-w-0">
-                        <p className="truncate font-medium text-text">{coach.fullName}</p>
-                        <p className="truncate text-sm text-muted">{coach.email}</p>
+                        <p className="truncate font-semibold text-text">{coach.fullName}</p>
+                        <p className="truncate text-xs text-muted">{coach.email}</p>
                       </div>
                     </div>
-                    <Button
-                      size="sm"
-                      loading={requesting}
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        requestCoach({ coachId: coach.id })
-                      }}
-                    >
-                      <UserPlus size={15} /> {tco.connectBtn}
-                    </Button>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="flex items-center gap-1 text-sm text-muted">
+                        <Star size={13} fill="currentColor" />
+                        {coach.averageRating?.toFixed(1) ?? '-'}
+                        <span className="text-xs">({coach.ratingCount})</span>
+                      </p>
+                      <Button
+                        size="sm"
+                        loading={requesting}
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          requestCoach({ coachId: coach.id })
+                        }}
+                      >
+                        <UserPlus size={15} /> {tco.connectBtn}
+                      </Button>
+                    </div>
                   </motion.div>
                 ))}
               </AnimatePresence>
               {coaches?.length === 0 && (
-                <p className="text-center text-muted py-8">{tco.noResults}</p>
+                <p className="text-center text-muted py-8 col-span-full">{tco.noResults}</p>
               )}
             </motion.div>
           )}

@@ -1,7 +1,9 @@
 export type UserRole = 'Individual' | 'Coach' | 'Admin'
+export type ReportReason = 'Harassment' | 'Spam' | 'Scam' | 'Inappropriate' | 'Other'
+export type ReportStatus = 'Pending' | 'Resolved' | 'Dismissed'
 export type DayStatus = 'Normal' | 'Rest' | 'Missed'
 export type Gender = 'Male' | 'Female' | 'Other'
-export type RelationshipStatus = 'Pending' | 'Active'
+export type RelationshipStatus = 'Pending' | 'Active' | 'PendingTermination'
 export type PlanType = 'Self' | 'Coach'
 
 export const MuscleGroup = {

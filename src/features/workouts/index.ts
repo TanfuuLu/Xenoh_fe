@@ -9,6 +9,7 @@ export {
   useCompleteSet,
   useStartExerciseTimer,
   useFinishExerciseTimer,
+  useSetExerciseDuration,
 } from './api/useExercises'
 export {
   useExerciseTemplates,

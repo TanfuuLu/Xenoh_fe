@@ -33,7 +33,7 @@ export function useMyCoach() {
     // Poll every 8s while waiting for coach to accept so client sees update without manual refresh
     refetchInterval: (query) => {
       const data = query.state.data
-      if (data?.status === 'Pending') return 8_000
+      if (data?.status === 'Pending' || data?.status === 'PendingTermination') return 8_000
       return false
     },
   })
@@ -100,6 +100,45 @@ export function useTerminateRelationship() {
       void qc.invalidateQueries({ queryKey: coachClientKeys.myClients })
       void qc.invalidateQueries({ queryKey: coachClientKeys.pendingRequests })
       void qc.invalidateQueries({ queryKey: coachKeys.all })
+    },
+  })
+}
+
+export function useRequestTermination() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (relationshipId: string) =>
+      api.post(ENDPOINTS.coachClient.requestTermination(relationshipId)),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: coachClientKeys.myCoach })
+      void qc.invalidateQueries({ queryKey: coachClientKeys.myClients })
+    },
+  })
+}
+
+export function useAcceptTermination() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (relationshipId: string) =>
+      api.post(ENDPOINTS.coachClient.acceptTermination(relationshipId)),
+    onSuccess: () => {
+      qc.setQueryData(coachClientKeys.myCoach, null)
+      void qc.invalidateQueries({ queryKey: coachClientKeys.myCoach })
+      void qc.invalidateQueries({ queryKey: coachClientKeys.myClients })
+      void qc.invalidateQueries({ queryKey: coachClientKeys.pendingRequests })
+      void qc.invalidateQueries({ queryKey: coachKeys.all })
+    },
+  })
+}
+
+export function useRejectTermination() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (relationshipId: string) =>
+      api.post(ENDPOINTS.coachClient.rejectTermination(relationshipId)),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: coachClientKeys.myCoach })
+      void qc.invalidateQueries({ queryKey: coachClientKeys.myClients })
     },
   })
 }

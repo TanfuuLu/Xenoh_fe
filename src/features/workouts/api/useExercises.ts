@@ -159,6 +159,29 @@ export function useCompleteSet(dailyWorkoutId: string) {
   })
 }
 
+export function useSetExerciseDuration(dailyWorkoutId: string) {
+  const qc = useQueryClient()
+  const key = exerciseKeys.byDay(dailyWorkoutId)
+
+  return useMutation({
+    mutationFn: ({ exerciseId, durationSeconds }: { exerciseId: string; durationSeconds: number }) =>
+      api
+        .patch<ExerciseResponse>(ENDPOINTS.exercises.setDuration(exerciseId), {
+          exerciseId,
+          durationSeconds,
+        })
+        .then((r) => r.data),
+    onSuccess: (updated) => {
+      qc.setQueryData<ExerciseResponse[]>(key, (old) =>
+        old?.map((exercise) => (exercise.id === updated.id ? updated : exercise)),
+      )
+      qc.invalidateQueries({ queryKey: ['days'] })
+      qc.invalidateQueries({ queryKey: ['weeks'] })
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: key }),
+  })
+}
+
 export function useStartExerciseTimer(dailyWorkoutId: string) {
   const qc = useQueryClient()
   const key = exerciseKeys.byDay(dailyWorkoutId)

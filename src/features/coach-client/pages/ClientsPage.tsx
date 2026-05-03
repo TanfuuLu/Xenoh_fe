@@ -4,8 +4,9 @@ import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import {
   CheckCircle2, XCircle, User, Clock, Mail, FileText,
   Flame, Dumbbell, Ruler, Weight, AlertTriangle, TrendingUp,
-  CalendarDays, Scale,
+  CalendarDays, Scale, UserMinus,
 } from 'lucide-react'
+import { useAuthStore } from '@/features/auth'
 import { format, differenceInDays, formatDistanceToNow } from 'date-fns'
 import { Card } from '@/shared/components/Card'
 import { UserAvatar } from '@/shared/components/UserAvatar'
@@ -24,6 +25,9 @@ import {
   useCoachDashboard,
   useAcceptRequest,
   useTerminateRelationship,
+  useRequestTermination,
+  useAcceptTermination,
+  useRejectTermination,
 } from '../index'
 
 // ─── Requester preview modal (unchanged) ───────────────────────────────────
@@ -131,12 +135,19 @@ function RequesterProfileModal({
 interface ClientCardProps {
   client: ClientResponse
   stats: CoachClientDashboardResponse | undefined
+  currentUserId: string
   onView: () => void
   onDisconnect: () => void
+  onCancelDisconnect: () => void
+  onAcceptDisconnect: () => void
+  onRejectDisconnect: () => void
   disconnecting: boolean
 }
 
-function ClientCard({ client, stats, onView, onDisconnect, disconnecting }: ClientCardProps) {
+function ClientCard({ client, stats, currentUserId, onView, onDisconnect, onCancelDisconnect, onAcceptDisconnect, onRejectDisconnect, disconnecting }: ClientCardProps) {
+  const isPendingTermination = client.status === 'PendingTermination'
+  const iInitiated = isPendingTermination && client.terminationRequestedBy === currentUserId
+  const clientInitiated = isPendingTermination && client.terminationRequestedBy !== currentUserId
   const daysSinceLast = stats?.lastWorkoutDate
     ? differenceInDays(new Date(), new Date(stats.lastWorkoutDate))
     : null
@@ -169,18 +180,41 @@ function ClientCard({ client, stats, onView, onDisconnect, disconnecting }: Clie
         </div>
 
         <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-          {isInactive && (
+          {isInactive && !isPendingTermination && (
             <Badge variant="warning">
               <AlertTriangle size={11} className="mr-0.5" />
               Inactive
             </Badge>
           )}
+          {isPendingTermination && (
+            <Badge variant="warning">
+              <UserMinus size={11} className="mr-0.5" />
+              {iInitiated ? 'Awaiting response' : 'Wants to disconnect'}
+            </Badge>
+          )}
           <Button variant="ghost" size="sm" onClick={onView}>
             <User size={14} />
           </Button>
-          <Button variant="ghost" size="sm" loading={disconnecting} onClick={onDisconnect}>
-            <XCircle size={14} className="text-danger" />
-          </Button>
+          {!isPendingTermination && (
+            <Button variant="ghost" size="sm" loading={disconnecting} onClick={onDisconnect}>
+              <XCircle size={14} className="text-danger" />
+            </Button>
+          )}
+          {iInitiated && (
+            <Button variant="ghost" size="sm" loading={disconnecting} onClick={onCancelDisconnect}>
+              <XCircle size={14} className="text-muted" />
+            </Button>
+          )}
+          {clientInitiated && (
+            <>
+              <Button size="sm" variant="danger" loading={disconnecting} onClick={onAcceptDisconnect}>
+                <CheckCircle2 size={14} />
+              </Button>
+              <Button size="sm" variant="ghost" loading={disconnecting} onClick={onRejectDisconnect}>
+                <XCircle size={14} />
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
@@ -273,14 +307,20 @@ export function ClientsPage() {
   const [previewReq, setPreviewReq] = useState<CoachRelationshipResponse | null>(null)
   const shouldReduce = useReducedMotion()
   const navigate = useNavigate()
+  const currentUserId = useAuthStore((s) => s.user?.id ?? '')
   const { data: pending, isLoading: pendingLoading } = usePendingRequests()
   const { data: clients, isLoading: clientsLoading } = useMyClients()
   const { data: dashboardData, isLoading: dashboardLoading } = useCoachDashboard()
   const { mutate: accept, isPending: accepting } = useAcceptRequest()
   const { mutate: terminate, isPending: terminating } = useTerminateRelationship()
+  const { mutate: requestTermination, isPending: requestingTermination } = useRequestTermination()
+  const { mutate: acceptTermination, isPending: acceptingTermination } = useAcceptTermination()
+  const { mutate: rejectTermination, isPending: rejectingTermination } = useRejectTermination()
   const { confirm, ConfirmDialog } = useConfirm()
   const t   = useT()
   const tcl = t.clients
+
+  const anyTerminationPending = requestingTermination || acceptingTermination || rejectingTermination
 
   const loading = pendingLoading || clientsLoading || dashboardLoading
 
@@ -292,7 +332,7 @@ export function ClientsPage() {
     )
   }
 
-  const activeClients = clients?.filter((c) => c.status === 'Active') ?? []
+  const activeClients = clients?.filter((c) => c.status === 'Active' || c.status === 'PendingTermination') ?? []
 
   // Build a lookup map from clientId → dashboard stats
   const statsMap = new Map<string, CoachClientDashboardResponse>(
@@ -352,7 +392,7 @@ export function ClientsPage() {
                   style={{ borderColor: 'var(--xn-warning)', background: 'var(--xn-warning-bg)' }}
                 >
                   <div className="flex min-w-0 items-center gap-3 self-stretch sm:self-auto">
-                    <UserAvatar name={req.clientName} size={44} variant="primary" />
+                    <UserAvatar name={req.clientName} imageUrl={req.clientAvatarUrl} size={44} variant="primary" />
                     <div className="min-w-0">
                       <p className="truncate font-semibold text-text">{req.clientName}</p>
                       <div className="mt-0.5 flex items-center gap-1 text-xs text-muted">
@@ -404,13 +444,17 @@ export function ClientsPage() {
                 key={client.relationshipId}
                 client={client}
                 stats={statsMap.get(client.clientId)}
+                currentUserId={currentUserId}
                 onView={() => navigate(`/coach/clients/${client.clientId}`)}
                 onDisconnect={async () => {
                   if (await confirm(tcl.disconnectConfirm.replace('{name}', client.fullName), { confirmLabel: tcl.disconnect, danger: true })) {
-                    terminate(client.relationshipId)
+                    requestTermination(client.relationshipId)
                   }
                 }}
-                disconnecting={terminating}
+                onCancelDisconnect={() => rejectTermination(client.relationshipId)}
+                onAcceptDisconnect={() => acceptTermination(client.relationshipId)}
+                onRejectDisconnect={() => rejectTermination(client.relationshipId)}
+                disconnecting={terminating || anyTerminationPending}
               />
             ))}
           </AnimatePresence>

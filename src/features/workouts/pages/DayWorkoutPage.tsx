@@ -2,7 +2,7 @@ import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useSta
 import type { DragEvent, ReactNode } from 'react'
 import { useParams, Link, useLocation } from 'react-router'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
-import { ChevronLeft, Plus, Trash2, CheckCircle2, Circle, Trophy, Dumbbell, Search, X, Copy, AlertTriangle, TriangleAlert, Activity, GripVertical, BedDouble, XCircle, Play, Square, Timer, Flame } from 'lucide-react'
+import { ChevronLeft, Plus, Trash2, CheckCircle2, Circle, Trophy, Dumbbell, Search, X, Copy, AlertTriangle, TriangleAlert, Activity, GripVertical, BedDouble, XCircle, Play, Square, Timer, Flame, Check } from 'lucide-react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -29,12 +29,14 @@ import {
   useCompleteSet,
   useStartExerciseTimer,
   useFinishExerciseTimer,
+  useSetExerciseDuration,
   useExerciseTemplates,
   useDailyWorkouts,
   useCopyDay,
   useMarkDayStatus,
 } from '../index'
 import type { ExerciseResponse, ExerciseSetResponse, ExerciseTemplateResponse } from '../types'
+import { useMyProfile } from '@/features/profile'
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -53,8 +55,11 @@ export function DayWorkoutPage() {
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<MuscleGroupValue | ''>('')
   const [orderedExercises, setOrderedExercises] = useState<ExerciseResponse[]>([])
   const [draggedExerciseId, setDraggedExerciseId] = useState<string | null>(null)
+  const [listHeight, setListHeight] = useState(400)
   const autoScrollFrame = useRef<number | null>(null)
   const autoScrollSpeed = useRef(0)
+  const lastDragOverId = useRef<string | null>(null)
+  const exerciseListRef = useRef<HTMLDivElement>(null)
   const t   = useT()
   const tw  = t.weekDetail
   const tdw = t.dayWorkout
@@ -74,6 +79,7 @@ export function DayWorkoutPage() {
   const { mutate: completeSet } = useCompleteSet(dailyWorkoutId)
   const { mutate: startTimer, isPending: startingTimer } = useStartExerciseTimer(dailyWorkoutId)
   const { mutate: finishTimer, isPending: finishingTimer } = useFinishExerciseTimer(dailyWorkoutId)
+  const { mutate: setDuration } = useSetExerciseDuration(dailyWorkoutId)
   const { mutate: reorderExercises } = useReorderExercises(dailyWorkoutId)
 
   const { data: siblingDays } = useDailyWorkouts(weeklyWorkoutId)
@@ -89,6 +95,17 @@ export function DayWorkoutPage() {
   }, [exercises])
 
   useEffect(() => () => stopDragAutoScroll(), [])
+
+  useEffect(() => {
+    const update = () => {
+      if (!exerciseListRef.current) return
+      const top = exerciseListRef.current.getBoundingClientRect().top
+      setListHeight(window.innerHeight - top - 20)
+    }
+    update()
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
+  })
 
   const addSchema = z.object({
     exerciseTemplateId: z.string().min(1, tdw.selectExerciseError),
@@ -141,6 +158,8 @@ export function DayWorkoutPage() {
 
   function moveDraggedExercise(targetExerciseId: string) {
     if (!draggedExerciseId || draggedExerciseId === targetExerciseId) return
+    if (lastDragOverId.current === targetExerciseId) return
+    lastDragOverId.current = targetExerciseId
 
     setOrderedExercises((current) => {
       const fromIndex = current.findIndex((exercise) => exercise.id === draggedExerciseId)
@@ -154,6 +173,18 @@ export function DayWorkoutPage() {
     })
   }
 
+  function moveDraggedToEnd() {
+    if (!draggedExerciseId) return
+    setOrderedExercises((current) => {
+      const fromIndex = current.findIndex((exercise) => exercise.id === draggedExerciseId)
+      if (fromIndex < 0 || fromIndex === current.length - 1) return current
+      const next = [...current]
+      const [moved] = next.splice(fromIndex, 1)
+      next.push(moved)
+      return next
+    })
+  }
+
   function stopDragAutoScroll() {
     autoScrollSpeed.current = 0
     if (autoScrollFrame.current != null) {
@@ -163,10 +194,14 @@ export function DayWorkoutPage() {
   }
 
   function startDragAutoScroll(clientY: number) {
-    const edgeSize = 110
-    const maxSpeed = 18
-    const bottomDistance = window.innerHeight - clientY
-    const topDistance = clientY
+    const container = exerciseListRef.current
+    if (!container) return
+
+    const rect = container.getBoundingClientRect()
+    const edgeSize = 80
+    const maxSpeed = 14
+    const topDistance = clientY - rect.top
+    const bottomDistance = rect.bottom - clientY
 
     if (topDistance < edgeSize) {
       autoScrollSpeed.current = -Math.round(((edgeSize - topDistance) / edgeSize) * maxSpeed)
@@ -184,8 +219,7 @@ export function DayWorkoutPage() {
         autoScrollFrame.current = null
         return
       }
-
-      window.scrollBy({ top: autoScrollSpeed.current, behavior: 'auto' })
+      container.scrollBy({ top: autoScrollSpeed.current, behavior: 'instant' as ScrollBehavior })
       autoScrollFrame.current = window.requestAnimationFrame(scrollStep)
     }
 
@@ -244,6 +278,9 @@ export function DayWorkoutPage() {
   const warningExercises = exercises?.filter(hasWarningExercise) ?? []
   const dayVolume = exercises?.reduce((sum, exercise) => sum + getExerciseVolume(exercise), 0) ?? 0
   const estimatedCalories = exercises?.reduce((sum, exercise) => sum + (exercise.estimatedCalories ?? 0), 0) ?? 0
+  const totalDurationSeconds = exercises?.reduce((sum, e) => sum + (e.durationSeconds ?? 0), 0) ?? 0
+  const rpeValues = exercises?.flatMap((e) => e.sets).filter((s) => s.isCompleted && s.rpe != null).map((s) => s.rpe as number) ?? []
+  const averageRpe = rpeValues.length > 0 ? rpeValues.reduce((a, b) => a + b, 0) / rpeValues.length : null
 
   return (
     <>
@@ -312,10 +349,17 @@ export function DayWorkoutPage() {
           warningCount={warningExercises.length}
           volume={dayVolume}
           estimatedCalories={estimatedCalories}
+          totalDurationSeconds={totalDurationSeconds}
+          averageRpe={averageRpe}
         />
       )}
 
       {/* Exercise list */}
+      <div
+        ref={exerciseListRef}
+        className="overflow-y-auto rounded-xl pr-1"
+        style={{ height: listHeight }}
+      >
       <motion.div
         initial={shouldReduce ? false : 'hidden'}
         animate="visible"
@@ -329,9 +373,12 @@ export function DayWorkoutPage() {
               exercise={exercise}
               canEdit={canEdit}
               canComplete={canComplete}
-              animateLayout={!shouldReduce}
+              animateLayout={!shouldReduce && draggedExerciseId === null}
               isDragging={draggedExerciseId === exercise.id}
-              onDragStart={() => setDraggedExerciseId(exercise.id)}
+              onDragStart={() => {
+                setDraggedExerciseId(exercise.id)
+                lastDragOverId.current = null
+              }}
               onDragMove={startDragAutoScroll}
               onDragOver={(event) => {
                 event.preventDefault()
@@ -344,12 +391,14 @@ export function DayWorkoutPage() {
                 setDraggedExerciseId(null)
               }}
               onDragEnd={() => {
+                saveExerciseOrder()
                 stopDragAutoScroll()
                 setDraggedExerciseId(null)
               }}
               onCompleteSet={handleCompleteSet}
               onStartTimer={() => startTimer(exercise.id)}
               onFinishTimer={() => finishTimer(exercise.id)}
+              onSetDuration={(durationSeconds) => setDuration({ exerciseId: exercise.id, durationSeconds })}
               timerPending={startingTimer || finishingTimer}
               onDelete={async () => {
                 if (await confirm(tdw.deleteExerciseConfirm.replace('{name}', exercise.name), { confirmLabel: tc.delete, danger: true })) {
@@ -360,6 +409,21 @@ export function DayWorkoutPage() {
           ))}
         </AnimatePresence>
 
+        {draggedExerciseId !== null && (
+          <div
+            className="h-16"
+            onDragOver={(e) => {
+              e.preventDefault()
+              moveDraggedToEnd()
+            }}
+            onDrop={() => {
+              saveExerciseOrder()
+              stopDragAutoScroll()
+              setDraggedExerciseId(null)
+            }}
+          />
+        )}
+
         {orderedExercises.length === 0 && (
           <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-surface py-14 text-center">
             <Dumbbell size={36} className="text-muted/40" />
@@ -367,6 +431,7 @@ export function DayWorkoutPage() {
           </div>
         )}
       </motion.div>
+      </div>
 
       {/* Modal: Add exercise */}
       <Modal
@@ -577,9 +642,11 @@ interface DayResultCardProps {
   warningCount: number
   volume: number
   estimatedCalories: number
+  totalDurationSeconds: number
+  averageRpe: number | null
 }
 
-function DayResultCard({ exerciseCount, warningCount, volume, estimatedCalories }: DayResultCardProps) {
+function DayResultCard({ exerciseCount, warningCount, volume, estimatedCalories, totalDurationSeconds, averageRpe }: DayResultCardProps) {
   const status = warningCount > 0 ? 'Warning' : 'Good'
   const isWarning = warningCount > 0
   const formattedVolume = new Intl.NumberFormat(undefined, {
@@ -609,7 +676,7 @@ function DayResultCard({ exerciseCount, warningCount, volume, estimatedCalories 
         <Badge variant={isWarning ? 'warning' : 'success'}>{status}</Badge>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-4">
+      <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
         <ResultMetric label="Exercises" value={exerciseCount.toString()} />
         <ResultMetric
           label="Status"
@@ -627,6 +694,17 @@ function DayResultCard({ exerciseCount, warningCount, volume, estimatedCalories 
           value={estimatedCalories > 0 ? `${Math.round(estimatedCalories)} kcal` : '—'}
           sub={estimatedCalories > 0 ? 'MET x bodyweight x duration' : 'No timed exercises'}
           icon={<Flame size={16} />}
+        />
+        <ResultMetric
+          label="Total Time"
+          value={totalDurationSeconds > 0 ? formatDuration(totalDurationSeconds) : '—'}
+          sub={totalDurationSeconds > 0 ? 'sum of timed exercises' : 'No timed exercises'}
+          icon={<Timer size={16} />}
+        />
+        <ResultMetric
+          label="Avg RPE"
+          value={averageRpe != null ? averageRpe.toFixed(1) : '—'}
+          sub={averageRpe != null ? 'rate of perceived exertion' : 'No RPE logged'}
         />
       </div>
     </Card>
@@ -894,6 +972,7 @@ interface ExerciseCardProps {
   onCompleteSet: (setId: string, actualReps: number, actualWeight: number, rpe?: number) => void
   onStartTimer: () => void
   onFinishTimer: () => void
+  onSetDuration: (durationSeconds: number) => void
   timerPending: boolean
   onDelete: () => void
 }
@@ -912,6 +991,7 @@ function ExerciseCard({
   onCompleteSet,
   onStartTimer,
   onFinishTimer,
+  onSetDuration,
   timerPending,
   onDelete,
 }: ExerciseCardProps) {
@@ -1033,6 +1113,7 @@ function ExerciseCard({
         pending={timerPending}
         onStart={onStartTimer}
         onFinish={onFinishTimer}
+        onSetDuration={onSetDuration}
       />
 
       {/* Per-exercise progress bar */}
@@ -1077,15 +1158,31 @@ function ExerciseTimerControls({
   pending,
   onStart,
   onFinish,
+  onSetDuration,
 }: {
   exercise: ExerciseResponse
   canComplete: boolean
   pending: boolean
   onStart: () => void
   onFinish: () => void
+  onSetDuration: (durationSeconds: number) => void
 }) {
   const [now, setNow] = useState(() => Date.now())
   const isRunning = exercise.startedAtUtc != null && exercise.endedAtUtc == null
+  const showManualInput = exercise.isCompleted && exercise.startedAtUtc == null
+
+  const storageKey = `xn-duration-${exercise.id}`
+  const [mins, setMins] = useState(() => {
+    const stored = localStorage.getItem(storageKey)
+    return stored ? stored.split(':')[0] : ''
+  })
+  const [secs, setSecs] = useState(() => {
+    const stored = localStorage.getItem(storageKey)
+    return stored ? stored.split(':')[1] : ''
+  })
+  const [saved, setSaved] = useState(() => !!localStorage.getItem(storageKey))
+
+  const { data: profile } = useMyProfile()
 
   useEffect(() => {
     if (!isRunning) return undefined
@@ -1093,14 +1190,31 @@ function ExerciseTimerControls({
     return () => window.clearInterval(id)
   }, [isRunning])
 
+  const manualSeconds = (parseInt(mins, 10) || 0) * 60 + (parseInt(secs, 10) || 0)
   const elapsedSeconds = isRunning && exercise.startedAtUtc
     ? Math.max(0, Math.floor((now - new Date(exercise.startedAtUtc).getTime()) / 1000))
-    : exercise.durationSeconds
-  const caloriesText = exercise.estimatedCalories != null
-    ? `${Math.round(exercise.estimatedCalories)} kcal`
-    : exercise.calorieEstimateStatus === 'MissingBodyweight'
-    ? 'Missing bodyweight'
-    : 'No estimate yet'
+    : (exercise.durationSeconds ?? (showManualInput && saved ? manualSeconds : 0))
+
+  const caloriesText = (() => {
+    if (exercise.estimatedCalories != null) return `${Math.round(exercise.estimatedCalories)} kcal`
+    if (exercise.calorieEstimateStatus === 'MissingBodyweight') return 'Missing bodyweight'
+    if (showManualInput && saved && manualSeconds > 0) {
+      const bw = profile?.latestBodyweight
+      if (!bw) return 'Missing bodyweight'
+      const kcal = exercise.estimatedMet * bw * (manualSeconds / 3600)
+      return `~${Math.round(kcal)} kcal`
+    }
+    return 'No estimate yet'
+  })()
+
+  function handleSave() {
+    if (manualSeconds <= 0) return
+    const m = String(parseInt(mins, 10) || 0).padStart(2, '0')
+    const s = String(Math.min(59, parseInt(secs, 10) || 0)).padStart(2, '0')
+    localStorage.setItem(storageKey, `${m}:${s}`)
+    onSetDuration(manualSeconds)
+    setSaved(true)
+  }
 
   return (
     <div
@@ -1117,8 +1231,46 @@ function ExerciseTimerControls({
       </div>
 
       {canComplete && (
-        <div className="flex gap-2">
-          {exercise.startedAtUtc == null ? (
+        <div className="flex items-center gap-1.5">
+          {showManualInput ? (
+            <>
+              <div className="flex items-center gap-1 text-sm">
+                <input
+                  type="number"
+                  min={0}
+                  max={999}
+                  value={mins}
+                  onChange={(e) => { setMins(e.target.value); setSaved(false) }}
+                  className="w-11 rounded-md border bg-transparent px-1 py-0.5 text-center font-medium text-text outline-none focus:ring-1 focus:ring-primary/50"
+                  style={{ borderColor: 'var(--border-1)' }}
+                  placeholder="00"
+                />
+                <span className="font-medium text-muted">:</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={59}
+                  value={secs}
+                  onChange={(e) => { setSecs(e.target.value); setSaved(false) }}
+                  className="w-11 rounded-md border bg-transparent px-1 py-0.5 text-center font-medium text-text outline-none focus:ring-1 focus:ring-primary/50"
+                  style={{ borderColor: 'var(--border-1)' }}
+                  placeholder="00"
+                />
+                <span className="ml-0.5 text-xs text-muted">m:s</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleSave}
+                className="flex h-7 w-7 items-center justify-center rounded-md border transition-colors"
+                style={saved
+                  ? { borderColor: 'var(--color-success)', background: 'rgba(34,197,94,0.15)', color: 'var(--color-success)' }
+                  : { borderColor: 'var(--border-1)', background: 'var(--bg-3)', color: 'var(--fg-2)' }
+                }
+              >
+                <Check size={14} />
+              </button>
+            </>
+          ) : exercise.startedAtUtc == null ? (
             <Button type="button" size="sm" variant="secondary" disabled={pending} onClick={onStart}>
               <Play size={14} /> Start
             </Button>

@@ -7,6 +7,7 @@ import {
   UserCheck, Menu, X, LogOut, ChevronDown,
   PanelLeftClose, PanelLeftOpen, ChartNoAxesCombined, TrendingUp,
   LockKeyhole, BookOpen, CreditCard,
+  Shield,
 } from 'lucide-react'
 import { cn } from '@/shared/utils/cn'
 import { useAuthStore } from '@/features/auth'
@@ -27,6 +28,7 @@ export function AppLayout() {
   const [mini, setMini] = useState(false)
   const user      = useAuthStore((s) => s.user)
   const isCoach   = useAuthStore((s) => s.user?.roles?.includes('Coach') ?? false)
+  const isAdmin   = useAuthStore((s) => s.user?.roles?.includes('Admin') ?? false)
   const { mutate: logout } = useLogout()
   const queryClient = useQueryClient()
   const navigate  = useNavigate()
@@ -60,7 +62,12 @@ export function AppLayout() {
     { to: '/subscription',  icon: CreditCard,      label: 'Subscription' },
   ]
 
-  const navItems = isCoach ? coachNav : individualNav
+  const adminNav = [
+    { to: '/admin/reports', icon: Shield, label: 'Reports' },
+    { to: '/profile',       icon: User,   label: tn.profile },
+  ]
+
+  const navItems = isAdmin ? adminNav : isCoach ? coachNav : individualNav
 
   function handleLogout() {
     setUserMenuOpen(false)
@@ -84,6 +91,7 @@ export function AppLayout() {
           navItems={navItems}
           user={user}
           isCoach={isCoach}
+          isAdmin={isAdmin}
           mini={mini}
           onToggleMini={() => setMini((v) => !v)}
           onLogout={handleLogout}
@@ -129,6 +137,7 @@ export function AppLayout() {
                 navItems={navItems}
                 user={user}
                 isCoach={isCoach}
+                isAdmin={isAdmin}
                 mini={false}
                 onLogout={handleLogout}
                 onNavClick={(to) => {
@@ -268,6 +277,7 @@ interface SidebarInnerProps {
   navItems: NavItem[]
   user: { fullName?: string; email?: string; avatarUrl?: string | null } | null
   isCoach: boolean
+  isAdmin: boolean
   mini: boolean
   onToggleMini?: () => void
   onLogout: () => void
@@ -276,7 +286,7 @@ interface SidebarInnerProps {
 }
 
 function SidebarInner({
-  navItems, user, isCoach, mini, onToggleMini, onLogout, onNavClick, hideBrand,
+  navItems, user, isCoach, isAdmin, mini, onToggleMini, onLogout, onNavClick, hideBrand,
 }: SidebarInnerProps) {
   const t  = useT()
   const tn = t.nav
@@ -318,7 +328,7 @@ function SidebarInner({
       {/* Nav */}
       <nav className="xn-nav flex-1" style={{ marginTop: hideBrand ? 8 : 0 }}>
         {!mini && (
-          <span className="xn-nav-section">{isCoach ? tn.sectionCoach : tn.sectionTraining}</span>
+          <span className="xn-nav-section">{isAdmin ? 'Admin' : isCoach ? tn.sectionCoach : tn.sectionTraining}</span>
         )}
         {navItems.map(({ to, icon: Icon, label }) => (
           <NavLink

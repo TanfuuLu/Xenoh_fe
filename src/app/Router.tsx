@@ -14,6 +14,7 @@ const RegisterPage = lazy(() => import('@/features/auth/pages/RegisterPage').the
 const DashboardPage = lazy(() => import('@/features/dashboard/pages/DashboardPage').then((m) => ({ default: m.DashboardPage })))
 const PlansPage = lazy(() => import('@/features/plans/pages/PlansPage').then((m) => ({ default: m.PlansPage })))
 const PlanDetailPage = lazy(() => import('@/features/plans/pages/PlanDetailPage').then((m) => ({ default: m.PlanDetailPage })))
+const PlanOverviewPage = lazy(() => import('@/features/plans/pages/PlanOverviewPage').then((m) => ({ default: m.PlanOverviewPage })))
 const WeekDetailPage = lazy(() => import('@/features/workouts/pages/WeekDetailPage').then((m) => ({ default: m.WeekDetailPage })))
 const WeekAnalyzePage = lazy(() => import('@/features/workouts/pages/WeekAnalyzePage').then((m) => ({ default: m.WeekAnalyzePage })))
 const DayWorkoutPage = lazy(() => import('@/features/workouts/pages/DayWorkoutPage').then((m) => ({ default: m.DayWorkoutPage })))
@@ -29,6 +30,7 @@ const ProgressPage = lazy(() => import('@/features/progress/pages/ProgressPage')
 const LandingPage = lazy(() => import('@/features/marketing/pages/LandingPage').then((m) => ({ default: m.LandingPage })))
 const AboutPage = lazy(() => import('@/features/marketing/pages/AboutPage').then((m) => ({ default: m.AboutPage })))
 const SubscriptionPage = lazy(() => import('@/features/billing/pages/SubscriptionPage').then((m) => ({ default: m.SubscriptionPage })))
+const AdminReportsPage = lazy(() => import('@/features/reports/pages/AdminReportsPage').then((m) => ({ default: m.AdminReportsPage })))
 
 function SuspenseFallback() {
   return (
@@ -54,7 +56,7 @@ function RoleReadyRoute() {
   return <Outlet />
 }
 
-function RoleRoute({ role }: { role: 'Individual' | 'Coach' }) {
+function RoleRoute({ role }: { role: 'Individual' | 'Coach' | 'Admin' }) {
   const roles = useAuthStore((s) => s.user?.roles)
   if (!roles?.includes?.(role)) return <Navigate to="/dashboard" replace />
   return <Outlet />
@@ -109,6 +111,10 @@ export const router = createBrowserRouter([
               {
                 path: 'plans/:planId',
                 element: <Suspended><PlanDetailPage /></Suspended>,
+              },
+              {
+                path: 'plans/:planId/overview',
+                element: <Suspended><PlanOverviewPage /></Suspended>,
               },
               {
                 path: 'plans/:planId/weeks/:weekId',
@@ -177,6 +183,15 @@ export const router = createBrowserRouter([
                   {
                     path: 'coach/plans',
                     element: <Navigate to="/plans" replace />,
+                  },
+                ],
+              },
+              {
+                element: <RoleRoute role="Admin" />,
+                children: [
+                  {
+                    path: 'admin/reports',
+                    element: <Suspended><AdminReportsPage /></Suspended>,
                   },
                 ],
               },

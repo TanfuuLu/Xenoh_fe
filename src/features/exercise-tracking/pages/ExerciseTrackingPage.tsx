@@ -172,6 +172,7 @@ export function ExerciseTrackingPage() {
         </>
       )}
     </div>
+  </RequireTier>
   )
 }
 
@@ -278,7 +279,6 @@ function ExerciseSearchBox({
         )}
       </AnimatePresence>
     </div>
-    </RequireTier>
   )
 }
 

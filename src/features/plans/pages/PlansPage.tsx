@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useNavigate } from 'react-router'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
-import { Plus, ChevronRight, Zap, ZapOff, Trash2 } from 'lucide-react'
+import { Plus, ChevronRight, Zap, ZapOff, Trash2, BarChart2 } from 'lucide-react'
 import { format } from 'date-fns'
 import { Card } from '@/shared/components/Card'
 import { Button } from '@/shared/components/Button'
@@ -170,6 +170,7 @@ export function PlansPage() {
                 key={plan.id}
                 plan={plan}
                 onOpen={() => navigate(`/plans/${plan.id}`)}
+                onOverview={() => navigate(`/plans/${plan.id}/overview`)}
                 onActivate={() => activate(plan.id)}
                 onDeactivate={() => deactivate(plan.id)}
                 onDelete={async () => {
@@ -212,6 +213,7 @@ export function PlansPage() {
                 key={plan.id}
                 plan={plan}
                 onOpen={() => navigate(`/plans/${plan.id}`, { state: { canEdit: true } })}
+                onOverview={() => navigate(`/plans/${plan.id}/overview`)}
                 onDelete={() => handleClientPlanDelete(plan.id, plan.name)}
               />
             ))}
@@ -349,12 +351,13 @@ export function PlansPage() {
 interface PlanRowProps {
   plan: PlanResponse
   onOpen: () => void
+  onOverview: () => void
   onActivate: () => void
   onDeactivate: () => void
   onDelete: () => void
 }
 
-function PlanRow({ plan, onOpen, onActivate, onDeactivate, onDelete }: PlanRowProps) {
+function PlanRow({ plan, onOpen, onOverview, onActivate, onDeactivate, onDelete }: PlanRowProps) {
   const t = useT()
   const tc = t.common
 
@@ -383,6 +386,9 @@ function PlanRow({ plan, onOpen, onActivate, onDeactivate, onDelete }: PlanRowPr
         </div>
 
         <div className="flex flex-shrink-0 items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+          <Button variant="ghost" size="sm" onClick={onOverview} title="Plan overview">
+            <BarChart2 size={15} />
+          </Button>
           {plan.isActive ? (
             <Button variant="ghost" size="sm" onClick={onDeactivate}>
               <ZapOff size={15} />
@@ -405,10 +411,11 @@ function PlanRow({ plan, onOpen, onActivate, onDeactivate, onDelete }: PlanRowPr
 interface ClientPlanRowProps {
   plan: CoachPlanResponse
   onOpen: () => void
+  onOverview: () => void
   onDelete: () => void
 }
 
-function ClientPlanRow({ plan, onOpen, onDelete }: ClientPlanRowProps) {
+function ClientPlanRow({ plan, onOpen, onOverview, onDelete }: ClientPlanRowProps) {
   const t = useT()
   const tcp = t.coachPlans
 
@@ -436,6 +443,9 @@ function ClientPlanRow({ plan, onOpen, onDelete }: ClientPlanRowProps) {
         </div>
 
         <div className="flex flex-shrink-0 items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+          <Button variant="ghost" size="sm" onClick={onOverview} title="Plan overview">
+            <BarChart2 size={15} />
+          </Button>
           <Button variant="ghost" size="sm" onClick={onOpen}>
             <ChevronRight size={18} />
           </Button>

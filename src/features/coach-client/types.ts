@@ -4,10 +4,12 @@ export interface CoachRelationshipResponse {
   id: string
   clientId: string
   clientName: string
+  clientAvatarUrl: string | null
   coachId: string
   coachName: string
   status: RelationshipStatus
   createdAt: string
+  terminationRequestedBy: string | null
 }
 
 export interface ClientResponse {
@@ -18,6 +20,7 @@ export interface ClientResponse {
   status: RelationshipStatus
   connectedAt: string
   lastWorkoutCompletedAt: string | null
+  terminationRequestedBy: string | null
 }
 
 export interface RequestCoachRequest {

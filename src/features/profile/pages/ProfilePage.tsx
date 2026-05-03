@@ -3,7 +3,9 @@ import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { motion } from 'framer-motion'
-import { Camera, Trash2 } from 'lucide-react'
+import { Camera, Star, Trash2 } from 'lucide-react'
+import { useAuthStore } from '@/features/auth'
+import { useCoachProfile } from '@/features/coaches'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
@@ -56,6 +58,8 @@ export function ProfilePage() {
   const [editMode, setEditMode] = useState(false)
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const { data: profile, isLoading } = useMyProfile()
+  const isCoach = useAuthStore((s) => s.user?.roles?.includes('Coach') ?? false)
+  const { data: coachProfile } = useCoachProfile(isCoach ? (profile?.id ?? '') : '')
   const { data: bwHistory } = useBodyweightHistory()
   const { mutate: updateProfile, isPending: saving, error: saveError } = useUpdateProfile()
   const { mutate: updateAvatar, isPending: avatarUploading } = useUpdateAvatar()
@@ -340,6 +344,64 @@ export function ProfilePage() {
           </div>
         )}
       </Card>
+
+      {/* Coach ratings */}
+      {isCoach && (
+        <Card>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-text">My Ratings</h2>
+            <div className="flex items-center gap-2">
+              <StarDisplay rating={coachProfile?.averageRating ?? 0} />
+              <span className="text-lg font-bold text-text">
+                {coachProfile?.averageRating?.toFixed(1) ?? '—'}
+              </span>
+              <span className="text-sm text-muted">({coachProfile?.ratingCount ?? 0})</span>
+            </div>
+          </div>
+
+          {(coachProfile?.ratings?.length ?? 0) === 0 ? (
+            <p className="text-sm text-muted">No reviews yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {coachProfile!.ratings.map((r) => (
+                <div
+                  key={r.id}
+                  className="rounded-xl px-4 py-3 space-y-1"
+                  style={{ background: 'var(--bg-2)' }}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-semibold text-text">{r.clientName}</span>
+                    <div className="flex items-center gap-1">
+                      <StarDisplay rating={r.rating} />
+                      <span className="text-xs text-muted ml-1">
+                        {formatDisplayDate(r.createdAt)}
+                      </span>
+                    </div>
+                  </div>
+                  {r.comment && (
+                    <p className="text-sm text-muted leading-relaxed">{r.comment}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      )}
+    </div>
+  )
+}
+
+function StarDisplay({ rating }: { rating: number }) {
+  return (
+    <div className="flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((s) => (
+        <Star
+          key={s}
+          size={13}
+          className={s <= Math.round(rating) ? 'text-warning' : 'text-muted'}
+          fill={s <= Math.round(rating) ? 'currentColor' : 'none'}
+        />
+      ))}
     </div>
   )
 }

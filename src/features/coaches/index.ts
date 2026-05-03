@@ -1,2 +1,8 @@
-export { useCoaches, useCoachProfile } from './api/useCoaches'
-export type { CoachResponse, CoachProfileResponse } from './types'
+export {
+  useCoaches,
+  useCoachProfile,
+  useCreateCoachRating,
+  useUpdateCoachRating,
+  useDeleteCoachRating,
+} from './api/useCoaches'
+export type { CoachResponse, CoachProfileResponse, CoachRatingResponse, CoachRatingRequest } from './types'

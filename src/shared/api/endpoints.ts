@@ -25,12 +25,14 @@ export const ENDPOINTS = {
     profile: (userId: string) => `/api/users/${userId}`,
     publicProfile: (userId: string) => `/api/users/${userId}/public`,
     profileBodyweight: (userId: string) => `/api/users/${userId}/bodyweight`,
+    report: (userId: string) => `/api/users/${userId}/reports`,
   },
 
   // Coaches
   coaches: {
     list: '/api/coaches',
     profile: (coachId: string) => `/api/coaches/${coachId}`,
+    rating: (coachId: string) => `/api/coaches/${coachId}/rating`,
   },
 
   // Coach-Client
@@ -38,6 +40,9 @@ export const ENDPOINTS = {
     request: '/api/coach-client/request',
     accept: (id: string) => `/api/coach-client/accept/${id}`,
     terminate: (id: string) => `/api/coach-client/${id}`,
+    requestTermination: (id: string) => `/api/coach-client/${id}/request-termination`,
+    acceptTermination: (id: string) => `/api/coach-client/${id}/accept-termination`,
+    rejectTermination: (id: string) => `/api/coach-client/${id}/reject-termination`,
     pendingRequests: '/api/coach-client/pending-requests',
     myCoach: '/api/coach-client/my-coach',
     myClients: '/api/coach-client/my-clients',
@@ -80,6 +85,7 @@ export const ENDPOINTS = {
     completeSet: (setId: string) => `/api/exercises/sets/${setId}/complete`,
     startTimer: (id: string) => `/api/exercises/${id}/timer/start`,
     finishTimer: (id: string) => `/api/exercises/${id}/timer/finish`,
+    setDuration: (id: string) => `/api/exercises/${id}/timer/set-duration`,
     reorderByDay: (dailyWorkoutId: string) => `/api/exercises/by-day/${dailyWorkoutId}/reorder`,
   },
 
@@ -120,5 +126,13 @@ export const ENDPOINTS = {
     list: '/api/notifications',
     markRead: (id: string) => `/api/notifications/${id}/read`,
     markAllRead: '/api/notifications/read-all',
+  },
+
+  // Admin
+  admin: {
+    reports: '/api/admin/reports',
+    report: (id: string) => `/api/admin/reports/${id}`,
+    suspendUser: (userId: string) => `/api/admin/users/${userId}/suspend`,
+    unsuspendUser: (userId: string) => `/api/admin/users/${userId}/unsuspend`,
   },
 } as const
