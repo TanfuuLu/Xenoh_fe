@@ -6,10 +6,11 @@ import {
   LayoutDashboard, ClipboardList, User, Users,
   UserCheck, Menu, X, LogOut, ChevronDown,
   PanelLeftClose, PanelLeftOpen, ChartNoAxesCombined, TrendingUp,
-  LockKeyhole, BookOpen, CreditCard,
+  LockKeyhole, Lock, BookOpen, CreditCard,
   Shield,
 } from 'lucide-react'
 import { cn } from '@/shared/utils/cn'
+import { Link as RouterLink } from 'react-router'
 import { useAuthStore } from '@/features/auth'
 import { useLogout } from '@/features/auth'
 import { useT } from '@/shared/i18n'
@@ -58,6 +59,7 @@ export function AppLayout() {
     { to: '/exercise-library', icon: BookOpen, label: exerciseLibraryLabel },
     { to: '/progress',      icon: TrendingUp,      label: tn.progress },
     { to: '/coach/clients', icon: UserCheck,       label: tn.clients },
+    { to: '/coaches',       icon: Users,           label: tn.findCoach },
     { to: '/profile',       icon: User,            label: tn.profile },
     { to: '/subscription',  icon: CreditCard,      label: 'Subscription' },
   ]
@@ -68,6 +70,10 @@ export function AppLayout() {
   ]
 
   const navItems = isAdmin ? adminNav : isCoach ? coachNav : individualNav
+
+  const lockedCoachNavItems: LockedNavItem[] = (!isCoach && !isAdmin) ? [
+    { icon: UserCheck, label: tn.clients },
+  ] : []
 
   function handleLogout() {
     setUserMenuOpen(false)
@@ -89,6 +95,7 @@ export function AppLayout() {
       <aside className="xn-sidebar xn-sidebar-desktop hidden md:flex" style={{ width: mini ? MINI_WIDTH : FULL_WIDTH }}>
         <SidebarInner
           navItems={navItems}
+          lockedNavItems={lockedCoachNavItems}
           user={user}
           isCoach={isCoach}
           isAdmin={isAdmin}
@@ -135,6 +142,7 @@ export function AppLayout() {
               </div>
               <SidebarInner
                 navItems={navItems}
+                lockedNavItems={lockedCoachNavItems}
                 user={user}
                 isCoach={isCoach}
                 isAdmin={isAdmin}
@@ -273,8 +281,14 @@ interface NavItem {
   label: string
 }
 
+interface LockedNavItem {
+  icon: React.ComponentType<{ size?: number }>
+  label: string
+}
+
 interface SidebarInnerProps {
   navItems: NavItem[]
+  lockedNavItems?: LockedNavItem[]
   user: { fullName?: string; email?: string; avatarUrl?: string | null } | null
   isCoach: boolean
   isAdmin: boolean
@@ -286,7 +300,7 @@ interface SidebarInnerProps {
 }
 
 function SidebarInner({
-  navItems, user, isCoach, isAdmin, mini, onToggleMini, onLogout, onNavClick, hideBrand,
+  navItems, lockedNavItems = [], user, isCoach, isAdmin, mini, onToggleMini, onLogout, onNavClick, hideBrand,
 }: SidebarInnerProps) {
   const t  = useT()
   const tn = t.nav
@@ -343,6 +357,28 @@ function SidebarInner({
             <Icon size={17} />
             {!mini && label}
           </NavLink>
+        ))}
+        {lockedNavItems.map(({ icon: Icon, label }) => (
+          <RouterLink
+            key={label}
+            to="/subscription"
+            title={mini ? `${label} — Upgrade to ProCoach` : undefined}
+            className="xn-nav-item"
+            style={{
+              opacity: 0.45,
+              cursor: 'pointer',
+              textDecoration: 'none',
+              ...(mini ? { justifyContent: 'center', padding: '10px 0' } : undefined),
+            }}
+          >
+            <Icon size={17} />
+            {!mini && (
+              <>
+                <span style={{ flex: 1 }}>{label}</span>
+                <Lock size={12} style={{ color: 'var(--fg-4)', flexShrink: 0 }} />
+              </>
+            )}
+          </RouterLink>
         ))}
       </nav>
 

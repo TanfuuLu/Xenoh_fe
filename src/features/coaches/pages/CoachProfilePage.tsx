@@ -47,11 +47,6 @@ export function CoachProfilePage() {
     else createRating.mutate(payload)
   }
 
-  function openRatingEdit() {
-    setRating(myRating?.rating ?? 5)
-    setComment(myRating?.comment ?? '')
-  }
-
   function submitReport() {
     createReport.mutate(
       { reason: reportReason, details: reportDetails },

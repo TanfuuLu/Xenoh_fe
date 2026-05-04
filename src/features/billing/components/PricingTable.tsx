@@ -46,6 +46,7 @@ const proIndividualFeatures = [
 
 const proCoachFeatures = [
   'Everything in Pro Individual',
+  'Unlock Coach role & dashboard',
   'Unlimited coach clients',
   'Coach plan creation tools',
 ]

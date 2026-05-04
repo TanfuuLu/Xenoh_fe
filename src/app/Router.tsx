@@ -8,7 +8,6 @@ import { useAuthStore } from '@/features/auth'
 // Lazy-loaded pages
 const LoginPage = lazy(() => import('@/features/auth/pages/LoginPage').then((m) => ({ default: m.LoginPage })))
 const SocialCallbackPage = lazy(() => import('@/features/auth/pages/SocialCallbackPage').then((m) => ({ default: m.SocialCallbackPage })))
-const ChooseRolePage = lazy(() => import('@/features/auth/pages/ChooseRolePage').then((m) => ({ default: m.ChooseRolePage })))
 const ForgotPasswordPage = lazy(() => import('@/features/auth/pages/ForgotPasswordPage').then((m) => ({ default: m.ForgotPasswordPage })))
 const RegisterPage = lazy(() => import('@/features/auth/pages/RegisterPage').then((m) => ({ default: m.RegisterPage })))
 const DashboardPage = lazy(() => import('@/features/dashboard/pages/DashboardPage').then((m) => ({ default: m.DashboardPage })))
@@ -50,15 +49,9 @@ function ProtectedRoute() {
   return <Outlet />
 }
 
-function RoleReadyRoute() {
+function RoleRoute({ role, redirectTo = '/dashboard' }: { role: 'Individual' | 'Coach' | 'Admin'; redirectTo?: string }) {
   const roles = useAuthStore((s) => s.user?.roles)
-  if (roles && roles.length === 0) return <Navigate to="/choose-role" replace />
-  return <Outlet />
-}
-
-function RoleRoute({ role }: { role: 'Individual' | 'Coach' | 'Admin' }) {
-  const roles = useAuthStore((s) => s.user?.roles)
-  if (!roles?.includes?.(role)) return <Navigate to="/dashboard" replace />
+  if (!roles?.includes?.(role)) return <Navigate to={redirectTo} replace />
   return <Outlet />
 }
 
@@ -91,109 +84,100 @@ export const router = createBrowserRouter([
     element: <ProtectedRoute />,
     children: [
       {
-        path: 'choose-role',
-        element: <Suspended><ChooseRolePage /></Suspended>,
-      },
-      {
-        element: <RoleReadyRoute />,
+        element: <AppLayout />,
         children: [
           {
-            element: <AppLayout />,
+            path: 'dashboard',
+            element: <Suspended><DashboardPage /></Suspended>,
+          },
+          {
+            path: 'plans',
+            element: <Suspended><PlansPage /></Suspended>,
+          },
+          {
+            path: 'plans/:planId',
+            element: <Suspended><PlanDetailPage /></Suspended>,
+          },
+          {
+            path: 'plans/:planId/overview',
+            element: <Suspended><PlanOverviewPage /></Suspended>,
+          },
+          {
+            path: 'plans/:planId/weeks/:weekId',
+            element: <Suspended><WeekDetailPage /></Suspended>,
+          },
+          {
+            path: 'plans/:planId/weeks/:weekId/analyze',
+            element: <Suspended><WeekAnalyzePage /></Suspended>,
+          },
+          {
+            path: 'days/:dailyWorkoutId',
+            element: <Suspended><DayWorkoutPage /></Suspended>,
+          },
+          {
+            path: 'exercise-library',
+            element: <Suspended><ExerciseLibraryPage /></Suspended>,
+          },
+          {
+            path: 'profile',
+            element: <Suspended><ProfilePage /></Suspended>,
+          },
+          {
+            path: 'change-password',
+            element: <Suspended><ChangePasswordPage /></Suspended>,
+          },
+          {
+            path: 'progress',
+            element: <Suspended><ProgressPage /></Suspended>,
+          },
+          {
+            path: 'leaderboard',
+            element: <Navigate to="/dashboard" replace />,
+          },
+          {
+            path: 'subscription',
+            element: <Suspended><SubscriptionPage /></Suspended>,
+          },
+          {
+            path: 'coaches',
+            element: <Suspended><CoachesPage /></Suspended>,
+          },
+          {
+            path: 'coaches/:coachId',
+            element: <Suspended><CoachProfilePage /></Suspended>,
+          },
+          {
+            element: <RoleRoute role="Individual" />,
             children: [
               {
-                path: 'dashboard',
-                element: <Suspended><DashboardPage /></Suspended>,
+                path: 'exercise-tracking',
+                element: <Suspended><ExerciseTrackingPage /></Suspended>,
+              },
+            ],
+          },
+          {
+            element: <RoleRoute role="Coach" redirectTo="/subscription?reason=coach-required" />,
+            children: [
+              {
+                path: 'coach/clients',
+                element: <Suspended><ClientsPage /></Suspended>,
               },
               {
-                path: 'plans',
-                element: <Suspended><PlansPage /></Suspended>,
+                path: 'coach/clients/:clientId',
+                element: <Suspended><ClientProfilePage /></Suspended>,
               },
               {
-                path: 'plans/:planId',
-                element: <Suspended><PlanDetailPage /></Suspended>,
+                path: 'coach/plans',
+                element: <Navigate to="/plans" replace />,
               },
+            ],
+          },
+          {
+            element: <RoleRoute role="Admin" />,
+            children: [
               {
-                path: 'plans/:planId/overview',
-                element: <Suspended><PlanOverviewPage /></Suspended>,
-              },
-              {
-                path: 'plans/:planId/weeks/:weekId',
-                element: <Suspended><WeekDetailPage /></Suspended>,
-              },
-              {
-                path: 'plans/:planId/weeks/:weekId/analyze',
-                element: <Suspended><WeekAnalyzePage /></Suspended>,
-              },
-              {
-                path: 'days/:dailyWorkoutId',
-                element: <Suspended><DayWorkoutPage /></Suspended>,
-              },
-              {
-                path: 'exercise-library',
-                element: <Suspended><ExerciseLibraryPage /></Suspended>,
-              },
-              {
-                path: 'profile',
-                element: <Suspended><ProfilePage /></Suspended>,
-              },
-              {
-                path: 'change-password',
-                element: <Suspended><ChangePasswordPage /></Suspended>,
-              },
-              {
-                path: 'progress',
-                element: <Suspended><ProgressPage /></Suspended>,
-              },
-              {
-                path: 'leaderboard',
-                element: <Navigate to="/dashboard" replace />,
-              },
-              {
-                path: 'subscription',
-                element: <Suspended><SubscriptionPage /></Suspended>,
-              },
-              {
-                element: <RoleRoute role="Individual" />,
-                children: [
-                  {
-                    path: 'exercise-tracking',
-                    element: <Suspended><ExerciseTrackingPage /></Suspended>,
-                  },
-                  {
-                    path: 'coaches',
-                    element: <Suspended><CoachesPage /></Suspended>,
-                  },
-                  {
-                    path: 'coaches/:coachId',
-                    element: <Suspended><CoachProfilePage /></Suspended>,
-                  },
-                ],
-              },
-              {
-                element: <RoleRoute role="Coach" />,
-                children: [
-                  {
-                    path: 'coach/clients',
-                    element: <Suspended><ClientsPage /></Suspended>,
-                  },
-                  {
-                    path: 'coach/clients/:clientId',
-                    element: <Suspended><ClientProfilePage /></Suspended>,
-                  },
-                  {
-                    path: 'coach/plans',
-                    element: <Navigate to="/plans" replace />,
-                  },
-                ],
-              },
-              {
-                element: <RoleRoute role="Admin" />,
-                children: [
-                  {
-                    path: 'admin/reports',
-                    element: <Suspended><AdminReportsPage /></Suspended>,
-                  },
-                ],
+                path: 'admin/reports',
+                element: <Suspended><AdminReportsPage /></Suspended>,
               },
             ],
           },

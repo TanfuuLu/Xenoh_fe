@@ -51,3 +51,17 @@ export function useDeleteCustomExerciseTemplate() {
     onSuccess: () => invalidateExerciseTemplates(qc),
   })
 }
+
+export function useCreateCustomExerciseTemplateForClient(clientId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: CustomExerciseTemplateRequest) =>
+      api
+        .post<ExerciseTemplateResponse>(ENDPOINTS.exerciseTemplates.customForClient(clientId), {
+          ...data,
+          clientId,
+        })
+        .then((r) => r.data),
+    onSuccess: () => invalidateExerciseTemplates(qc),
+  })
+}

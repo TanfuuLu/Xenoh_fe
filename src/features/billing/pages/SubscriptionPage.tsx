@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
+import { useSearchParams } from 'react-router'
+import { Zap } from 'lucide-react'
 import { slideUp, staggerContainer } from '@/shared/utils/motion'
 import { useCreatePaymentOrder } from '../api/useSubscription'
 import { CurrentPlanCard } from '../components/CurrentPlanCard'
@@ -11,6 +13,8 @@ import type { PaymentOrderResponse, PlanTier } from '../types'
 export function SubscriptionPage() {
   const [order, setOrder] = useState<PaymentOrderResponse | null>(null)
   const { mutate: createOrder, isPending } = useCreatePaymentOrder()
+  const [searchParams] = useSearchParams()
+  const showCoachBanner = searchParams.get('reason') === 'coach-required'
 
   function handleSelectTier(tier: Exclude<PlanTier, 'Free'>, durationMonths: 1 | 3 | 12) {
     createOrder(
@@ -44,6 +48,24 @@ export function SubscriptionPage() {
           Manage your plan and unlock premium features.
         </p>
       </motion.div>
+
+      {/* Coach upgrade banner */}
+      {showCoachBanner && (
+        <motion.div variants={slideUp}>
+          <div
+            className="flex items-center gap-3 rounded-xl px-4 py-3"
+            style={{
+              background: 'rgba(245, 158, 11, 0.1)',
+              border: '1px solid var(--color-warning)',
+            }}
+          >
+            <Zap size={18} style={{ color: 'var(--color-warning)', flexShrink: 0 }} />
+            <p className="text-sm font-medium" style={{ color: 'var(--fg-1)', margin: 0 }}>
+              Upgrade to <strong>ProCoach</strong> to unlock the Coach role and dashboard features.
+            </p>
+          </div>
+        </motion.div>
+      )}
 
       {/* Current plan */}
       <motion.div variants={slideUp}>

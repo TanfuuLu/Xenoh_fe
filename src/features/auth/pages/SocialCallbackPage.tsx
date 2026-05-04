@@ -22,9 +22,9 @@ export function SocialCallbackPage() {
 
     setExchangeStarted(true)
     exchangeExternalLoginTicketOnce({ ticket })
-      .then((data) => {
+      .then(() => {
           queryClient.clear()
-          navigate(data.roles.length === 0 ? '/choose-role' : '/dashboard', { replace: true })
+          navigate('/dashboard', { replace: true })
       })
       .catch(() => {
         setHasError(true)

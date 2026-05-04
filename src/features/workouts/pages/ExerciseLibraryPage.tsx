@@ -175,11 +175,11 @@ export function ExerciseLibraryPage() {
               All movements in one place.
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-muted md:text-base">
-              Browse Xenoh exercises, filter by muscle group or type, and manage up to 5 custom exercises for your own library.
+              Browse Xenoh exercises, filter by muscle group or type, and create unlimited custom exercises with a Pro subscription.
             </p>
           </div>
           {isActivePro ? (
-            <Button disabled={customCount >= 5} onClick={openCreateModal}>
+            <Button onClick={openCreateModal}>
               <Plus size={16} /> Create custom
             </Button>
           ) : (
@@ -192,7 +192,7 @@ export function ExerciseLibraryPage() {
 
       <div className="grid gap-4 md:grid-cols-3">
         <LibraryStat label="Shared exercises" value={sharedCount.toString()} />
-        <LibraryStat label="Custom exercises" value={`${customCount}/5`} />
+        <LibraryStat label="Custom exercises" value={`${customCount}${isActivePro ? '' : '/0'}`} />
         <LibraryStat label="Showing" value={filteredTemplates.length.toString()} />
       </div>
 

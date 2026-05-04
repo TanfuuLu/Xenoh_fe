@@ -94,6 +94,7 @@ export const ENDPOINTS = {
     list: '/api/exercise-templates',
     custom: '/api/exercise-templates/custom',
     customById: (id: string) => `/api/exercise-templates/custom/${id}`,
+    customForClient: (clientId: string) => `/api/exercise-templates/custom/for-client/${clientId}`,
   },
 
   // Leaderboard

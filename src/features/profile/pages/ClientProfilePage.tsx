@@ -1,6 +1,10 @@
+import { useState } from 'react'
 import { Link, useParams } from 'react-router'
+import { Controller, useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import { motion } from 'framer-motion'
-import { ChevronLeft, Activity, Flame, Scale, Dumbbell, Ruler, CalendarDays, Users, ClipboardList } from 'lucide-react'
+import { ChevronLeft, Activity, Flame, Scale, Dumbbell, Plus, Ruler, CalendarDays, Users, ClipboardList } from 'lucide-react'
 import { format } from 'date-fns'
 import {
   CartesianGrid,
@@ -13,21 +17,75 @@ import {
 } from 'recharts'
 import { Button } from '@/shared/components/Button'
 import { Card } from '@/shared/components/Card'
+import { Input } from '@/shared/components/Input'
+import { Modal } from '@/shared/components/Modal'
+import { Select } from '@/shared/components/Select'
 import { Spinner } from '@/shared/components/Spinner'
+import { MuscleGroup, type MuscleGroup as MuscleGroupValue } from '@/shared/types/api'
 import { slideUp, staggerContainer } from '@/shared/utils/motion'
 import { useT } from '@/shared/i18n'
 import { useCoachPlanOverview } from '@/features/plans'
+import { useCreateCustomExerciseTemplateForClient } from '@/features/workouts'
+import type { CustomExerciseTemplateRequest } from '@/features/workouts'
 import { useClientBodyweightHistory, useClientProfile } from '../index'
+
+const customTemplateSchema = z.object({
+  name: z.string().trim().min(1, 'Exercise name is required').max(100),
+  description: z.string().max(500).optional(),
+  primaryMuscleGroup: z.enum(MuscleGroup),
+  secondaryMuscleGroups: z.array(z.enum(MuscleGroup)).default([]),
+  exerciseKind: z.enum(['Strength', 'Cardio']),
+})
+
+type CustomTemplateForm = z.output<typeof customTemplateSchema>
 
 export function ClientProfilePage() {
   const { clientId = '' } = useParams()
   const { data: profile, isLoading } = useClientProfile(clientId)
   const { data: bodyweightHistory = [] } = useClientBodyweightHistory(clientId)
   const { data: coachPlans = [], isLoading: plansLoading } = useCoachPlanOverview()
+  const { mutate: createForClient, isPending: creatingForClient, error: createForClientError } =
+    useCreateCustomExerciseTemplateForClient(clientId)
+  const [exerciseModalOpen, setExerciseModalOpen] = useState(false)
   const t   = useT()
   const tp  = t.profile
   const tcp = t.clientProfile
   const tc  = t.common
+
+  const exerciseForm = useForm<z.input<typeof customTemplateSchema>, unknown, CustomTemplateForm>({
+    resolver: zodResolver(customTemplateSchema),
+    defaultValues: {
+      name: '',
+      description: '',
+      primaryMuscleGroup: 'Chest',
+      secondaryMuscleGroups: [],
+      exerciseKind: 'Strength',
+    },
+  })
+
+  function openExerciseModal() {
+    exerciseForm.reset({ name: '', description: '', primaryMuscleGroup: 'Chest', secondaryMuscleGroups: [], exerciseKind: 'Strength' })
+    setExerciseModalOpen(true)
+  }
+
+  function closeExerciseModal() {
+    setExerciseModalOpen(false)
+    exerciseForm.reset()
+  }
+
+  function onSubmitExercise(data: CustomTemplateForm) {
+    const payload: CustomExerciseTemplateRequest = {
+      name: data.name.trim(),
+      description: data.description?.trim() || undefined,
+      primaryMuscleGroup: data.primaryMuscleGroup,
+      secondaryMuscleGroups: data.secondaryMuscleGroups.filter((g) => g !== data.primaryMuscleGroup),
+      exerciseKind: data.exerciseKind,
+    }
+    createForClient(payload, { onSuccess: closeExerciseModal })
+  }
+
+  const createForClientApiError = (createForClientError as { response?: { data?: { message?: string } } } | null)
+    ?.response?.data?.message
 
   if (isLoading) {
     return (
@@ -197,6 +255,97 @@ export function ClientProfilePage() {
         )}
       </Card>
 
+      {/* Custom exercises for client */}
+      <Card>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-muted">
+            <Dumbbell size={14} />
+            <h2 className="text-sm font-semibold uppercase tracking-wide">Custom exercises for client</h2>
+          </div>
+          <Button size="sm" onClick={openExerciseModal}>
+            <Plus size={14} /> Add exercise
+          </Button>
+        </div>
+        <p className="text-sm text-muted">
+          Create a custom exercise that will appear in this client's exercise library.
+        </p>
+      </Card>
+
+      <Modal
+        open={exerciseModalOpen}
+        onClose={closeExerciseModal}
+        title="Create custom exercise for client"
+        className="max-w-lg"
+      >
+        <form onSubmit={exerciseForm.handleSubmit(onSubmitExercise)} className="space-y-4">
+          <Input
+            label="Exercise name"
+            placeholder="Incline dumbbell press"
+            error={exerciseForm.formState.errors.name?.message}
+            {...exerciseForm.register('name')}
+          />
+          <Input
+            label="Description"
+            placeholder="Optional notes for this movement"
+            error={exerciseForm.formState.errors.description?.message}
+            {...exerciseForm.register('description')}
+          />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Controller
+              name="primaryMuscleGroup"
+              control={exerciseForm.control}
+              render={({ field }) => (
+                <Select
+                  label="Primary muscle"
+                  options={Object.values(MuscleGroup).map((g) => ({ value: g, label: formatMuscleGroup(g) }))}
+                  value={field.value}
+                  onChange={(next) => field.onChange(next as MuscleGroupValue)}
+                />
+              )}
+            />
+            <Controller
+              name="exerciseKind"
+              control={exerciseForm.control}
+              render={({ field }) => (
+                <Select
+                  label="Exercise type"
+                  options={[
+                    { value: 'Strength', label: 'Strength' },
+                    { value: 'Cardio', label: 'Cardio' },
+                  ]}
+                  value={field.value}
+                  onChange={(next) => field.onChange(next || 'Strength')}
+                />
+              )}
+            />
+          </div>
+          <Controller
+            name="secondaryMuscleGroups"
+            control={exerciseForm.control}
+            render={({ field }) => (
+              <SecondaryMusclePicker
+                value={field.value ?? []}
+                primaryMuscleGroup={exerciseForm.watch('primaryMuscleGroup')}
+                onChange={field.onChange}
+              />
+            )}
+          />
+          {createForClientApiError && (
+            <p className="rounded-lg px-3 py-2 text-sm" style={{ background: 'var(--xn-danger-bg)', color: 'var(--xn-danger)' }}>
+              {createForClientApiError}
+            </p>
+          )}
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button type="button" variant="secondary" className="w-full sm:w-auto" onClick={closeExerciseModal}>
+              Cancel
+            </Button>
+            <Button type="submit" className="w-full sm:w-auto" loading={creatingForClient}>
+              Create exercise
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
       <Card>
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -330,6 +479,57 @@ function AnalysisStat({ label, value }: { label: string; value: string }) {
     <div className="rounded-lg border border-border px-4 py-3">
       <p className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</p>
       <p className="mt-1 text-lg font-bold text-text">{value}</p>
+    </div>
+  )
+}
+
+function formatMuscleGroup(group: MuscleGroupValue) {
+  return group.replace(/([a-z])([A-Z])/g, '$1 $2')
+}
+
+function SecondaryMusclePicker({
+  value,
+  primaryMuscleGroup,
+  onChange,
+}: {
+  value: MuscleGroupValue[]
+  primaryMuscleGroup: MuscleGroupValue
+  onChange: (value: MuscleGroupValue[]) => void
+}) {
+  const selected = new Set(value.filter((g) => g !== primaryMuscleGroup))
+
+  function toggle(group: MuscleGroupValue) {
+    const next = new Set(selected)
+    if (next.has(group)) next.delete(group)
+    else next.add(group)
+    onChange([...next])
+  }
+
+  return (
+    <div className="space-y-2">
+      <p className="text-sm font-medium" style={{ color: 'var(--fg-1)' }}>Secondary muscles</p>
+      <div className="flex max-h-36 flex-wrap gap-1.5 overflow-y-auto rounded-xl border p-2" style={{ borderColor: 'var(--border-1)', background: 'var(--bg-1)' }}>
+        {Object.values(MuscleGroup)
+          .filter((g) => g !== primaryMuscleGroup)
+          .map((group) => {
+            const isSelected = selected.has(group)
+            return (
+              <button
+                key={group}
+                type="button"
+                onClick={() => toggle(group)}
+                className="rounded-full border px-2.5 py-1 text-xs"
+                style={{
+                  borderColor: isSelected ? 'var(--xn-clay-600)' : 'var(--border-1)',
+                  background: isSelected ? 'var(--xn-clay-200)' : 'var(--bg-2)',
+                  color: isSelected ? 'var(--xn-clay-900)' : 'var(--fg-3)',
+                }}
+              >
+                {formatMuscleGroup(group)}
+              </button>
+            )
+          })}
+      </div>
     </div>
   )
 }

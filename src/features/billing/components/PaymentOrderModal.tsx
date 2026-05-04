@@ -8,6 +8,7 @@ import { Modal } from '@/shared/components/Modal'
 import { Button } from '@/shared/components/Button'
 import { Spinner } from '@/shared/components/Spinner'
 import { useSubscription, useRefreshSubscription } from '../api/useSubscription'
+import { refreshAuth } from '@/features/auth'
 import { TIER_LABELS } from '../types'
 import type { PaymentOrderResponse, PlanTier } from '../types'
 
@@ -184,6 +185,7 @@ export function PaymentOrderModal({ order, onClose }: Props) {
       const newTier = result.data?.tier
       if (newTier && prevTierRef.current && newTier !== prevTierRef.current) {
         clearInterval(pollRef.current!)
+        await refreshAuth()
         setActivated(true)
         toast.success('🎉 Đã kích hoạt subscription!', {
           description: `Bạn đang dùng ${TIER_LABELS[newTier]}.`,
@@ -200,6 +202,7 @@ export function PaymentOrderModal({ order, onClose }: Props) {
       const result = await refetch()
       const newTier = result.data?.tier
       if (newTier && prevTierRef.current && newTier !== prevTierRef.current) {
+        await refreshAuth()
         setActivated(true)
         toast.success('🎉 Đã kích hoạt subscription!', {
           description: `Bạn đang dùng ${TIER_LABELS[newTier]}.`,

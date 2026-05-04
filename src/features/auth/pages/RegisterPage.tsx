@@ -1,4 +1,5 @@
 import { useForm, Controller } from 'react-hook-form'
+import type { Resolver } from 'react-hook-form'
 import { useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -24,7 +25,6 @@ const schema = z.object({
   lastName: z.string().min(1),
   email: z.string().email(),
   password: z.string().min(6),
-  role: z.enum(['Individual', 'Coach']),
   gender: z.enum(['Male', 'Female']).optional(),
   dateOfBirth: z.string().optional(),
   height: optionalNumber,
@@ -33,22 +33,12 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>
 
-// Panel styling constants (colours only — copy driven by translations)
 const PANEL_STYLE = {
-  Individual: {
-    badgeBg: 'var(--xn-clay-300)',
-    badgeColor: 'var(--xn-clay-900)',
-    checkBg: 'var(--xn-clay-700)',
-    footerBg: 'rgba(163, 139, 118, 0.12)',
-    panelGradient: 'linear-gradient(145deg, var(--bg-4) 0%, var(--xn-clay-200) 58%, var(--bg-3) 100%)',
-  },
-  Coach: {
-    badgeBg: 'var(--xn-sage-300)',
-    badgeColor: '#2e4018',
-    checkBg: 'var(--xn-sage-600)',
-    footerBg: 'rgba(140, 150, 101, 0.12)',
-    panelGradient: 'linear-gradient(145deg, var(--xn-sage-200) 0%, var(--xn-sage-100) 48%, var(--bg-3) 100%)',
-  },
+  badgeBg: 'var(--xn-clay-300)',
+  badgeColor: 'var(--xn-clay-900)',
+  checkBg: 'var(--xn-clay-700)',
+  footerBg: 'rgba(163, 139, 118, 0.12)',
+  panelGradient: 'linear-gradient(145deg, var(--bg-4) 0%, var(--xn-clay-200) 58%, var(--bg-3) 100%)',
 } as const
 
 export function RegisterPage() {
@@ -57,18 +47,16 @@ export function RegisterPage() {
   const t = useT()
   const tr = t.register
 
-  const { register, handleSubmit, watch, control, formState: { errors } } = useForm<FormData>({
-    resolver: zodResolver(schema),
-    defaultValues: { role: 'Individual' },
+  const { register, handleSubmit, control, formState: { errors } } = useForm<FormData>({
+    resolver: zodResolver(schema) as Resolver<FormData>,
   })
 
-  const selectedRole = watch('role')
-  const style = PANEL_STYLE[selectedRole] ?? PANEL_STYLE.Individual
-  const panel = tr.panel[selectedRole] ?? tr.panel.Individual
+  const style = PANEL_STYLE
+  const panel = tr.panel.Individual
 
   function onSubmit(data: FormData) {
     register_(
-      { firstName: data.firstName, lastName: data.lastName, email: data.email, password: data.password, role: data.role },
+      { firstName: data.firstName, lastName: data.lastName, email: data.email, password: data.password, role: 'Individual' },
       {
         onSuccess: async () => {
           try {
@@ -137,46 +125,6 @@ export function RegisterPage() {
 
             <SocialLoginButtons />
             <AuthDivider />
-
-            {/* ── Role toggle ── */}
-            <div style={{
-              display: 'flex',
-              gap: 4,
-              padding: 4,
-              background: 'var(--bg-3)',
-              borderRadius: 11,
-              border: '1px solid var(--border-1)',
-              marginBottom: 20,
-            }}>
-              {(['Individual', 'Coach'] as const).map((r) => (
-                <label
-                  key={r}
-                  style={{
-                    flex: 1,
-                    padding: '7px 10px',
-                    textAlign: 'center',
-                    fontFamily: 'var(--font-sans)',
-                    fontSize: 13,
-                    fontWeight: selectedRole === r ? 600 : 500,
-                    cursor: 'pointer',
-                    background: selectedRole === r ? 'var(--bg-2)' : 'transparent',
-                    color: selectedRole === r ? 'var(--fg-1)' : 'var(--fg-3)',
-                    borderRadius: 8,
-                    boxShadow: selectedRole === r ? 'var(--sh-xs)' : 'none',
-                    transition: 'all 140ms',
-                    userSelect: 'none' as const,
-                  }}
-                >
-                  <input
-                    type="radio"
-                    value={r}
-                    style={{ position: 'absolute', opacity: 0, width: 0, height: 0 }}
-                    {...register('role')}
-                  />
-                  {r === 'Individual' ? tr.roleIndividual : tr.roleCoach}
-                </label>
-              ))}
-            </div>
 
             <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: 13 }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>

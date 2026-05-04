@@ -9,6 +9,7 @@ export {
   useChangePassword,
   useSendForgotPasswordCode,
   useResetPassword,
+  refreshAuth,
 } from './api/useAuth'
 export { useAuthStore } from './store/authStore'
 export type {

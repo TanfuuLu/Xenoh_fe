@@ -158,3 +158,16 @@ export function useResetPassword() {
       api.post(ENDPOINTS.auth.forgotPasswordReset, data).then(() => undefined),
   })
 }
+
+export async function refreshAuth(): Promise<void> {
+  const { refreshToken, setAuth } = useAuthStore.getState()
+  if (!refreshToken) return
+  const r = await api.post<AuthResponse>(ENDPOINTS.auth.refreshToken, { refreshToken })
+  setAuth(r.data.accessToken, r.data.refreshToken, {
+    id: r.data.userId,
+    email: r.data.email,
+    fullName: r.data.fullName,
+    avatarUrl: r.data.avatarUrl,
+    roles: r.data.roles,
+  })
+}
