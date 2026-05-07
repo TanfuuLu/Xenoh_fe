@@ -5,12 +5,15 @@ import { Card } from '@/shared/components/Card'
 import { Select } from '@/shared/components/Select'
 import { Spinner } from '@/shared/components/Spinner'
 import type { ReportReason, ReportStatus } from '@/shared/types/api'
+import { useAdminReportSummary } from '@/features/admin'
+import { MetricCard } from '@/features/admin/components/AdminPageParts'
 import { useAdminReports, useReviewReport, useSuspendUser, useUnsuspendUser } from '../index'
 
 export function AdminReportsPage() {
   const [status, setStatus] = useState<ReportStatus | ''>('Pending')
   const [reason, setReason] = useState<ReportReason | ''>('')
   const [notes, setNotes] = useState<Record<string, string>>({})
+  const { data: summary } = useAdminReportSummary()
   const { data: reports, isLoading } = useAdminReports({ status, reason })
   const reviewReport = useReviewReport()
   const suspendUser = useSuspendUser()
@@ -24,6 +27,17 @@ export function AdminReportsPage() {
           <h1 className="text-2xl font-bold text-text">User Reports</h1>
           <p className="text-sm text-muted">Review reports and moderate user accounts.</p>
         </div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <MetricCard label="Total reports" value={summary?.total ?? 0} />
+        {['Pending', 'Resolved', 'Dismissed'].map((item) => (
+          <MetricCard
+            key={item}
+            label={item}
+            value={summary?.countsByStatus.find((statusCount) => statusCount.status === item)?.count ?? 0}
+          />
+        ))}
       </div>
 
       <Card className="grid gap-3 sm:grid-cols-2">

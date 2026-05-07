@@ -92,6 +92,7 @@ export const ENDPOINTS = {
   // Exercise Templates
   exerciseTemplates: {
     list: '/api/exercise-templates',
+    forClient: (clientId: string) => `/api/exercise-templates/for-client/${clientId}`,
     custom: '/api/exercise-templates/custom',
     customById: (id: string) => `/api/exercise-templates/custom/${id}`,
     customForClient: (clientId: string) => `/api/exercise-templates/custom/for-client/${clientId}`,
@@ -122,6 +123,19 @@ export const ENDPOINTS = {
     createOrder: '/api/subscriptions/payment-orders',
   },
 
+  // Nutrition
+  nutrition: {
+    summary: '/api/nutrition/summary',
+    profile: '/api/nutrition/profile',
+    log: (date: string) => `/api/nutrition/logs/${date}`,
+    history: (from: string, to: string) => `/api/nutrition/history?from=${from}&to=${to}`,
+    clientSummary: (clientId: string) => `/api/nutrition/clients/${clientId}/summary`,
+    clientProfile: (clientId: string) => `/api/nutrition/clients/${clientId}/profile`,
+    clientLog: (clientId: string, date: string) => `/api/nutrition/clients/${clientId}/logs/${date}`,
+    clientHistory: (clientId: string, from: string, to: string) =>
+      `/api/nutrition/clients/${clientId}/history?from=${from}&to=${to}`,
+  },
+
   // Notifications
   notifications: {
     list: '/api/notifications',
@@ -131,9 +145,18 @@ export const ENDPOINTS = {
 
   // Admin
   admin: {
+    dashboard: '/api/admin/dashboard',
     reports: '/api/admin/reports',
+    reportsSummary: '/api/admin/reports/summary',
     report: (id: string) => `/api/admin/reports/${id}`,
+    users: '/api/admin/users',
+    user: (userId: string) => `/api/admin/users/${userId}`,
     suspendUser: (userId: string) => `/api/admin/users/${userId}/suspend`,
     unsuspendUser: (userId: string) => `/api/admin/users/${userId}/unsuspend`,
+    plans: '/api/admin/plans',
+    planAnalytics: (planId: string) => `/api/admin/plans/${planId}/analytics`,
+    payments: '/api/admin/payments',
+    paymentsSummary: '/api/admin/payments/summary',
+    subscriptions: '/api/admin/subscriptions',
   },
 } as const

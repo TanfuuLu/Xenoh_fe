@@ -36,7 +36,10 @@ export function useReviewReport() {
   return useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: ReviewReportRequest }) =>
       api.patch<UserReportResponse>(ENDPOINTS.admin.report(id), payload).then((r) => r.data),
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: reportKeys.all }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: reportKeys.all })
+      void queryClient.invalidateQueries({ queryKey: ['admin'] })
+    },
   })
 }
 
@@ -44,7 +47,10 @@ export function useSuspendUser() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (userId: string) => api.post(ENDPOINTS.admin.suspendUser(userId)),
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: reportKeys.all }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: reportKeys.all })
+      void queryClient.invalidateQueries({ queryKey: ['admin'] })
+    },
   })
 }
 
@@ -52,6 +58,9 @@ export function useUnsuspendUser() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (userId: string) => api.post(ENDPOINTS.admin.unsuspendUser(userId)),
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: reportKeys.all }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: reportKeys.all })
+      void queryClient.invalidateQueries({ queryKey: ['admin'] })
+    },
   })
 }

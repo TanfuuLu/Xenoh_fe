@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import {
   Bar,
@@ -12,7 +12,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { CalendarDays, Dumbbell, Target, TrendingUp, Weight, Users } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Dumbbell, Gauge, Info, Target, TrendingUp, Weight, Users, Zap } from 'lucide-react'
 import { Card } from '@/shared/components/Card'
 import { Spinner } from '@/shared/components/Spinner'
 import { slideUp } from '@/shared/utils/motion'
@@ -23,7 +23,7 @@ import { usePlans, useCoachPlanOverview } from '@/features/plans'
 import { useMyClients } from '@/features/coach-client'
 import { RequireTier } from '@/features/billing/components/RequireTier'
 import { usePlanAnalytics } from '../api/usePlanAnalytics'
-import type { MuscleGroupPoint, PlanAnalyticsResponse } from '../types'
+import type { MuscleGroupPoint, PlanAnalyticsResponse, TrainingInsightResponse, TrainingInsightSeverity } from '../types'
 
 const CHART_TOOLTIP_STYLE = {
   background: 'var(--bg-2)',
@@ -121,7 +121,10 @@ function CoachProgressView({
   const { data: clients, isLoading: loadingClients } = useMyClients()
   const { data: coachPlans, isLoading: loadingCoachPlans } = useCoachPlanOverview()
 
-  const activeClients = clients?.filter((c) => c.status === 'Active') ?? []
+  const activeClients = useMemo(
+    () => clients?.filter((c) => c.status === 'Active') ?? [],
+    [clients],
+  )
 
   const [selectedClientId, setSelectedClientId] = useState('')
   const [selectedPlanId, setSelectedPlanId] = useState('')
@@ -134,11 +137,14 @@ function CoachProgressView({
   }, [activeClients, selectedClientId])
 
   // When client changes, reset plan and default to their first plan
-  const clientPlans = coachPlans?.filter((p) => p.ownerId === selectedClientId) ?? []
+  const clientPlans = useMemo(
+    () => coachPlans?.filter((p) => p.ownerId === selectedClientId) ?? [],
+    [coachPlans, selectedClientId],
+  )
+
   useEffect(() => {
     setSelectedPlanId(clientPlans[0]?.id ?? '')
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedClientId])
+  }, [clientPlans])
 
   // Once coachPlans load, set the first plan for the selected client
   useEffect(() => {
@@ -271,11 +277,27 @@ function ProgressShell({
             variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.07 } } }}
             className="grid grid-cols-2 gap-3 lg:grid-cols-4"
           >
+            <ScoreCard score={analytics.trainingScore} shouldReduce={shouldReduce} />
             <StatCard icon={<Dumbbell size={18} />} label={tp.totalWorkouts} value={String(analytics.totalWorkoutsCompleted)} shouldReduce={shouldReduce} />
             <StatCard icon={<Weight size={18} />}   label={tp.totalVolume}   value={`${(analytics.totalVolume / 1000).toFixed(1)}t`} shouldReduce={shouldReduce} />
             <StatCard icon={<Target size={18} />}   label={tp.consistency}   value={`${analytics.consistencyPercent}%`} shouldReduce={shouldReduce} />
-            <StatCard icon={<CalendarDays size={18} />} label={tp.avgSessions} value={String(analytics.avgSessionsPerWeek)} shouldReduce={shouldReduce} />
           </motion.div>
+
+          {analytics.insights.length > 0 && (
+            <motion.div {...(shouldReduce ? {} : slideUp)}>
+              <Card>
+                <div className="mb-4 flex items-center gap-2">
+                  <Zap size={17} style={{ color: 'var(--color-primary)' }} />
+                  <h2 className="text-base font-semibold text-text">Training recommendations</h2>
+                </div>
+                <div className="grid gap-3 lg:grid-cols-3">
+                  {analytics.insights.slice(0, 3).map((insight) => (
+                    <InsightCard key={`${insight.type}-${insight.title}`} insight={insight} />
+                  ))}
+                </div>
+              </Card>
+            </motion.div>
+          )}
 
           {/* Weekly Compliance */}
           <motion.div {...(shouldReduce ? {} : slideUp)}>
@@ -477,4 +499,79 @@ function StatCard({
       <p className="text-2xl font-bold text-text">{value}</p>
     </motion.div>
   )
+}
+
+function ScoreCard({ score, shouldReduce }: { score: number; shouldReduce: boolean }) {
+  const color = score >= 80 ? 'var(--color-success)' : score >= 60 ? 'var(--color-warning)' : 'var(--color-danger)'
+  return (
+    <motion.div
+      variants={slideUp}
+      initial={shouldReduce ? false : 'hidden'}
+      animate="visible"
+      className="rounded-2xl p-4"
+      style={{ background: 'var(--bg-2)', border: '1px solid var(--border-1)' }}
+    >
+      <div className="mb-2 flex items-center gap-2" style={{ color }}>
+        <Gauge size={18} />
+        <span className="text-xs font-medium text-muted">Training score</span>
+      </div>
+      <p className="text-2xl font-bold text-text">{score}/100</p>
+    </motion.div>
+  )
+}
+
+function InsightCard({ insight }: { insight: TrainingInsightResponse }) {
+  const styles = insightStyle(insight.severity)
+  const Icon = styles.icon
+  return (
+    <div
+      className="rounded-xl border p-4"
+      style={{ borderColor: styles.border, background: styles.background }}
+    >
+      <div className="mb-3 flex items-start gap-2">
+        <Icon size={18} style={{ color: styles.color, marginTop: 2, flexShrink: 0 }} />
+        <div className="min-w-0">
+          <p className="font-semibold text-text">{insight.title}</p>
+          <p className="mt-1 text-sm text-muted">{insight.message}</p>
+        </div>
+      </div>
+      <div className="rounded-lg px-3 py-2 text-xs" style={{ background: 'var(--bg-2)', color: 'var(--fg-2)' }}>
+        <span className="text-muted">{insight.metricLabel}: </span>
+        <span className="font-semibold">{insight.metricValue}</span>
+      </div>
+    </div>
+  )
+}
+
+function insightStyle(severity: TrainingInsightSeverity) {
+  if (severity === 'Critical') {
+    return {
+      icon: AlertTriangle,
+      color: 'var(--color-danger)',
+      border: 'rgba(239,68,68,0.28)',
+      background: 'rgba(239,68,68,0.08)',
+    }
+  }
+  if (severity === 'Warning') {
+    return {
+      icon: AlertTriangle,
+      color: 'var(--color-warning)',
+      border: 'rgba(245,158,11,0.28)',
+      background: 'rgba(245,158,11,0.08)',
+    }
+  }
+  if (severity === 'Positive') {
+    return {
+      icon: CheckCircle2,
+      color: 'var(--color-success)',
+      border: 'rgba(34,197,94,0.25)',
+      background: 'rgba(34,197,94,0.08)',
+    }
+  }
+  return {
+    icon: Info,
+    color: 'var(--color-primary)',
+    border: 'var(--border-1)',
+    background: 'var(--bg-2)',
+  }
 }

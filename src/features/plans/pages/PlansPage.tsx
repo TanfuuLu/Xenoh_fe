@@ -55,6 +55,11 @@ export function PlansPage() {
   const tc = t.common
 
   const activeClients = clients?.filter((c) => c.status === 'Active') ?? []
+  // TEMP TEST BYPASS: every user can create unlimited personal plans while testing.
+  const subscriptionLoading = false
+  const hasUnlimitedPlans = true
+  const canCreatePersonalPlan = hasUnlimitedPlans || (plans?.length ?? 0) < 3
+  const planLimitLabel = hasUnlimitedPlans ? 'unlimited' : '3'
   const displayedPlans = useMemo(
     () =>
       (plans ?? [])
@@ -128,7 +133,7 @@ export function PlansPage() {
 
   const apiError = (createError as AxiosError<ApiError>)?.response?.data?.message
   const clientPlanApiError = (createClientPlanError as AxiosError<ApiError>)?.response?.data?.message
-  const loading = isLoading || (isCoach && (clientPlansLoading || clientsLoading))
+  const loading = isLoading || subscriptionLoading || (isCoach && (clientPlansLoading || clientsLoading))
 
   if (loading) {
     return (
@@ -146,11 +151,11 @@ export function PlansPage() {
         <div className="min-w-0">
           <h1 className="text-2xl font-bold text-text">Plans</h1>
           <p className="mt-1 text-sm text-muted">
-            {(plans?.length ?? 0)}/3 {isCoach ? 'personal plans' : 'plans'}
+            {(plans?.length ?? 0)}/{planLimitLabel} {isCoach ? 'personal plans' : 'plans'}
             {isCoach && ` - ${clientPlans?.length ?? 0} ${tcp.subtitle}`}
           </p>
         </div>
-        {(plans?.length ?? 0) < 3 && (
+        {canCreatePersonalPlan && (
           <Button onClick={() => setShowCreate(true)} size="sm" className="w-full sm:w-auto">
             <Plus size={16} /> {tp.createPlan}
           </Button>

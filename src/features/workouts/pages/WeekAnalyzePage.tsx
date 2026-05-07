@@ -1,7 +1,7 @@
 import { useParams, Link } from 'react-router'
 import { useQueries } from '@tanstack/react-query'
 import { motion, useReducedMotion } from 'framer-motion'
-import { ChevronLeft, CheckCircle2, AlertTriangle, Dumbbell, TrendingUp, Calendar, Zap, BedDouble, XCircle, Flame, Timer, Activity } from 'lucide-react'
+import { ChevronLeft, CheckCircle2, AlertTriangle, Dumbbell, TrendingUp, Calendar, Zap, BedDouble, XCircle, Flame, Timer, Activity, Info } from 'lucide-react'
 import { format } from 'date-fns'
 import { vi as viLocale, enUS } from 'date-fns/locale'
 import {
@@ -221,6 +221,16 @@ export function WeekAnalyzePage() {
   const volumeRatio = totalPlannedVol > 0
     ? Math.round((totalActualVol / totalPlannedVol) * 100)
     : 0
+  const weekInsights = buildWeekInsights({
+    completionPct,
+    volumeRatio,
+    warnDays,
+    missedDays,
+    restDays,
+    weekAverageRpe,
+    muscleEntries,
+    totalMuscleScore,
+  })
 
   return (
     <RequireTier feature="Week Analysis">
@@ -315,6 +325,24 @@ export function WeekAnalyzePage() {
           accent="rgba(239,68,68,0.1)"
         />
       </motion.div>
+
+      {weekInsights.length > 0 && (
+        <motion.div
+          {...motionProps.slideUp}
+          className="rounded-xl p-4 space-y-3"
+          style={{ background: 'var(--bg-2)', border: '1px solid var(--border-1)' }}
+        >
+          <div className="flex items-center gap-2">
+            <Zap size={16} style={{ color: 'var(--color-primary)' }} />
+            <h2 className="text-sm font-semibold text-text">Recommendations</h2>
+          </div>
+          <div className="grid gap-3 lg:grid-cols-3">
+            {weekInsights.map((insight) => (
+              <WeekInsightCard key={insight.title} insight={insight} />
+            ))}
+          </div>
+        </motion.div>
+      )}
 
       {/* Training days visual */}
       <motion.div
@@ -511,4 +539,172 @@ export function WeekAnalyzePage() {
     </div>
     </RequireTier>
   )
+}
+
+type WeekInsightSeverity = 'Info' | 'Warning' | 'Critical' | 'Positive'
+
+interface WeekInsight {
+  severity: WeekInsightSeverity
+  title: string
+  message: string
+  metricLabel: string
+  metricValue: string
+}
+
+function buildWeekInsights({
+  completionPct,
+  volumeRatio,
+  warnDays,
+  missedDays,
+  restDays,
+  weekAverageRpe,
+  muscleEntries,
+  totalMuscleScore,
+}: {
+  completionPct: number
+  volumeRatio: number
+  warnDays: number
+  missedDays: number
+  restDays: number
+  weekAverageRpe: number | null
+  muscleEntries: [string, number][]
+  totalMuscleScore: number
+}): WeekInsight[] {
+  const insights: WeekInsight[] = []
+
+  if (completionPct < 50 || missedDays >= 2) {
+    insights.push({
+      severity: 'Critical',
+      title: 'Repeat or simplify this week',
+      message: 'Completion is low. Do not progress load until the key sessions are completed more consistently.',
+      metricLabel: 'Completion',
+      metricValue: `${completionPct}%`,
+    })
+  } else if (completionPct < 85 || warnDays > 0) {
+    insights.push({
+      severity: 'Warning',
+      title: 'Hold progression steady',
+      message: 'Some sessions missed target. Keep load stable and aim for cleaner execution next week.',
+      metricLabel: 'Warnings',
+      metricValue: String(warnDays),
+    })
+  } else {
+    insights.push({
+      severity: 'Positive',
+      title: 'Good week for progression',
+      message: 'Completion is strong. Add a small load or rep increase to priority lifts if recovery feels good.',
+      metricLabel: 'Completion',
+      metricValue: `${completionPct}%`,
+    })
+  }
+
+  if (volumeRatio > 130) {
+    insights.push({
+      severity: 'Warning',
+      title: 'Volume exceeded plan',
+      message: 'Actual volume is far above planned volume. Watch fatigue and avoid another large jump immediately.',
+      metricLabel: 'Volume vs plan',
+      metricValue: `${volumeRatio}%`,
+    })
+  } else if (volumeRatio > 0 && volumeRatio < 80) {
+    insights.push({
+      severity: 'Warning',
+      title: 'Volume below plan',
+      message: 'Actual volume is below planned work. Repeat this target before increasing load.',
+      metricLabel: 'Volume vs plan',
+      metricValue: `${volumeRatio}%`,
+    })
+  }
+
+  if (weekAverageRpe != null && weekAverageRpe >= 8.5) {
+    insights.push({
+      severity: 'Warning',
+      title: 'Fatigue risk is high',
+      message: 'Average RPE is high. Use recovery work, rest, or a lighter week before pushing harder.',
+      metricLabel: 'Avg RPE',
+      metricValue: weekAverageRpe.toFixed(1),
+    })
+  }
+
+  const topMuscle = muscleEntries[0]
+  if (topMuscle && totalMuscleScore > 0) {
+    const topPercent = Math.round((topMuscle[1] / totalMuscleScore) * 100)
+    if (topPercent > 45) {
+      insights.push({
+        severity: 'Warning',
+        title: 'Muscle focus is narrow',
+        message: `${topMuscle[0]} dominates this week. Add balance if this was not intentional.`,
+        metricLabel: topMuscle[0],
+        metricValue: `${topPercent}%`,
+      })
+    }
+  }
+
+  if (restDays === 0 && completionPct >= 85 && weekAverageRpe != null && weekAverageRpe >= 8) {
+    insights.push({
+      severity: 'Info',
+      title: 'Add recovery room',
+      message: 'Hard training with no rest days can accumulate fatigue. Consider at least one recovery day.',
+      metricLabel: 'Rest days',
+      metricValue: '0',
+    })
+  }
+
+  return insights.slice(0, 3)
+}
+
+function WeekInsightCard({ insight }: { insight: WeekInsight }) {
+  const styles = weekInsightStyle(insight.severity)
+  const Icon = styles.icon
+  return (
+    <div
+      className="rounded-xl border p-4"
+      style={{ borderColor: styles.border, background: styles.background }}
+    >
+      <div className="mb-3 flex items-start gap-2">
+        <Icon size={17} style={{ color: styles.color, marginTop: 2, flexShrink: 0 }} />
+        <div>
+          <p className="font-semibold text-text">{insight.title}</p>
+          <p className="mt-1 text-sm text-muted">{insight.message}</p>
+        </div>
+      </div>
+      <div className="rounded-lg px-3 py-2 text-xs" style={{ background: 'var(--bg-3)', color: 'var(--fg-2)' }}>
+        <span className="text-muted">{insight.metricLabel}: </span>
+        <span className="font-semibold">{insight.metricValue}</span>
+      </div>
+    </div>
+  )
+}
+
+function weekInsightStyle(severity: WeekInsightSeverity) {
+  if (severity === 'Critical') {
+    return {
+      icon: AlertTriangle,
+      color: 'var(--color-danger)',
+      border: 'rgba(239,68,68,0.28)',
+      background: 'rgba(239,68,68,0.08)',
+    }
+  }
+  if (severity === 'Warning') {
+    return {
+      icon: AlertTriangle,
+      color: 'var(--color-warning)',
+      border: 'rgba(245,158,11,0.28)',
+      background: 'rgba(245,158,11,0.08)',
+    }
+  }
+  if (severity === 'Positive') {
+    return {
+      icon: CheckCircle2,
+      color: 'var(--color-success)',
+      border: 'rgba(34,197,94,0.25)',
+      background: 'rgba(34,197,94,0.08)',
+    }
+  }
+  return {
+    icon: Info,
+    color: 'var(--color-primary)',
+    border: 'var(--border-1)',
+    background: 'var(--bg-3)',
+  }
 }

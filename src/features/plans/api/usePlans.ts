@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/shared/api/axios'
 import { ENDPOINTS } from '@/shared/api/endpoints'
+import { coachClientKeys } from '@/features/coach-client/api/useCoachClient'
 import type {
   CoachPlanResponse,
   CreatePlanForUserRequest,
@@ -101,6 +102,7 @@ export function useCreatePlanForUser() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: planKeys.coachOverview })
       void qc.invalidateQueries({ queryKey: planKeys.all })
+      void qc.invalidateQueries({ queryKey: coachClientKeys.dashboard })
     },
   })
 }

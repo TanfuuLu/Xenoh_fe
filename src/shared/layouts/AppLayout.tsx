@@ -7,7 +7,7 @@ import {
   UserCheck, Menu, X, LogOut, ChevronDown,
   PanelLeftClose, PanelLeftOpen, ChartNoAxesCombined, TrendingUp,
   LockKeyhole, Lock, BookOpen, CreditCard,
-  Shield,
+  Shield, Utensils,
 } from 'lucide-react'
 import { cn } from '@/shared/utils/cn'
 import { Link as RouterLink } from 'react-router'
@@ -48,6 +48,8 @@ export function AppLayout() {
     { to: '/exercise-library', icon: BookOpen, label: exerciseLibraryLabel },
     { to: '/exercise-tracking', icon: ChartNoAxesCombined, label: tn.exerciseTracking },
     { to: '/progress',     icon: TrendingUp,      label: tn.progress },
+    { to: '/nutrition',    icon: Utensils,        label: 'Nutrition' },
+    { to: '/coach/clients', icon: UserCheck,      label: tn.clients },
     { to: '/coaches',      icon: Users,           label: tn.findCoach },
     { to: '/profile',      icon: User,            label: tn.profile },
     { to: '/subscription', icon: CreditCard,      label: 'Subscription' },
@@ -58,6 +60,7 @@ export function AppLayout() {
     { to: '/plans',         icon: ClipboardList,   label: tn.myPlans },
     { to: '/exercise-library', icon: BookOpen, label: exerciseLibraryLabel },
     { to: '/progress',      icon: TrendingUp,      label: tn.progress },
+    { to: '/nutrition',     icon: Utensils,        label: 'Nutrition' },
     { to: '/coach/clients', icon: UserCheck,       label: tn.clients },
     { to: '/coaches',       icon: Users,           label: tn.findCoach },
     { to: '/profile',       icon: User,            label: tn.profile },
@@ -65,15 +68,18 @@ export function AppLayout() {
   ]
 
   const adminNav = [
+    { to: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { to: '/admin/reports', icon: Shield, label: 'Reports' },
-    { to: '/profile',       icon: User,   label: tn.profile },
+    { to: '/admin/users', icon: Users, label: 'Users' },
+    { to: '/admin/plans', icon: ClipboardList, label: 'Plans' },
+    { to: '/admin/payments', icon: CreditCard, label: 'Payments' },
+    { to: '/profile', icon: User, label: tn.profile },
   ]
 
   const navItems = isAdmin ? adminNav : isCoach ? coachNav : individualNav
 
-  const lockedCoachNavItems: LockedNavItem[] = (!isCoach && !isAdmin) ? [
-    { icon: UserCheck, label: tn.clients },
-  ] : []
+  // TEMP TEST BYPASS: do not show coach features as locked while validating features.
+  const lockedCoachNavItems: LockedNavItem[] = []
 
   function handleLogout() {
     setUserMenuOpen(false)

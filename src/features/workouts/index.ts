@@ -13,6 +13,7 @@ export {
 } from './api/useExercises'
 export {
   useExerciseTemplates,
+  useClientExerciseTemplates,
   useCreateCustomExerciseTemplate,
   useUpdateCustomExerciseTemplate,
   useDeleteCustomExerciseTemplate,

@@ -20,6 +20,19 @@ export function useExerciseTemplates(filters?: Filters) {
   })
 }
 
+export function useClientExerciseTemplates(clientId: string, filters?: Filters) {
+  return useQuery({
+    queryKey: ['exercise-templates', 'client', clientId, filters?.muscleGroup ?? ''],
+    enabled: Boolean(clientId),
+    queryFn: () =>
+      api
+        .get<ExerciseTemplateResponse[]>(ENDPOINTS.exerciseTemplates.forClient(clientId), {
+          params: { muscleGroup: filters?.muscleGroup },
+        })
+        .then((r) => r.data),
+  })
+}
+
 function invalidateExerciseTemplates(qc: ReturnType<typeof useQueryClient>) {
   void qc.invalidateQueries({ queryKey: ['exercise-templates'] })
 }
@@ -62,6 +75,9 @@ export function useCreateCustomExerciseTemplateForClient(clientId: string) {
           clientId,
         })
         .then((r) => r.data),
-    onSuccess: () => invalidateExerciseTemplates(qc),
+    onSuccess: () => {
+      invalidateExerciseTemplates(qc)
+      void qc.invalidateQueries({ queryKey: ['exercise-templates', 'client', clientId] })
+    },
   })
 }

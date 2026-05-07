@@ -46,9 +46,22 @@ export interface PlanAnalyticsResponse {
   totalVolume: number
   consistencyPercent: number
   avgSessionsPerWeek: number
+  trainingScore: number
+  insights: TrainingInsightResponse[]
   weeklyCompliance: WeekCompliancePoint[]
   weeklyVolume: WeekVolumePoint[]
   muscleGroupVolume: MuscleGroupPoint[]
   muscleGroupHeatmap: MuscleGroupHeatmapPoint[]
   muscleGroupBalance: MuscleGroupBalancePoint
+}
+
+export type TrainingInsightSeverity = 'Info' | 'Warning' | 'Critical' | 'Positive'
+
+export interface TrainingInsightResponse {
+  type: 'Consistency' | 'VolumeTrend' | 'Overload' | 'FatigueRisk' | 'MuscleBalance' | 'Recommendation'
+  severity: TrainingInsightSeverity
+  title: string
+  message: string
+  metricLabel: string
+  metricValue: string
 }

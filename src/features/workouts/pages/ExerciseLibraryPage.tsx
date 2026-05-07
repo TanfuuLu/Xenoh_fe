@@ -13,7 +13,6 @@ import { Select } from '@/shared/components/Select'
 import { Spinner } from '@/shared/components/Spinner'
 import { useConfirm } from '@/shared/components/ConfirmModal'
 import { MuscleGroup, type MuscleGroup as MuscleGroupValue } from '@/shared/types/api'
-import { useSubscription } from '@/features/billing/api/useSubscription'
 import {
   useCreateCustomExerciseTemplate,
   useDeleteCustomExerciseTemplate,
@@ -36,8 +35,8 @@ type CustomTemplateForm = z.output<typeof customTemplateSchema>
 
 export function ExerciseLibraryPage() {
   const navigate = useNavigate()
-  const { data: subscription } = useSubscription()
-  const isActivePro = (subscription?.tier ?? 'Free') !== 'Free' && (subscription?.isActive ?? false)
+  // TEMP TEST BYPASS: custom exercise features are open while validating features.
+  const isActivePro = true
 
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<MuscleGroupValue | ''>('')
   const [selectedType, setSelectedType] = useState<ExerciseKindFilter>('')

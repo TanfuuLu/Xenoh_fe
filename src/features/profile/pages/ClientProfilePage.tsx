@@ -4,7 +4,7 @@ import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { motion } from 'framer-motion'
-import { ChevronLeft, Activity, Flame, Scale, Dumbbell, Plus, Ruler, CalendarDays, Users, ClipboardList } from 'lucide-react'
+import { ChevronLeft, Activity, Flame, Scale, Dumbbell, Plus, Ruler, CalendarDays, Users, ClipboardList, Utensils, Pencil, Trash2 } from 'lucide-react'
 import { format } from 'date-fns'
 import {
   CartesianGrid,
@@ -21,12 +21,20 @@ import { Input } from '@/shared/components/Input'
 import { Modal } from '@/shared/components/Modal'
 import { Select } from '@/shared/components/Select'
 import { Spinner } from '@/shared/components/Spinner'
+import { useConfirm } from '@/shared/components/ConfirmModal'
 import { MuscleGroup, type MuscleGroup as MuscleGroupValue } from '@/shared/types/api'
 import { slideUp, staggerContainer } from '@/shared/utils/motion'
 import { useT } from '@/shared/i18n'
-import { useCoachPlanOverview } from '@/features/plans'
-import { useCreateCustomExerciseTemplateForClient } from '@/features/workouts'
-import type { CustomExerciseTemplateRequest } from '@/features/workouts'
+import { useCoachPlanOverview, useCreatePlanForUser } from '@/features/plans'
+import type { CreatePlanForUserRequest } from '@/features/plans'
+import { useCoachDashboard } from '@/features/coach-client'
+import {
+  useClientExerciseTemplates,
+  useCreateCustomExerciseTemplateForClient,
+  useDeleteCustomExerciseTemplate,
+  useUpdateCustomExerciseTemplate,
+} from '@/features/workouts'
+import type { CustomExerciseTemplateRequest, ExerciseTemplateResponse } from '@/features/workouts'
 import { useClientBodyweightHistory, useClientProfile } from '../index'
 
 const customTemplateSchema = z.object({
@@ -39,14 +47,34 @@ const customTemplateSchema = z.object({
 
 type CustomTemplateForm = z.output<typeof customTemplateSchema>
 
+const clientPlanSchema = z.object({
+  name: z.string().trim().min(2, 'Plan name must be at least 2 characters').max(100),
+  startDate: z.string().min(1, 'Start date is required'),
+  endDate: z.string().min(1, 'End date is required'),
+}).refine((data) => data.endDate > data.startDate, {
+  message: 'End date must be after start date',
+  path: ['endDate'],
+})
+
+type ClientPlanForm = z.output<typeof clientPlanSchema>
+
 export function ClientProfilePage() {
   const { clientId = '' } = useParams()
   const { data: profile, isLoading } = useClientProfile(clientId)
   const { data: bodyweightHistory = [] } = useClientBodyweightHistory(clientId)
   const { data: coachPlans = [], isLoading: plansLoading } = useCoachPlanOverview()
+  const { data: dashboard = [] } = useCoachDashboard()
+  const { data: clientExerciseTemplates = [], isLoading: clientExercisesLoading } =
+    useClientExerciseTemplates(clientId)
+  const { mutate: createClientPlan, isPending: creatingClientPlan, error: createClientPlanError } = useCreatePlanForUser()
   const { mutate: createForClient, isPending: creatingForClient, error: createForClientError } =
     useCreateCustomExerciseTemplateForClient(clientId)
+  const { mutate: updateCustomTemplate, isPending: updatingCustom, error: updateError } = useUpdateCustomExerciseTemplate()
+  const { mutate: deleteCustomTemplate, isPending: deletingCustom } = useDeleteCustomExerciseTemplate()
+  const { confirm, ConfirmDialog } = useConfirm()
   const [exerciseModalOpen, setExerciseModalOpen] = useState(false)
+  const [editingTemplate, setEditingTemplate] = useState<ExerciseTemplateResponse | null>(null)
+  const [planModalOpen, setPlanModalOpen] = useState(false)
   const t   = useT()
   const tp  = t.profile
   const tcp = t.clientProfile
@@ -63,13 +91,62 @@ export function ClientProfilePage() {
     },
   })
 
+  const planForm = useForm<z.input<typeof clientPlanSchema>, unknown, ClientPlanForm>({
+    resolver: zodResolver(clientPlanSchema),
+    defaultValues: {
+      name: '',
+      startDate: '',
+      endDate: '',
+    },
+  })
+
+  function openPlanModal() {
+    const startDate = format(new Date(), 'yyyy-MM-dd')
+    const endDate = format(new Date(Date.now() + 28 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd')
+    planForm.reset({
+      name: `${profile?.firstName ?? 'Client'} Training Plan`,
+      startDate,
+      endDate,
+    })
+    setPlanModalOpen(true)
+  }
+
+  function closePlanModal() {
+    setPlanModalOpen(false)
+    planForm.reset()
+  }
+
+  function onSubmitPlan(data: ClientPlanForm) {
+    const payload: CreatePlanForUserRequest = {
+      userId: clientId,
+      name: data.name.trim(),
+      startDate: data.startDate,
+      endDate: data.endDate,
+    }
+    createClientPlan(payload, { onSuccess: closePlanModal })
+  }
+
   function openExerciseModal() {
+    setEditingTemplate(null)
     exerciseForm.reset({ name: '', description: '', primaryMuscleGroup: 'Chest', secondaryMuscleGroups: [], exerciseKind: 'Strength' })
+    setExerciseModalOpen(true)
+  }
+
+  function openEditExerciseModal(template: ExerciseTemplateResponse) {
+    setEditingTemplate(template)
+    exerciseForm.reset({
+      name: template.name,
+      description: template.description ?? '',
+      primaryMuscleGroup: template.primaryMuscleGroup,
+      secondaryMuscleGroups: template.secondaryMuscleGroups,
+      exerciseKind: template.exerciseKind,
+    })
     setExerciseModalOpen(true)
   }
 
   function closeExerciseModal() {
     setExerciseModalOpen(false)
+    setEditingTemplate(null)
     exerciseForm.reset()
   }
 
@@ -81,10 +158,31 @@ export function ClientProfilePage() {
       secondaryMuscleGroups: data.secondaryMuscleGroups.filter((g) => g !== data.primaryMuscleGroup),
       exerciseKind: data.exerciseKind,
     }
+
+    if (editingTemplate) {
+      updateCustomTemplate(
+        { id: editingTemplate.id, data: payload },
+        { onSuccess: closeExerciseModal },
+      )
+      return
+    }
+
     createForClient(payload, { onSuccess: closeExerciseModal })
   }
 
-  const createForClientApiError = (createForClientError as { response?: { data?: { message?: string } } } | null)
+  async function onDeleteExercise(template: ExerciseTemplateResponse) {
+    const ok = await confirm(`Delete custom exercise "${template.name}"?`, {
+      confirmLabel: 'Delete',
+      danger: true,
+    })
+    if (!ok) return
+
+    deleteCustomTemplate(template.id)
+  }
+
+  const createForClientApiError = ((createForClientError || updateError) as { response?: { data?: { message?: string } } } | null)
+    ?.response?.data?.message
+  const createPlanApiError = (createClientPlanError as { response?: { data?: { message?: string } } } | null)
     ?.response?.data?.message
 
   if (isLoading) {
@@ -105,6 +203,11 @@ export function ClientProfilePage() {
 
   const today = new Date()
   const clientPlans = coachPlans.filter((p) => p.ownerId === clientId)
+  const clientDashboard = dashboard.find((entry) => entry.clientId === clientId)
+  const planProgress = clientDashboard?.planProgressPercent ?? null
+  const clientCustomExercises = clientExerciseTemplates.filter(
+    (template) => template.isCustom && template.ownerId === clientId
+  )
   const activePlan = clientPlans.find(
     (p) => today >= new Date(p.startDate) && today <= new Date(p.endDate)
   )
@@ -112,6 +215,8 @@ export function ClientProfilePage() {
 
   return (
     <div className="space-y-6">
+      {ConfirmDialog}
+
       {/* Header */}
       <div className="flex items-start gap-2">
         <Link to="/coach/clients">
@@ -196,14 +301,47 @@ export function ClientProfilePage() {
 
       {/* Training plan */}
       <Card>
-        <div className="mb-4 flex items-center gap-2 text-muted">
-          <ClipboardList size={14} />
-          <h2 className="text-sm font-semibold uppercase tracking-wide">Training Plan</h2>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-muted">
+            <ClipboardList size={14} />
+            <h2 className="text-sm font-semibold uppercase tracking-wide">Training Plan</h2>
+          </div>
+          <Button size="sm" onClick={openPlanModal}>
+            <Plus size={14} /> Create plan
+          </Button>
+        </div>
+        <div className="mb-4 rounded-xl border border-border p-4" style={{ background: 'var(--bg-2)' }}>
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-text">Client plan progress</p>
+              <p className="mt-0.5 text-xs text-muted">
+                {activePlan ? activePlan.name : 'No active plan in date range'}
+              </p>
+            </div>
+            <p className="text-2xl font-bold text-text">
+              {planProgress !== null ? `${planProgress}%` : '-'}
+            </p>
+          </div>
+          {planProgress !== null && (
+            <div className="mt-3 h-2 overflow-hidden rounded-full" style={{ background: 'var(--xn-clay-200)' }}>
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${Math.max(0, Math.min(100, planProgress))}%` }}
+                className="h-full rounded-full"
+                style={{ background: 'var(--xn-clay-700)' }}
+              />
+            </div>
+          )}
         </div>
         {plansLoading ? (
           <Spinner size="sm" />
         ) : clientPlans.length === 0 ? (
-          <p className="text-sm text-muted">No plan assigned yet.</p>
+          <div className="rounded-xl border border-border p-4" style={{ background: 'var(--bg-2)' }}>
+            <p className="text-sm text-muted">No plan assigned yet.</p>
+            <Button size="sm" className="mt-3" onClick={openPlanModal}>
+              <Plus size={14} /> Create first plan
+            </Button>
+          </div>
         ) : (
           <motion.div
             initial="hidden"
@@ -212,7 +350,7 @@ export function ClientProfilePage() {
             className="space-y-3"
           >
             {activePlan && (
-              <Link to={`/plans/${activePlan.id}`}>
+              <Link to={`/plans/${activePlan.id}`} state={{ canEdit: true }}>
                 <motion.div
                   variants={slideUp}
                   className="rounded-xl border p-4 transition-opacity hover:opacity-80"
@@ -237,7 +375,7 @@ export function ClientProfilePage() {
               </Link>
             )}
             {otherPlans.map((plan) => (
-              <Link key={plan.id} to={`/plans/${plan.id}`}>
+              <Link key={plan.id} to={`/plans/${plan.id}`} state={{ canEdit: true }}>
                 <motion.div
                   variants={slideUp}
                   className="rounded-xl border border-border p-4 transition-opacity hover:opacity-80"
@@ -255,6 +393,49 @@ export function ClientProfilePage() {
         )}
       </Card>
 
+      <Modal
+        open={planModalOpen}
+        onClose={closePlanModal}
+        title="Create plan for client"
+        className="max-w-lg"
+      >
+        <form onSubmit={planForm.handleSubmit(onSubmitPlan)} className="space-y-4">
+          <Input
+            label="Plan name"
+            placeholder="Hypertrophy Block"
+            error={planForm.formState.errors.name?.message}
+            {...planForm.register('name')}
+          />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Input
+              label="Start date"
+              type="date"
+              error={planForm.formState.errors.startDate?.message}
+              {...planForm.register('startDate')}
+            />
+            <Input
+              label="End date"
+              type="date"
+              error={planForm.formState.errors.endDate?.message}
+              {...planForm.register('endDate')}
+            />
+          </div>
+          {createPlanApiError && (
+            <p className="rounded-lg px-3 py-2 text-sm" style={{ background: 'var(--xn-danger-bg)', color: 'var(--xn-danger)' }}>
+              {createPlanApiError}
+            </p>
+          )}
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button type="button" variant="secondary" className="w-full sm:w-auto" onClick={closePlanModal}>
+              Cancel
+            </Button>
+            <Button type="submit" className="w-full sm:w-auto" loading={creatingClientPlan}>
+              Create plan
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
       {/* Custom exercises for client */}
       <Card>
         <div className="mb-4 flex items-center justify-between gap-3">
@@ -269,12 +450,96 @@ export function ClientProfilePage() {
         <p className="text-sm text-muted">
           Create a custom exercise that will appear in this client's exercise library.
         </p>
+        <div className="mt-4">
+          {clientExercisesLoading ? (
+            <Spinner size="sm" />
+          ) : clientCustomExercises.length === 0 ? (
+            <p className="text-sm text-muted">No custom exercises created for this client yet.</p>
+          ) : (
+            <motion.div
+              initial="hidden"
+              animate="visible"
+              variants={staggerContainer}
+              className="grid gap-3 md:grid-cols-2"
+            >
+              {clientCustomExercises.map((template) => (
+                <motion.div
+                  key={template.id}
+                  variants={slideUp}
+                  className="rounded-xl border border-border p-4"
+                  style={{ background: 'var(--bg-2)' }}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="break-words font-semibold text-text">{template.name}</p>
+                      <p className="mt-1 text-xs text-muted">
+                        {formatMuscleGroup(template.primaryMuscleGroup)} • {template.exerciseKind}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openEditExerciseModal(template)}
+                        title="Edit custom exercise"
+                      >
+                        <Pencil size={14} />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        loading={deletingCustom}
+                        onClick={() => onDeleteExercise(template)}
+                        title="Delete custom exercise"
+                      >
+                        <Trash2 size={14} />
+                      </Button>
+                    </div>
+                  </div>
+                  {template.description && (
+                    <p className="mt-3 line-clamp-2 text-sm text-muted">{template.description}</p>
+                  )}
+                  {template.secondaryMuscleGroups.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-1.5">
+                      {template.secondaryMuscleGroups.map((group) => (
+                        <span
+                          key={group}
+                          className="rounded-full border px-2 py-0.5 text-xs text-muted"
+                          style={{ borderColor: 'var(--border-1)' }}
+                        >
+                          {formatMuscleGroup(group)}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
+        </div>
+      </Card>
+
+      <Card>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <Utensils size={18} className="mt-0.5 text-primary" />
+            <div>
+              <h2 className="font-semibold text-text">Nutrition</h2>
+              <p className="mt-1 text-sm text-muted">Edit this client's TDEE, bulk/cut targets, and daily intake logs.</p>
+            </div>
+          </div>
+          <Link to={`/coach/clients/${clientId}/nutrition`}>
+            <Button size="sm">Open nutrition</Button>
+          </Link>
+        </div>
       </Card>
 
       <Modal
         open={exerciseModalOpen}
         onClose={closeExerciseModal}
-        title="Create custom exercise for client"
+        title={editingTemplate ? 'Edit custom exercise for client' : 'Create custom exercise for client'}
         className="max-w-lg"
       >
         <form onSubmit={exerciseForm.handleSubmit(onSubmitExercise)} className="space-y-4">
@@ -339,8 +604,8 @@ export function ClientProfilePage() {
             <Button type="button" variant="secondary" className="w-full sm:w-auto" onClick={closeExerciseModal}>
               Cancel
             </Button>
-            <Button type="submit" className="w-full sm:w-auto" loading={creatingForClient}>
-              Create exercise
+            <Button type="submit" className="w-full sm:w-auto" loading={creatingForClient || updatingCustom}>
+              {editingTemplate ? 'Save exercise' : 'Create exercise'}
             </Button>
           </div>
         </form>

@@ -34,7 +34,7 @@ export function ExerciseTrackingPage() {
   const selectedId = selectedExerciseId || null
   const { data: history, isLoading: loadingHistory } = useExercisePrHistory(selectedId)
 
-  const exercises = Array.isArray(prs) ? prs : []
+  const exercises = useMemo(() => (Array.isArray(prs) ? prs : []), [prs])
 
   const selectedPr = exercises.find((pr) => pr.exerciseTemplateId === selectedExerciseId)
 
