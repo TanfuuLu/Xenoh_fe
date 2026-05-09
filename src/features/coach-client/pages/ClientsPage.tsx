@@ -2,9 +2,10 @@ import { useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import {
-  CheckCircle2, XCircle, User, Clock, Mail, FileText,
+  CheckCircle2, XCircle, User, Users, Clock, Mail, FileText,
   Flame, Dumbbell, Ruler, Weight, AlertTriangle, TrendingUp,
-  CalendarDays, Scale, UserMinus,
+  CalendarDays, Scale, UserMinus, RefreshCw,
+  ClipboardList,
 } from 'lucide-react'
 import { useAuthStore } from '@/features/auth'
 import { format, differenceInDays, formatDistanceToNow } from 'date-fns'
@@ -18,6 +19,7 @@ import { useConfirm } from '@/shared/components/ConfirmModal'
 import { staggerContainer, slideUp } from '@/shared/utils/motion'
 import { useT } from '@/shared/i18n'
 import { usePublicUserProfile } from '@/features/profile'
+import { InlineTip } from '@/features/tips'
 import type { CoachRelationshipResponse, ClientResponse, CoachClientDashboardResponse } from '../types'
 import {
   usePendingRequests,
@@ -28,7 +30,16 @@ import {
   useRequestTermination,
   useAcceptTermination,
   useRejectTermination,
+  useAcceptRenewal,
+  useRejectRenewal,
 } from '../index'
+import { RenewalModal } from '../components/RenewalModal'
+
+function formatContractDate(value: string | null): string {
+  if (!value) return 'chưa đặt'
+  const [y, m, d] = value.split('-')
+  return `${d}/${m}/${y}`
+}
 
 // ─── Requester preview modal (unchanged) ───────────────────────────────────
 
@@ -141,19 +152,48 @@ interface ClientCardProps {
   onCancelDisconnect: () => void
   onAcceptDisconnect: () => void
   onRejectDisconnect: () => void
+  onProposeRenewal: () => void
+  onAcceptRenewal: () => void
+  onRejectRenewal: () => void
   disconnecting: boolean
+  renewalPending: boolean
 }
 
-function ClientCard({ client, stats, currentUserId, onView, onDisconnect, onCancelDisconnect, onAcceptDisconnect, onRejectDisconnect, disconnecting }: ClientCardProps) {
+function attentionRank(level: CoachClientDashboardResponse['attentionLevel'] | undefined) {
+  if (level === 'High') return 3
+  if (level === 'Medium') return 2
+  if (level === 'Low') return 1
+  return 0
+}
+
+function reasonBadgeVariant(reason: string): 'success' | 'danger' | 'warning' | 'default' | 'primary' {
+  if (reason === 'No active plan' || reason === 'No workout history') return 'danger'
+  if (reason === 'Inactive' || reason === 'Missed days' || reason === 'Behind plan') return 'warning'
+  return 'default'
+}
+
+function ClientCard({ client, stats, currentUserId, onView, onDisconnect, onCancelDisconnect, onAcceptDisconnect, onRejectDisconnect, onProposeRenewal, onAcceptRenewal, onRejectRenewal, disconnecting, renewalPending }: ClientCardProps) {
   const isPendingTermination = client.status === 'PendingTermination'
   const iInitiated = isPendingTermination && client.terminationRequestedBy === currentUserId
   const clientInitiated = isPendingTermination && client.terminationRequestedBy !== currentUserId
-  const daysSinceLast = stats?.lastWorkoutDate
-    ? differenceInDays(new Date(), new Date(stats.lastWorkoutDate))
-    : null
+  const isExpired = client.status === 'Expired'
+  const isPendingRenewal = client.status === 'PendingRenewal'
+  const iInitiatedRenewal = isPendingRenewal && client.renewalRequestedBy === currentUserId
+  const clientInitiatedRenewal = isPendingRenewal && client.renewalRequestedBy !== currentUserId
+  const daysSinceLast = stats?.daysSinceLastWorkout ?? (
+    stats?.lastWorkoutDate
+      ? differenceInDays(new Date(), new Date(stats.lastWorkoutDate))
+      : null
+  )
   const isInactive = daysSinceLast === null || daysSinceLast > 5
-  const progress = stats?.planProgressPercent ?? null
+  const progress = stats?.activePlanProgressPercent ?? stats?.planProgressPercent ?? null
   const big3 = stats?.bigThreePRs
+  const attentionLevel = stats?.attentionLevel ?? 'None'
+  const attentionVariant =
+    attentionLevel === 'High' ? 'danger' :
+    attentionLevel === 'Medium' ? 'warning' :
+    attentionLevel === 'Low' ? 'primary' :
+    'default'
 
   return (
     <motion.div
@@ -180,16 +220,28 @@ function ClientCard({ client, stats, currentUserId, onView, onDisconnect, onCanc
         </div>
 
         <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-          {isInactive && !isPendingTermination && (
-            <Badge variant="warning">
+          {attentionLevel !== 'None' && !isPendingTermination && (
+            <Badge variant={attentionVariant}>
               <AlertTriangle size={11} className="mr-0.5" />
-              Inactive
+              {attentionLevel}
             </Badge>
           )}
           {isPendingTermination && (
             <Badge variant="warning">
               <UserMinus size={11} className="mr-0.5" />
               {iInitiated ? 'Awaiting response' : 'Wants to disconnect'}
+            </Badge>
+          )}
+          {isExpired && (
+            <Badge variant="warning">
+              <Clock size={11} className="mr-0.5" />
+              Expired
+            </Badge>
+          )}
+          {isPendingRenewal && (
+            <Badge variant="warning">
+              <RefreshCw size={11} className="mr-0.5" />
+              {iInitiatedRenewal ? 'Renewal pending' : 'Renewal proposed'}
             </Badge>
           )}
           <Button variant="ghost" size="sm" onClick={onView}>
@@ -215,7 +267,29 @@ function ClientCard({ client, stats, currentUserId, onView, onDisconnect, onCanc
               </Button>
             </>
           )}
+          {(isExpired || iInitiatedRenewal) && (
+            <Button size="sm" variant="ghost" onClick={onProposeRenewal}>
+              <RefreshCw size={14} />
+            </Button>
+          )}
+          {clientInitiatedRenewal && (
+            <>
+              <Button size="sm" loading={renewalPending} onClick={onAcceptRenewal}>
+                <CheckCircle2 size={14} />
+              </Button>
+              <Button size="sm" variant="ghost" loading={renewalPending} onClick={onRejectRenewal}>
+                <XCircle size={14} />
+              </Button>
+            </>
+          )}
         </div>
+      </div>
+
+      <div className="px-4 pb-2 text-xs text-muted">
+        Hợp đồng: {formatContractDate(client.startDate)} → {formatContractDate(client.endDate)}
+        {isPendingRenewal && client.proposedEndDate && (
+          <span className="ml-1 text-warning">(đề xuất {formatContractDate(client.proposedEndDate)})</span>
+        )}
       </div>
 
       {/* Progress bar */}
@@ -223,7 +297,7 @@ function ClientCard({ client, stats, currentUserId, onView, onDisconnect, onCanc
         <div className="flex items-center justify-between text-xs">
           <span className="flex items-center gap-1 text-muted">
             <TrendingUp size={11} />
-            Plan progress
+            {stats?.activePlanName ?? 'Plan progress'}
           </span>
           <span className="font-semibold text-text">
             {progress !== null ? `${progress}%` : '—'}
@@ -246,6 +320,15 @@ function ClientCard({ client, stats, currentUserId, onView, onDisconnect, onCanc
             />
           )}
         </div>
+        {stats?.attentionReasons && stats.attentionReasons.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            {stats.attentionReasons.map((reason) => (
+              <Badge key={reason} variant={reasonBadgeVariant(reason)}>
+                {reason}
+              </Badge>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Stats row */}
@@ -316,11 +399,15 @@ export function ClientsPage() {
   const { mutate: requestTermination, isPending: requestingTermination } = useRequestTermination()
   const { mutate: acceptTermination, isPending: acceptingTermination } = useAcceptTermination()
   const { mutate: rejectTermination, isPending: rejectingTermination } = useRejectTermination()
+  const { mutate: acceptRenewal, isPending: acceptingRenewal } = useAcceptRenewal()
+  const { mutate: rejectRenewal, isPending: rejectingRenewal } = useRejectRenewal()
   const { confirm, ConfirmDialog } = useConfirm()
+  const [renewalTarget, setRenewalTarget] = useState<ClientResponse | null>(null)
   const t   = useT()
   const tcl = t.clients
 
   const anyTerminationPending = requestingTermination || acceptingTermination || rejectingTermination
+  const anyRenewalPending = acceptingRenewal || rejectingRenewal
 
   const loading = pendingLoading || clientsLoading || dashboardLoading
 
@@ -332,7 +419,12 @@ export function ClientsPage() {
     )
   }
 
-  const activeClients = clients?.filter((c) => c.status === 'Active' || c.status === 'PendingTermination') ?? []
+  const activeClients = clients?.filter((c) =>
+    c.status === 'Active' ||
+    c.status === 'PendingTermination' ||
+    c.status === 'Expired' ||
+    c.status === 'PendingRenewal',
+  ) ?? []
 
   // Build a lookup map from clientId → dashboard stats
   const statsMap = new Map<string, CoachClientDashboardResponse>(
@@ -342,11 +434,33 @@ export function ClientsPage() {
   // Summary numbers
   const inactiveCount = activeClients.filter((c) => {
     const s = statsMap.get(c.clientId)
-    const days = s?.lastWorkoutDate
-      ? differenceInDays(new Date(), new Date(s.lastWorkoutDate))
-      : null
+    const days = s?.daysSinceLastWorkout ?? (
+      s?.lastWorkoutDate
+        ? differenceInDays(new Date(), new Date(s.lastWorkoutDate))
+        : null
+    )
     return days === null || days > 5
   }).length
+  const needsAttentionCount = activeClients.filter((c) => {
+    const level = statsMap.get(c.clientId)?.attentionLevel ?? 'None'
+    return level !== 'None'
+  }).length
+  const noActivePlanCount = activeClients.filter((c) => {
+    const stats = statsMap.get(c.clientId)
+    return stats != null && !stats.activePlanId
+  }).length
+  const sortedActiveClients = [...activeClients].sort((a, b) => {
+    const aStats = statsMap.get(a.clientId)
+    const bStats = statsMap.get(b.clientId)
+    const byAttention = attentionRank(bStats?.attentionLevel) - attentionRank(aStats?.attentionLevel)
+    if (byAttention !== 0) return byAttention
+
+    const aDays = aStats?.daysSinceLastWorkout ?? (aStats?.lastWorkoutDate ? differenceInDays(new Date(), new Date(aStats.lastWorkoutDate)) : Number.POSITIVE_INFINITY)
+    const bDays = bStats?.daysSinceLastWorkout ?? (bStats?.lastWorkoutDate ? differenceInDays(new Date(), new Date(bStats.lastWorkoutDate)) : Number.POSITIVE_INFINITY)
+    if (aDays !== bDays) return bDays - aDays
+
+    return a.fullName.localeCompare(b.fullName)
+  })
 
   return (
     <>
@@ -366,6 +480,15 @@ export function ClientsPage() {
             )}
           </p>
         </div>
+      </div>
+
+      <InlineTip placement="clients" audience="coach" />
+
+      <div className="grid gap-3 min-[390px]:grid-cols-2 lg:grid-cols-4">
+        <StatCard icon={<Users size={15} />} label="Active clients" value={String(activeClients.length)} />
+        <StatCard icon={<AlertTriangle size={15} />} label="Need attention" value={String(needsAttentionCount)} />
+        <StatCard icon={<ClipboardList size={15} />} label="No active plan" value={String(noActivePlanCount)} />
+        <StatCard icon={<CalendarDays size={15} />} label="Inactive" value={String(inactiveCount)} />
       </div>
 
       {/* Pending requests */}
@@ -439,7 +562,7 @@ export function ClientsPage() {
           className="grid gap-3 md:grid-cols-2"
         >
           <AnimatePresence>
-            {activeClients.map((client) => (
+            {sortedActiveClients.map((client) => (
               <ClientCard
                 key={client.relationshipId}
                 client={client}
@@ -454,7 +577,11 @@ export function ClientsPage() {
                 onCancelDisconnect={() => rejectTermination(client.relationshipId)}
                 onAcceptDisconnect={() => acceptTermination(client.relationshipId)}
                 onRejectDisconnect={() => rejectTermination(client.relationshipId)}
+                onProposeRenewal={() => setRenewalTarget(client)}
+                onAcceptRenewal={() => acceptRenewal(client.relationshipId)}
+                onRejectRenewal={() => rejectRenewal(client.relationshipId)}
                 disconnecting={terminating || anyTerminationPending}
+                renewalPending={anyRenewalPending}
               />
             ))}
           </AnimatePresence>
@@ -473,6 +600,15 @@ export function ClientsPage() {
           onDecline={() => { terminate(previewReq.id); setPreviewReq(null) }}
           accepting={accepting}
           declining={terminating}
+        />
+      )}
+
+      {renewalTarget && (
+        <RenewalModal
+          open
+          relationshipId={renewalTarget.relationshipId}
+          currentEndDate={renewalTarget.endDate}
+          onClose={() => setRenewalTarget(null)}
         />
       )}
     </div>

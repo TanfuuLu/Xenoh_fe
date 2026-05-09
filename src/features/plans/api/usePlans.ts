@@ -4,16 +4,20 @@ import { ENDPOINTS } from '@/shared/api/endpoints'
 import { coachClientKeys } from '@/features/coach-client/api/useCoachClient'
 import type {
   CoachPlanResponse,
+  CreateAiStarterPlanRequest,
   CreatePlanForUserRequest,
   CreatePlanRequest,
+  PlanBalanceReviewResponse,
   PlanResponse,
   UpdatePlanRequest,
 } from '../types'
+import { useLangStore } from '@/shared/i18n'
 
 export const planKeys = {
   all: ['plans'] as const,
   byId: (id: string) => ['plans', id] as const,
   coachOverview: ['plans', 'coach-overview'] as const,
+  balanceCheck: (id: string, lang: 'en' | 'vi') => ['plans', id, 'balance-check', lang] as const,
 }
 
 export function usePlans() {
@@ -40,6 +44,15 @@ export function useCreatePlan() {
   return useMutation({
     mutationFn: (data: CreatePlanRequest) =>
       api.post<PlanResponse>(ENDPOINTS.plans.create, data).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: planKeys.all }),
+  })
+}
+
+export function useCreateAiStarterPlan() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: CreateAiStarterPlanRequest) =>
+      api.post<PlanResponse>(ENDPOINTS.plans.starterAi, data).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: planKeys.all }),
   })
 }
@@ -104,5 +117,15 @@ export function useCreatePlanForUser() {
       void qc.invalidateQueries({ queryKey: planKeys.all })
       void qc.invalidateQueries({ queryKey: coachClientKeys.dashboard })
     },
+  })
+}
+
+export function usePlanBalanceCheck(planId: string) {
+  const lang = useLangStore((s) => s.lang)
+  return useMutation({
+    mutationFn: () =>
+      api
+        .post<PlanBalanceReviewResponse>(ENDPOINTS.plans.balanceCheck(planId, lang))
+        .then((r) => r.data),
   })
 }

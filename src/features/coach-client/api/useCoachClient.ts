@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/shared/api/axios'
 import { ENDPOINTS } from '@/shared/api/endpoints'
 import { coachKeys } from '@/features/coaches/api/useCoaches'
-import type { ClientResponse, CoachClientDashboardResponse, CoachRelationshipResponse, RequestCoachRequest } from '../types'
+import type { ClientResponse, CoachClientDashboardResponse, CoachRelationshipResponse, RequestCoachRequest, RequestRenewalRequest } from '../types'
 
 export const coachClientKeys = {
   pendingRequests: ['coach-client', 'pending'] as const,
@@ -33,7 +33,12 @@ export function useMyCoach() {
     // Poll every 8s while waiting for coach to accept so client sees update without manual refresh
     refetchInterval: (query) => {
       const data = query.state.data
-      if (data?.status === 'Pending' || data?.status === 'PendingTermination') return 8_000
+      if (
+        data?.status === 'Pending' ||
+        data?.status === 'PendingTermination' ||
+        data?.status === 'PendingRenewal'
+      )
+        return 8_000
       return false
     },
   })
@@ -136,6 +141,46 @@ export function useRejectTermination() {
   return useMutation({
     mutationFn: (relationshipId: string) =>
       api.post(ENDPOINTS.coachClient.rejectTermination(relationshipId)),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: coachClientKeys.myCoach })
+      void qc.invalidateQueries({ queryKey: coachClientKeys.myClients })
+    },
+  })
+}
+
+interface RequestRenewalArgs extends RequestRenewalRequest {
+  relationshipId: string
+}
+
+export function useRequestRenewal() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ relationshipId, ...body }: RequestRenewalArgs) =>
+      api.post(ENDPOINTS.coachClient.requestRenewal(relationshipId), body),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: coachClientKeys.myCoach })
+      void qc.invalidateQueries({ queryKey: coachClientKeys.myClients })
+    },
+  })
+}
+
+export function useAcceptRenewal() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (relationshipId: string) =>
+      api.post(ENDPOINTS.coachClient.acceptRenewal(relationshipId)),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: coachClientKeys.myCoach })
+      void qc.invalidateQueries({ queryKey: coachClientKeys.myClients })
+    },
+  })
+}
+
+export function useRejectRenewal() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (relationshipId: string) =>
+      api.post(ENDPOINTS.coachClient.rejectRenewal(relationshipId)),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: coachClientKeys.myCoach })
       void qc.invalidateQueries({ queryKey: coachClientKeys.myClients })

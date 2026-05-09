@@ -5,6 +5,9 @@ export {
   useRequestTermination,
   useAcceptTermination,
   useRejectTermination,
+  useRequestRenewal,
+  useAcceptRenewal,
+  useRejectRenewal,
   usePendingRequests,
   useMyCoach,
   useMyClients,
@@ -14,6 +17,7 @@ export type {
   CoachRelationshipResponse,
   ClientResponse,
   RequestCoachRequest,
+  RequestRenewalRequest,
   CoachClientDashboardResponse,
   BigThreePRs,
 } from './types'

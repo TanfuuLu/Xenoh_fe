@@ -3,6 +3,7 @@ import { Check, Lock } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { cn } from '@/shared/utils/cn'
 import { Button } from '@/shared/components/Button'
+import { useT } from '@/shared/i18n'
 import { useSubscription } from '../api/useSubscription'
 import { TIER_LABELS, TIER_PRICES } from '../types'
 import type { PlanTier } from '../types'
@@ -15,41 +16,12 @@ interface Props {
 type Duration = 1 | 3 | 12
 
 const durations: Duration[] = [1, 3, 12]
-const durationLabels: Record<Duration, string> = { 1: '1 month', 3: '3 months', 12: '12 months' }
 
 const savingsPercent: Record<Duration, number | null> = {
   1: null,
   3: Math.round((1 - TIER_PRICES.ProIndividual[3] / (3 * TIER_PRICES.ProIndividual[1])) * 100),
   12: Math.round((1 - TIER_PRICES.ProIndividual[12] / (12 * TIER_PRICES.ProIndividual[1])) * 100),
 }
-
-const freeFeatures = [
-  'Max 3 training plans',
-  'Max 5 coach clients',
-  'Basic workout logging',
-  'Progress tracking & charts',
-  'Bulk messaging',
-]
-
-const lockedOnFree = [
-  'Unlimited training plans',
-  'Advanced analytics',
-  'Unlimited coach clients',
-  'Coach plan creation tools',
-]
-
-const proIndividualFeatures = [
-  'Everything in Free',
-  'Unlimited training plans',
-  'Advanced analytics',
-]
-
-const proCoachFeatures = [
-  'Everything in Pro Individual',
-  'Unlock Coach role & dashboard',
-  'Unlimited coach clients',
-  'Coach plan creation tools',
-]
 
 function formatVnd(amount: number) {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount)
@@ -60,11 +32,19 @@ function perMonthPrice(total: number, months: number) {
 }
 
 export function PricingTable({ onSelect, loading }: Props) {
+  const t = useT()
+  const ts = t.subscription
   const [duration, setDuration] = useState<Duration>(1)
   const { data: subscription } = useSubscription()
   const currentTier = subscription?.tier ?? 'Free'
 
   const isCurrentPlan = (tier: PlanTier) => currentTier === tier
+
+  const durationLabels: Record<Duration, string> = {
+    1: ts.duration1,
+    3: ts.duration3,
+    12: ts.duration12,
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -121,7 +101,7 @@ export function PricingTable({ onSelect, loading }: Props) {
               className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-0.5 text-xs font-bold whitespace-nowrap"
               style={{ background: 'var(--xn-sage-500)', color: '#fff' }}
             >
-              Current Plan
+              {ts.currentPlan}
             </div>
           )}
 
@@ -132,17 +112,17 @@ export function PricingTable({ onSelect, loading }: Props) {
             <p className="mt-1 text-3xl font-bold" style={{ color: 'var(--fg-1)' }}>
               {formatVnd(0)}
             </p>
-            <p className="text-xs mt-1" style={{ color: 'var(--fg-3)' }}>Forever free</p>
+            <p className="text-xs mt-1" style={{ color: 'var(--fg-3)' }}>{ts.forever}</p>
           </div>
 
           <ul className="flex flex-col gap-2">
-            {freeFeatures.map((label) => (
+            {ts.featuresFree.map((label) => (
               <li key={label} className="flex items-center gap-2 text-sm">
                 <Check size={14} className="shrink-0" style={{ color: 'var(--color-success)' }} />
                 <span style={{ color: 'var(--fg-2)' }}>{label}</span>
               </li>
             ))}
-            {lockedOnFree.map((label) => (
+            {ts.featuresLockedOnFree.map((label) => (
               <li key={label} className="flex items-center gap-2 text-sm opacity-40">
                 <Lock size={13} className="shrink-0" style={{ color: 'var(--fg-3)' }} />
                 <span style={{ color: 'var(--fg-3)' }}>{label}</span>
@@ -151,7 +131,7 @@ export function PricingTable({ onSelect, loading }: Props) {
           </ul>
 
           <Button variant="secondary" disabled className="mt-auto">
-            {isCurrentPlan('Free') ? 'Current Plan' : 'Free Plan'}
+            {isCurrentPlan('Free') ? ts.currentPlan : ts.freePlan}
           </Button>
         </div>
 
@@ -172,7 +152,7 @@ export function PricingTable({ onSelect, loading }: Props) {
             className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-0.5 text-xs font-bold whitespace-nowrap"
             style={{ background: isCurrentPlan('ProIndividual') ? 'var(--xn-sage-500)' : 'var(--accent)', color: '#fff' }}
           >
-            {isCurrentPlan('ProIndividual') ? 'Current Plan' : 'Most Popular'}
+            {isCurrentPlan('ProIndividual') ? ts.currentPlan : ts.mostPopular}
           </div>
 
           <div>
@@ -191,21 +171,21 @@ export function PricingTable({ onSelect, loading }: Props) {
               <p className="text-xs mt-1" style={{ color: 'var(--fg-3)' }}>
                 /{durationLabels[duration]} ·{' '}
                 <span style={{ color: 'var(--color-success)', fontWeight: 600 }}>
-                  ~{formatVnd(perMonthPrice(TIER_PRICES.ProIndividual[duration], duration))}/mo
+                  ~{formatVnd(perMonthPrice(TIER_PRICES.ProIndividual[duration], duration))}{ts.perMonth}
                 </span>
               </p>
             )}
           </div>
 
-          <FeatureList items={proIndividualFeatures} />
+          <FeatureList items={ts.featuresProIndividual} />
 
           {isCurrentPlan('ProIndividual') ? (
             <Button disabled className="mt-auto" style={{ background: 'var(--xn-sage-500)', color: '#fff', cursor: 'default' }}>
-              ✓ Your Current Plan
+              {ts.yourCurrentPlan}
             </Button>
           ) : (
             <Button onClick={() => onSelect('ProIndividual', duration)} loading={loading} className="mt-auto">
-              Upgrade to Pro Individual
+              {ts.upgradeProInd}
             </Button>
           )}
         </motion.div>
@@ -227,7 +207,7 @@ export function PricingTable({ onSelect, loading }: Props) {
             className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-0.5 text-xs font-bold whitespace-nowrap"
             style={{ background: isCurrentPlan('ProCoach') ? 'var(--xn-sage-500)' : 'var(--color-warning)', color: '#fff' }}
           >
-            {isCurrentPlan('ProCoach') ? 'Current Plan' : 'For Coaches'}
+            {isCurrentPlan('ProCoach') ? ts.currentPlan : ts.forCoaches}
           </div>
 
           <div>
@@ -246,17 +226,17 @@ export function PricingTable({ onSelect, loading }: Props) {
               <p className="text-xs mt-1" style={{ color: 'var(--fg-3)' }}>
                 /{durationLabels[duration]} ·{' '}
                 <span style={{ color: 'var(--color-success)', fontWeight: 600 }}>
-                  ~{formatVnd(perMonthPrice(TIER_PRICES.ProCoach[duration], duration))}/mo
+                  ~{formatVnd(perMonthPrice(TIER_PRICES.ProCoach[duration], duration))}{ts.perMonth}
                 </span>
               </p>
             )}
           </div>
 
-          <FeatureList items={proCoachFeatures} />
+          <FeatureList items={ts.featuresProCoach} />
 
           {isCurrentPlan('ProCoach') ? (
             <Button disabled className="mt-auto" style={{ background: 'var(--xn-sage-500)', color: '#fff', cursor: 'default' }}>
-              ✓ Your Current Plan
+              {ts.yourCurrentPlan}
             </Button>
           ) : (
             <Button
@@ -265,7 +245,7 @@ export function PricingTable({ onSelect, loading }: Props) {
               className="mt-auto"
               style={{ background: 'var(--color-warning)', color: '#fff' }}
             >
-              Upgrade to Pro Coach
+              {ts.upgradeProCoach}
             </Button>
           )}
         </motion.div>
@@ -275,7 +255,7 @@ export function PricingTable({ onSelect, loading }: Props) {
   )
 }
 
-function FeatureList({ items }: { items: string[] }) {
+function FeatureList({ items }: { items: readonly string[] }) {
   return (
     <ul className="flex flex-col gap-2">
       {items.map((label, i) => (

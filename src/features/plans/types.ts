@@ -43,6 +43,26 @@ export interface CreatePlanForUserRequest {
   endDate: string
 }
 
+export interface CreateAiStarterPlanRequest {
+  goal: string
+  experience: string
+  daysPerWeek: number
+  equipment: string
+  startDate: string
+  endDate: string
+  name?: string
+  description?: string
+  language?: 'en' | 'vi'
+}
+
+export interface PlanBalanceReviewResponse {
+  headline: string
+  severity: 'Low' | 'Medium' | 'High'
+  summary: string
+  warnings: string[]
+  suggestions: string[]
+}
+
 export interface UpdatePlanRequest {
   name: string
   startDate: string

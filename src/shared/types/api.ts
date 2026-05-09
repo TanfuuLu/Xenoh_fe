@@ -3,7 +3,12 @@ export type ReportReason = 'Harassment' | 'Spam' | 'Scam' | 'Inappropriate' | 'O
 export type ReportStatus = 'Pending' | 'Resolved' | 'Dismissed'
 export type DayStatus = 'Normal' | 'Rest' | 'Missed'
 export type Gender = 'Male' | 'Female' | 'Other'
-export type RelationshipStatus = 'Pending' | 'Active' | 'PendingTermination'
+export type RelationshipStatus =
+  | 'Pending'
+  | 'Active'
+  | 'PendingTermination'
+  | 'Expired'
+  | 'PendingRenewal'
 export type PlanType = 'Self' | 'Coach'
 
 export const MuscleGroup = {

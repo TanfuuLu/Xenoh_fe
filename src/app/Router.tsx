@@ -27,6 +27,7 @@ const ClientProfilePage = lazy(() => import('@/features/profile/pages/ClientProf
 const CoachProfilePage = lazy(() => import('@/features/coaches/pages/CoachProfilePage').then((m) => ({ default: m.CoachProfilePage })))
 const ProgressPage = lazy(() => import('@/features/progress/pages/ProgressPage').then((m) => ({ default: m.ProgressPage })))
 const NutritionPage = lazy(() => import('@/features/nutrition/pages/NutritionPage').then((m) => ({ default: m.NutritionPage })))
+const InsightsPage = lazy(() => import('@/features/insights').then((m) => ({ default: m.InsightsPage })))
 const LandingPage = lazy(() => import('@/features/marketing/pages/LandingPage').then((m) => ({ default: m.LandingPage })))
 const AboutPage = lazy(() => import('@/features/marketing/pages/AboutPage').then((m) => ({ default: m.AboutPage })))
 const SubscriptionPage = lazy(() => import('@/features/billing/pages/SubscriptionPage').then((m) => ({ default: m.SubscriptionPage })))
@@ -35,6 +36,7 @@ const AdminUsersPage = lazy(() => import('@/features/admin/pages/AdminUsersPage'
 const AdminPlansPage = lazy(() => import('@/features/admin/pages/AdminPlansPage').then((m) => ({ default: m.AdminPlansPage })))
 const AdminPaymentsPage = lazy(() => import('@/features/admin/pages/AdminPaymentsPage').then((m) => ({ default: m.AdminPaymentsPage })))
 const AdminReportsPage = lazy(() => import('@/features/reports/pages/AdminReportsPage').then((m) => ({ default: m.AdminReportsPage })))
+const BlocklistPage = lazy(() => import('@/features/blocks/pages/BlocklistPage').then((m) => ({ default: m.BlocklistPage })))
 
 function SuspenseFallback() {
   return (
@@ -56,9 +58,6 @@ function ProtectedRoute() {
 
 function RoleRoute({ role, redirectTo = '/dashboard' }: { role: 'Individual' | 'Coach' | 'Admin'; redirectTo?: string }) {
   const roles = useAuthStore((s) => s.user?.roles)
-  // TEMP TEST BYPASS: open individual and coach routes to all authenticated users.
-  if (role !== 'Admin') return <Outlet />
-
   if (!roles?.includes?.(role)) return <Navigate to={redirectTo} replace />
   return <Outlet />
 }
@@ -135,12 +134,20 @@ export const router = createBrowserRouter([
             element: <Suspended><ChangePasswordPage /></Suspended>,
           },
           {
+            path: 'settings/blocklist',
+            element: <Suspended><BlocklistPage /></Suspended>,
+          },
+          {
             path: 'progress',
             element: <Suspended><ProgressPage /></Suspended>,
           },
           {
             path: 'nutrition',
             element: <Suspended><NutritionPage /></Suspended>,
+          },
+          {
+            path: 'insights',
+            element: <Suspended><InsightsPage /></Suspended>,
           },
           {
             path: 'leaderboard',

@@ -19,6 +19,10 @@ import {
   useExerciseTemplates,
   useUpdateCustomExerciseTemplate,
 } from '../index'
+import { useLocalizedExerciseName } from '../exerciseNames'
+import { InlineTip } from '@/features/tips'
+import { useAuthStore } from '@/features/auth'
+import { useSubscription } from '@/features/billing/api/useSubscription'
 import type { CustomExerciseTemplateRequest, ExerciseTemplateResponse } from '../types'
 
 type ExerciseKindFilter = '' | 'Strength' | 'Cardio'
@@ -35,8 +39,9 @@ type CustomTemplateForm = z.output<typeof customTemplateSchema>
 
 export function ExerciseLibraryPage() {
   const navigate = useNavigate()
-  // TEMP TEST BYPASS: custom exercise features are open while validating features.
-  const isActivePro = true
+  const isAdmin = useAuthStore((s) => s.user?.roles?.includes('Admin') ?? false)
+  const { data: subscription } = useSubscription()
+  const isActivePro = isAdmin || (subscription?.isActive === true && subscription?.tier !== 'Free')
 
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<MuscleGroupValue | ''>('')
   const [selectedType, setSelectedType] = useState<ExerciseKindFilter>('')
@@ -188,6 +193,8 @@ export function ExerciseLibraryPage() {
           )}
         </div>
       </section>
+
+      <InlineTip placement="exercise-library" />
 
       <div className="grid gap-4 md:grid-cols-3">
         <LibraryStat label="Shared exercises" value={sharedCount.toString()} />
@@ -366,6 +373,7 @@ function ExerciseLibraryCard({
   isActivePro: boolean
 }) {
   const navigate = useNavigate()
+  const localizeName = useLocalizedExerciseName()
   return (
     <Card className="flex min-h-48 flex-col">
       <div className="mb-4 flex items-start justify-between gap-3">
@@ -385,7 +393,7 @@ function ExerciseLibraryCard({
             </span>
           )}
           <div className="min-w-0">
-            <h2 className="truncate text-lg font-semibold text-text">{template.name}</h2>
+            <h2 className="truncate text-lg font-semibold text-text">{localizeName(template.name)}</h2>
             <p className="text-sm text-muted">{formatMuscleGroup(template.primaryMuscleGroup)}</p>
           </div>
         </div>

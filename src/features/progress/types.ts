@@ -53,15 +53,70 @@ export interface PlanAnalyticsResponse {
   muscleGroupVolume: MuscleGroupPoint[]
   muscleGroupHeatmap: MuscleGroupHeatmapPoint[]
   muscleGroupBalance: MuscleGroupBalancePoint
+  /** Present only when the plan contains exercises flagged as competition lifts. */
+  powerlifting: PowerliftingSection | null
 }
 
 export type TrainingInsightSeverity = 'Info' | 'Warning' | 'Critical' | 'Positive'
 
+export type TrainingInsightType =
+  | 'Consistency'
+  | 'VolumeTrend'
+  | 'Overload'
+  | 'FatigueRisk'
+  | 'MuscleBalance'
+  | 'Recommendation'
+  | 'PowerliftingPlateau'
+  | 'PowerliftingImbalance'
+  | 'PowerliftingDeload'
+
 export interface TrainingInsightResponse {
-  type: 'Consistency' | 'VolumeTrend' | 'Overload' | 'FatigueRisk' | 'MuscleBalance' | 'Recommendation'
+  type: TrainingInsightType
   severity: TrainingInsightSeverity
   title: string
   message: string
   metricLabel: string
   metricValue: string
+}
+
+export type CompetitionLift = 'Squat' | 'Bench' | 'Deadlift'
+
+export interface LiftE1RmPoint {
+  weekStart: string
+  e1Rm: number
+}
+
+export interface LiftPrEvent {
+  date: string
+  weight: number
+  reps: number
+  e1Rm: number
+}
+
+export interface LiftSeries {
+  lift: CompetitionLift
+  e1Rm: LiftE1RmPoint[]
+  prTimeline: LiftPrEvent[]
+  currentE1Rm: number | null
+  currentTrainingMax: number | null
+  isPlateau: boolean
+}
+
+export interface DotsOverTimePoint {
+  weekStart: string
+  dots: number
+  bodyweightKg: number
+}
+
+export interface PowerliftingSection {
+  squat: LiftSeries
+  bench: LiftSeries
+  deadlift: LiftSeries
+  dots: DotsOverTimePoint[]
+}
+
+export interface ClientPowerliftingResponse {
+  clientId: string
+  powerlifting: PowerliftingSection | null
+  insights: TrainingInsightResponse[]
 }

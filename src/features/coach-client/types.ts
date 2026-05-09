@@ -10,6 +10,10 @@ export interface CoachRelationshipResponse {
   status: RelationshipStatus
   createdAt: string
   terminationRequestedBy: string | null
+  startDate: string
+  endDate: string | null
+  renewalRequestedBy: string | null
+  proposedEndDate: string | null
 }
 
 export interface ClientResponse {
@@ -21,10 +25,20 @@ export interface ClientResponse {
   connectedAt: string
   lastWorkoutCompletedAt: string | null
   terminationRequestedBy: string | null
+  startDate: string
+  endDate: string | null
+  renewalRequestedBy: string | null
+  proposedEndDate: string | null
 }
 
 export interface RequestCoachRequest {
   coachId: string
+  startDate: string
+  endDate: string
+}
+
+export interface RequestRenewalRequest {
+  proposedEndDate: string
 }
 
 export interface BigThreePRs {
@@ -42,4 +56,15 @@ export interface CoachClientDashboardResponse {
   planProgressPercent: number | null
   latestBodyweightKg: number | null
   bigThreePRs: BigThreePRs
+  activePlanId: string | null
+  activePlanName: string | null
+  activePlanStartDate: string | null
+  activePlanEndDate: string | null
+  activePlanProgressPercent: number | null
+  daysSinceLastWorkout: number | null
+  missedWorkoutDays: number
+  completedWorkoutDays: number
+  totalWorkoutDays: number
+  attentionLevel: 'None' | 'Low' | 'Medium' | 'High'
+  attentionReasons: string[]
 }

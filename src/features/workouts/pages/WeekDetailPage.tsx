@@ -14,6 +14,7 @@ import { staggerContainer, slideUp } from '@/shared/utils/motion'
 import { useT, useLangStore } from '@/shared/i18n'
 import { NotFoundPage } from '@/shared/components/NotFoundPage'
 import { useDailyWorkouts, useWeeklyWorkouts } from '../index'
+import { InlineTip } from '@/features/tips'
 import type { ExerciseResponse } from '../types'
 import { CommentSection } from '@/features/comments/components/CommentSection'
 import { useWeekComments, useAddWeekComment, useDeleteWeekComment } from '@/features/comments/api/useWeekComments'
@@ -35,7 +36,7 @@ export function WeekDetailPage() {
   const navigate = useNavigate()
   const locationState = state as { canEdit?: boolean; canComplete?: boolean } | null
   const canEdit = locationState?.canEdit ?? false
-  const canComplete = locationState?.canComplete ?? true
+  const canComplete = locationState?.canComplete ?? false
   const shouldReduce = useReducedMotion()
 
   const { data: allWeeks, isError: weeksError } = useWeeklyWorkouts(planId)
@@ -149,7 +150,7 @@ export function WeekDetailPage() {
                 disabled={!nextWeek}
                 onClick={() =>
                   nextWeek &&
-                  navigate(`/plans/${planId}/weeks/${nextWeek.id}`, { state: { canEdit } })
+                  navigate(`/plans/${planId}/weeks/${nextWeek.id}`, { state: { canEdit, canComplete } })
                 }
                 className={cn(
                   'flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors',
@@ -165,19 +166,24 @@ export function WeekDetailPage() {
         </div>
       </div>
 
+      <InlineTip placement="week-detail" />
+
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px] 2xl:grid-cols-[minmax(0,1fr)_400px]">
         <div className="min-w-0 space-y-6">
       {/* Weekly completion progress */}
-      {currentWeek && currentWeek.totalDays > 0 && (() => {
-        const pct      = Math.round((currentWeek.completedDays / currentWeek.totalDays) * 100)
-        const weekDone = currentWeek.completedDays === currentWeek.totalDays
+      {currentWeek && currentWeek.effectiveTotalDays > 0 && (() => {
+        const effective = currentWeek.effectiveTotalDays
+        const pct       = Math.round((currentWeek.completedDays / effective) * 100)
+        const weekDone  = currentWeek.isCompleted
         return (
           <div
             className="rounded-xl px-4 py-3 space-y-2"
-            style={{ background: 'var(--bg-2)', border: '1px solid var(--border-1)' }}
+            style={{ background: 'var(--bg-2)', border: `1px solid ${weekDone ? 'var(--xn-success)' : 'var(--border-1)'}` }}
           >
             <div className="flex items-center justify-between text-sm">
-              <span className="font-medium text-text">{tw.weeklyCompletion}</span>
+              <span className="font-medium text-text">
+                {weekDone ? '✓ Week Complete' : tw.weeklyCompletion}
+              </span>
               <span className="font-bold" style={{ color: weekDone ? 'var(--xn-success)' : 'var(--color-primary)' }}>
                 {pct}%
               </span>
@@ -192,7 +198,7 @@ export function WeekDetailPage() {
               />
             </div>
             <p className="text-xs text-muted">
-              {currentWeek.completedDays} / {currentWeek.totalDays} {tc.days} · {tw.daysCompleted}
+              {currentWeek.completedDays} / {effective} {tc.days} · {tw.daysCompleted}
             </p>
           </div>
         )

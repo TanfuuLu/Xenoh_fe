@@ -21,6 +21,7 @@ import { cn } from '@/shared/utils/cn'
 import { slideUp } from '@/shared/utils/motion'
 import { useT } from '@/shared/i18n'
 import { LevelCard } from '@/features/dashboard/components/LevelCard'
+import { InlineTip } from '@/features/tips'
 import {
   useMyProfile,
   useUpdateAvatar,
@@ -155,6 +156,8 @@ export function ProfilePage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-text">{tp.title}</h1>
+
+      <InlineTip placement="profile" />
 
       {profile && <LevelCard profile={profile} />}
 

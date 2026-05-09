@@ -2,7 +2,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/shared/api/axios'
 import { ENDPOINTS } from '@/shared/api/endpoints'
 import type { MuscleGroup } from '@/shared/types/api'
-import type { CustomExerciseTemplateRequest, ExerciseTemplateResponse } from '../types'
+import type {
+  CustomExerciseTemplateRequest,
+  ExerciseTemplateResponse,
+  LastExercisePerformanceResponse,
+} from '../types'
 
 interface Filters {
   muscleGroup?: MuscleGroup
@@ -30,6 +34,23 @@ export function useClientExerciseTemplates(clientId: string, filters?: Filters) 
           params: { muscleGroup: filters?.muscleGroup },
         })
         .then((r) => r.data),
+  })
+}
+
+export function useLastExercisePerformance(
+  dailyWorkoutId: string,
+  exerciseTemplateId: string,
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: ['exercise-template-last-performance', dailyWorkoutId, exerciseTemplateId] as const,
+    queryFn: () =>
+      api
+        .get<LastExercisePerformanceResponse>(
+          ENDPOINTS.exerciseTemplates.lastPerformance(exerciseTemplateId, dailyWorkoutId),
+        )
+        .then((r) => r.data),
+    enabled: enabled && !!dailyWorkoutId && !!exerciseTemplateId,
   })
 }
 

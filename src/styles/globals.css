@@ -1,42 +1,8 @@
-/* Google Fonts (Geist, JetBrains Mono) are loaded via <link> in index.html */
+/* Google Fonts (Fraunces, Geist, JetBrains Mono) are loaded via <link> in index.html.
+   Fraunces is the display serif — chosen over Namdhinggo because it ships full
+   Vietnamese diacritics. Local Namdhinggo TTFs in /public/fonts are unused now
+   but kept on disk for reference; remove them when the brand decision is final. */
 @import "tailwindcss";
-
-/* ── Namdhinggo display serif ─────────────────────────────────────────── */
-@font-face {
-  font-family: "Namdhinggo";
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("/fonts/Namdhinggo-Regular.ttf") format("truetype");
-}
-@font-face {
-  font-family: "Namdhinggo";
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url("/fonts/Namdhinggo-Medium.ttf") format("truetype");
-}
-@font-face {
-  font-family: "Namdhinggo";
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url("/fonts/Namdhinggo-SemiBold.ttf") format("truetype");
-}
-@font-face {
-  font-family: "Namdhinggo";
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  src: url("/fonts/Namdhinggo-Bold.ttf") format("truetype");
-}
-@font-face {
-  font-family: "Namdhinggo";
-  font-style: normal;
-  font-weight: 800;
-  font-display: swap;
-  src: url("/fonts/Namdhinggo-ExtraBold.ttf") format("truetype");
-}
 
 /* ── Design system CSS variables ──────────────────────────────────────── */
 :root {
@@ -110,7 +76,7 @@
   --accent-2-soft: var(--xn-sage-200);
 
   /* Fonts */
-  --font-display: "Namdhinggo", "Playfair Display", Georgia, serif;
+  --font-display: "Fraunces", "Playfair Display", Georgia, serif;
   --font-sans:    "Geist", "Inter", system-ui, -apple-system, sans-serif;
   --font-mono:    "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
 
@@ -130,6 +96,20 @@
   --dur-slow: 420ms;
 }
 
+/* ── Vietnamese: single-font system using Fraunces everywhere ──────────── */
+html[lang="vi"] {
+  --font-display: "Fraunces", Georgia, serif;
+  --font-sans:    "Fraunces", Georgia, serif;
+  --font-mono:    "Fraunces", Georgia, serif;
+}
+html[lang="vi"] body,
+html[lang="vi"] input,
+html[lang="vi"] textarea,
+html[lang="vi"] select,
+html[lang="vi"] button {
+  font-family: var(--font-sans);
+}
+
 /* ── Tailwind theme mapping ────────────────────────────────────────────── */
 @theme {
   /* Core semantic tokens → Tailwind utilities */
@@ -147,7 +127,7 @@
   --color-warning:    #8d560d;
 
   /* Font families available as Tailwind utilities */
-  --font-display: "Namdhinggo", Georgia, serif;
+  --font-display: "Fraunces", Georgia, serif;
   --font-sans:    "Geist", system-ui, sans-serif;
   --font-mono:    "JetBrains Mono", monospace;
 }

@@ -17,6 +17,7 @@ import { Card } from '@/shared/components/Card'
 import { Input } from '@/shared/components/Input'
 import { Select } from '@/shared/components/Select'
 import { Spinner } from '@/shared/components/Spinner'
+import { useT } from '@/shared/i18n'
 import { RequireTier } from '@/features/billing/components/RequireTier'
 import {
   useNutritionHistory,
@@ -26,27 +27,29 @@ import {
 } from '../api/useNutrition'
 import type { ActivityLevel, NutritionGoal, UpdateNutritionDailyLogRequest, UpdateNutritionProfileRequest } from '../types'
 
-const activityOptions: { value: ActivityLevel; label: string }[] = [
-  { value: 'Sedentary', label: 'Sedentary' },
-  { value: 'Light', label: 'Light' },
-  { value: 'Moderate', label: 'Moderate' },
-  { value: 'VeryActive', label: 'Very active' },
-  { value: 'Athlete', label: 'Athlete' },
-]
-
-const goalOptions: { value: NutritionGoal; label: string }[] = [
-  { value: 'Cut', label: 'Cut' },
-  { value: 'Maintain', label: 'Maintain' },
-  { value: 'Bulk', label: 'Bulk' },
-]
-
 export function NutritionPage() {
+  const t = useT()
+  const tn = t.nutrition
   const { clientId } = useParams()
   const isClientView = Boolean(clientId)
   const today = format(new Date(), 'yyyy-MM-dd')
   const { data: summary, isLoading } = useNutritionSummary(clientId)
   const updateProfile = useUpdateNutritionProfile(clientId)
   const updateLog = useUpdateNutritionDailyLog(today, clientId)
+
+  const activityOptions: { value: ActivityLevel; label: string }[] = [
+    { value: 'Sedentary', label: tn.activitySedentary },
+    { value: 'Light', label: tn.activityLight },
+    { value: 'Moderate', label: tn.activityModerate },
+    { value: 'VeryActive', label: tn.activityVeryActive },
+    { value: 'Athlete', label: tn.activityAthlete },
+  ]
+
+  const goalOptions: { value: NutritionGoal; label: string }[] = [
+    { value: 'Cut', label: tn.goalCut },
+    { value: 'Maintain', label: tn.goalMaintain },
+    { value: 'Bulk', label: tn.goalBulk },
+  ]
 
   const [profileForm, setProfileForm] = useState<ProfileForm>({
     activityLevel: 'Moderate',
@@ -124,7 +127,7 @@ export function NutritionPage() {
     )
   }
 
-  if (!summary) return <p className="text-muted">Nutrition data is not available.</p>
+  if (!summary) return <p className="text-muted">{tn.notAvailable}</p>
 
   const calc = summary.calculation
   const hasCalculation = calc.missingFields.length === 0
@@ -135,11 +138,11 @@ export function NutritionPage() {
         <div className="min-w-0">
           {isClientView && (
             <Link to={`/coach/clients/${clientId}`} className="mb-2 inline-flex">
-              <Button variant="ghost" size="sm"><ChevronLeft size={16} /> Client</Button>
+              <Button variant="ghost" size="sm"><ChevronLeft size={16} /> {tn.backToClient}</Button>
             </Link>
           )}
-          <h1 className="text-2xl font-bold text-text">{isClientView ? 'Client nutrition' : 'Nutrition'}</h1>
-          <p className="mt-1 text-sm text-muted">TDEE, bulk/cut targets, macros, and daily intake.</p>
+          <h1 className="text-2xl font-bold text-text">{isClientView ? tn.clientTitle : tn.title}</h1>
+          <p className="mt-1 text-sm text-muted">{tn.subtitle}</p>
         </div>
       </div>
 
@@ -148,9 +151,12 @@ export function NutritionPage() {
           <div className="flex items-start gap-3">
             <Flame size={20} style={{ color: 'var(--xn-warning)' }} />
             <div>
-              <h2 className="font-semibold text-text">Complete profile data to calculate TDEE</h2>
+              <h2 className="font-semibold text-text">{tn.missingProfileTitle}</h2>
               <p className="mt-1 text-sm text-muted">
-                Missing: {calc.missingFields.map(formatMissingField).join(', ')}.
+                {tn.missingProfileBody.replace(
+                  '{fields}',
+                  calc.missingFields.map((f) => formatMissingField(f, tn.missingFieldDateOfBirth)).join(', '),
+                )}
               </p>
             </div>
           </div>
@@ -158,78 +164,112 @@ export function NutritionPage() {
       )}
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard icon={<Activity size={18} />} label="BMR" value={formatKcal(calc.bmr)} />
-        <MetricCard icon={<Flame size={18} />} label="TDEE" value={formatKcal(calc.tdee)} />
-        <MetricCard icon={<Target size={18} />} label="Target" value={formatKcal(calc.calorieTarget)} />
-        <MetricCard icon={<Utensils size={18} />} label="Bodyweight" value={calc.bodyweightKg ? `${calc.bodyweightKg} kg` : 'Missing'} />
+        <MetricCard icon={<Activity size={18} />} label={tn.bmrLabel} value={formatKcal(calc.bmr, tn.kcal, tn.missing)} />
+        <MetricCard icon={<Flame size={18} />} label={tn.tdeeLabel} value={formatKcal(calc.tdee, tn.kcal, tn.missing)} />
+        <MetricCard icon={<Target size={18} />} label={tn.targetLabel} value={formatKcal(calc.calorieTarget, tn.kcal, tn.missing)} />
+        <MetricCard
+          icon={<Utensils size={18} />}
+          label={tn.bodyweightLabel}
+          value={calc.bodyweightKg ? `${calc.bodyweightKg} ${tn.kg}` : tn.missing}
+        />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(320px,420px)]">
+      <div className="flex flex-col gap-6">
         <Card>
-          <div className="mb-4 flex items-center gap-2">
+          <div className="mb-5 flex items-center gap-2">
             <Target size={17} className="text-primary" />
-            <h2 className="text-lg font-semibold text-text">Nutrition profile</h2>
+            <h2 className="text-lg font-semibold text-text">{tn.profileSectionTitle}</h2>
           </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <Select
-              label="Goal"
-              value={profileForm.goal}
-              options={goalOptions}
-              onChange={(value) => setProfileForm((f) => ({ ...f, goal: value as NutritionGoal }))}
-            />
-            <Select
-              label="Activity"
-              value={profileForm.activityLevel}
-              options={activityOptions}
-              onChange={(value) => setProfileForm((f) => ({ ...f, activityLevel: value as ActivityLevel }))}
-            />
-            <Input
-              label="Target weight (kg)"
-              type="number"
-              min="20"
-              step="0.1"
-              value={profileForm.targetWeightKg}
-              onChange={(e) => setProfileForm((f) => ({ ...f, targetWeightKg: e.target.value }))}
-            />
-            <Input
-              label="Custom calories"
-              type="number"
-              min="800"
-              value={profileForm.customCalorieTarget}
-              onChange={(e) => setProfileForm((f) => ({ ...f, customCalorieTarget: e.target.value }))}
-            />
-            <Input
-              label="Protein g/kg"
-              type="number"
-              min="0.5"
-              step="0.1"
-              value={profileForm.proteinPerKg}
-              onChange={(e) => setProfileForm((f) => ({ ...f, proteinPerKg: e.target.value }))}
-            />
-            <Input
-              label="Fat g/kg"
-              type="number"
-              min="0.2"
-              step="0.1"
-              value={profileForm.fatPerKg}
-              onChange={(e) => setProfileForm((f) => ({ ...f, fatPerKg: e.target.value }))}
-            />
-          </div>
-          <div className="mt-4 flex justify-end">
-            <Button onClick={saveProfile} loading={updateProfile.isPending}>Save profile</Button>
+
+          {/* ── Basics row ─────────────────────────────────────────────── */}
+          <section className="space-y-3">
+            <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'var(--fg-3)' }}>
+              {tn.basicsSection}
+            </p>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <Select
+                label={tn.goalLabel}
+                value={profileForm.goal}
+                options={goalOptions}
+                onChange={(value) => setProfileForm((f) => ({ ...f, goal: value as NutritionGoal }))}
+              />
+              <Select
+                label={tn.activityLabel}
+                value={profileForm.activityLevel}
+                options={activityOptions}
+                onChange={(value) => setProfileForm((f) => ({ ...f, activityLevel: value as ActivityLevel }))}
+              />
+              <Input
+                label={tn.targetWeightLabel}
+                type="number"
+                min="20"
+                step="0.1"
+                value={profileForm.targetWeightKg}
+                onChange={(e) => setProfileForm((f) => ({ ...f, targetWeightKg: e.target.value }))}
+              />
+            </div>
+          </section>
+
+          {/* ── Fine tuning row ────────────────────────────────────────── */}
+          <section
+            className="mt-6 space-y-3 border-t pt-6"
+            style={{ borderColor: 'var(--border-1)' }}
+          >
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'var(--fg-3)' }}>
+                {tn.fineTuningSection}
+              </p>
+              <p className="text-xs text-muted">{tn.fineTuningHint}</p>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <Input
+                label={tn.customCaloriesLabel}
+                type="number"
+                min="800"
+                placeholder={
+                  calc.calorieTarget
+                    ? `${tn.autoPrefix}${calc.calorieTarget} ${tn.kcal}`
+                    : tn.autoPlaceholder
+                }
+                value={profileForm.customCalorieTarget}
+                onChange={(e) => setProfileForm((f) => ({ ...f, customCalorieTarget: e.target.value }))}
+              />
+              <Input
+                label={tn.proteinPerKgLabel}
+                type="number"
+                min="0.5"
+                step="0.1"
+                placeholder={tn.autoPlaceholder}
+                value={profileForm.proteinPerKg}
+                onChange={(e) => setProfileForm((f) => ({ ...f, proteinPerKg: e.target.value }))}
+              />
+              <Input
+                label={tn.fatPerKgLabel}
+                type="number"
+                min="0.2"
+                step="0.1"
+                placeholder={tn.autoPlaceholder}
+                value={profileForm.fatPerKg}
+                onChange={(e) => setProfileForm((f) => ({ ...f, fatPerKg: e.target.value }))}
+              />
+            </div>
+          </section>
+
+          <div className="mt-6 flex justify-end">
+            <Button onClick={saveProfile} loading={updateProfile.isPending}>{tn.saveProfile}</Button>
           </div>
         </Card>
 
         <Card>
           <div className="mb-4 flex items-center gap-2">
             <Target size={17} className="text-primary" />
-            <h2 className="text-lg font-semibold text-text">Macro targets</h2>
+            <h2 className="text-lg font-semibold text-text">{tn.macroTargetsTitle}</h2>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-            <MacroCard label="Protein" target={calc.proteinG} actual={readNumber(logForm.proteinG)} remaining={remaining?.proteinG} unit="g" />
-            <MacroCard label="Carbs" target={calc.carbsG} actual={readNumber(logForm.carbsG)} remaining={remaining?.carbsG} unit="g" />
-            <MacroCard label="Fat" target={calc.fatG} actual={readNumber(logForm.fatG)} remaining={remaining?.fatG} unit="g" />
-            <MacroCard label="Calories" target={calc.calorieTarget} actual={readNumber(logForm.calories)} remaining={remaining?.calories} unit="kcal" />
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <MacroCard label={tn.proteinShort} target={calc.proteinG} actual={readNumber(logForm.proteinG)} remaining={remaining?.proteinG} unit="g" missingLabel={tn.missing} loggedLabel={tn.logged} remainingLabel={tn.remaining} />
+            <MacroCard label={tn.carbsShort}   target={calc.carbsG}   actual={readNumber(logForm.carbsG)}   remaining={remaining?.carbsG}   unit="g" missingLabel={tn.missing} loggedLabel={tn.logged} remainingLabel={tn.remaining} />
+            <MacroCard label={tn.fatShort}     target={calc.fatG}     actual={readNumber(logForm.fatG)}     remaining={remaining?.fatG}     unit="g" missingLabel={tn.missing} loggedLabel={tn.logged} remainingLabel={tn.remaining} />
+            <MacroCard label={tn.caloriesShort} target={calc.calorieTarget} actual={readNumber(logForm.calories)} remaining={remaining?.calories} unit={tn.kcal} missingLabel={tn.missing} loggedLabel={tn.logged} remainingLabel={tn.remaining} />
           </div>
         </Card>
       </div>
@@ -237,18 +277,18 @@ export function NutritionPage() {
       <Card>
         <div className="mb-4 flex items-center gap-2">
           <Utensils size={17} className="text-primary" />
-          <h2 className="text-lg font-semibold text-text">Today intake</h2>
+          <h2 className="text-lg font-semibold text-text">{tn.todayIntakeTitle}</h2>
         </div>
         <div className="grid gap-4 md:grid-cols-2">
           <Input
-            label="Calories"
+            label={tn.caloriesLabel}
             type="number"
             min="0"
             value={logForm.calories}
             onChange={(e) => setLogForm((f) => ({ ...f, calories: e.target.value }))}
           />
           <Input
-            label="Protein (g)"
+            label={tn.proteinLabel}
             type="number"
             min="0"
             step="0.1"
@@ -256,7 +296,7 @@ export function NutritionPage() {
             onChange={(e) => setLogForm((f) => ({ ...f, proteinG: e.target.value }))}
           />
           <Input
-            label="Carbs (g)"
+            label={tn.carbsLabel}
             type="number"
             min="0"
             step="0.1"
@@ -264,7 +304,7 @@ export function NutritionPage() {
             onChange={(e) => setLogForm((f) => ({ ...f, carbsG: e.target.value }))}
           />
           <Input
-            label="Fat (g)"
+            label={tn.fatLabel}
             type="number"
             min="0"
             step="0.1"
@@ -272,7 +312,7 @@ export function NutritionPage() {
             onChange={(e) => setLogForm((f) => ({ ...f, fatG: e.target.value }))}
           />
           <label className="flex flex-col gap-1.5 text-sm font-medium text-text md:col-span-2">
-            Notes
+            {tn.notesLabel}
             <textarea
               className="xn-input min-h-20 resize-y"
               value={logForm.notes}
@@ -281,11 +321,11 @@ export function NutritionPage() {
           </label>
         </div>
         <div className="mt-4 flex justify-end">
-          <Button onClick={saveLog} loading={updateLog.isPending}>Save today</Button>
+          <Button onClick={saveLog} loading={updateLog.isPending}>{tn.saveToday}</Button>
         </div>
       </Card>
 
-      <RequireTier feature="advanced nutrition analysis">
+      <RequireTier feature={tn.requireFeature}>
         <NutritionHistoryPanel clientId={clientId} enabled={summary.canUseAdvancedAnalysis} calorieTarget={calc.calorieTarget} />
       </RequireTier>
     </div>
@@ -301,6 +341,8 @@ function NutritionHistoryPanel({
   enabled: boolean
   calorieTarget: number | null
 }) {
+  const t = useT()
+  const tn = t.nutrition
   const to = format(new Date(), 'yyyy-MM-dd')
   const from = format(subDays(new Date(), 29), 'yyyy-MM-dd')
   const { data = [], isLoading } = useNutritionHistory(from, to, enabled, clientId)
@@ -318,14 +360,16 @@ function NutritionHistoryPanel({
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <LineChartIcon size={17} className="text-primary" />
-          <h2 className="text-lg font-semibold text-text">Advanced analysis</h2>
+          <h2 className="text-lg font-semibold text-text">{tn.advancedTitle}</h2>
         </div>
-        <p className="text-sm text-muted">{average ? `${average} kcal/day avg` : 'No logs yet'}</p>
+        <p className="text-sm text-muted">
+          {average ? tn.advancedAvg.replace('{n}', String(average)) : tn.advancedNoLogs}
+        </p>
       </div>
       {isLoading ? (
         <div className="flex h-48 items-center justify-center"><Spinner /></div>
       ) : chartData.length === 0 ? (
-        <p className="text-sm text-muted">Log intake for a few days to see calorie trend analysis.</p>
+        <p className="text-sm text-muted">{tn.advancedEmpty}</p>
       ) : (
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
@@ -335,7 +379,7 @@ function NutritionHistoryPanel({
               <YAxis tick={{ fill: 'var(--fg-3)', fontSize: 12 }} width={48} />
               <Tooltip
                 contentStyle={{ background: 'var(--bg-2)', border: '1px solid var(--border-1)', borderRadius: 8 }}
-                formatter={(value) => [`${value} kcal`, '']}
+                formatter={(value) => [`${value} ${tn.kcal}`, '']}
               />
               <Line type="monotone" dataKey="calories" stroke="var(--xn-clay-800)" strokeWidth={2} dot={false} />
               {calorieTarget && (
@@ -384,20 +428,26 @@ function MacroCard({
   actual,
   remaining,
   unit,
+  missingLabel,
+  loggedLabel,
+  remainingLabel,
 }: {
   label: string
   target: number | null
   actual: number
   remaining?: number
   unit: string
+  missingLabel: string
+  loggedLabel: string
+  remainingLabel: string
 }) {
   return (
     <div className="rounded-lg border border-border p-4">
       <p className="text-sm font-semibold text-text">{label}</p>
-      <p className="mt-1 text-xl font-bold text-text">{target == null ? 'Missing' : `${target} ${unit}`}</p>
-      <p className="mt-2 text-xs text-muted">Logged: {actual} {unit}</p>
+      <p className="mt-1 text-xl font-bold text-text">{target == null ? missingLabel : `${target} ${unit}`}</p>
+      <p className="mt-2 text-xs text-muted">{loggedLabel}: {actual} {unit}</p>
       {remaining != null && (
-        <p className="mt-1 text-xs text-muted">Remaining: {Math.round(remaining)} {unit}</p>
+        <p className="mt-1 text-xs text-muted">{remainingLabel}: {Math.round(remaining)} {unit}</p>
       )}
     </div>
   )
@@ -419,10 +469,10 @@ function readNumber(value: string) {
   return Number.isFinite(parsed) ? parsed : 0
 }
 
-function formatKcal(value: number | null) {
-  return value == null ? 'Missing' : `${value} kcal`
+function formatKcal(value: number | null, kcalUnit: string, missingLabel: string) {
+  return value == null ? missingLabel : `${value} ${kcalUnit}`
 }
 
-function formatMissingField(field: string) {
-  return field === 'dateOfBirth' ? 'date of birth' : field
+function formatMissingField(field: string, dateOfBirthLabel: string) {
+  return field === 'dateOfBirth' ? dateOfBirthLabel : field
 }

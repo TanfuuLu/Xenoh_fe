@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { Link } from 'react-router'
-import { Flame, TrendingUp, Calendar, ChevronRight, Dumbbell, CheckCircle2 } from 'lucide-react'
+import { Flame, TrendingUp, Calendar, ChevronRight, Dumbbell, CheckCircle2, Calculator, Sparkles } from 'lucide-react'
 import { format, isSameDay } from 'date-fns'
 import type { Locale } from 'date-fns'
 import { vi as viLocale, enUS } from 'date-fns/locale'
@@ -9,12 +9,16 @@ import { Card } from '@/shared/components/Card'
 import { Badge } from '@/shared/components/Badge'
 import { Spinner } from '@/shared/components/Spinner'
 import { Input } from '@/shared/components/Input'
+import { Button } from '@/shared/components/Button'
+import { Modal } from '@/shared/components/Modal'
 import { cn } from '@/shared/utils/cn'
 import { staggerContainer, slideUp } from '@/shared/utils/motion'
 import { useT, useLangStore } from '@/shared/i18n'
 import { useMyProfile } from '@/features/profile'
 import { usePlans } from '@/features/plans'
-import { useWeeklyWorkouts, useDailyWorkouts } from '@/features/workouts'
+import { useWeeklyWorkouts, useDailyWorkouts, useExercises } from '@/features/workouts'
+import { DailyTipCard } from '@/features/tips'
+
 
 export function DashboardPage() {
   const shouldReduce = useReducedMotion()
@@ -22,6 +26,7 @@ export function DashboardPage() {
     value: '100',
     unit: 'kg',
   })
+  const [plateCalcOpen, setPlateCalcOpen] = useState(false)
   const { data: profile, isLoading: profileLoading } = useMyProfile()
   const { data: plans, isLoading: plansLoading } = usePlans()
   const t   = useT()
@@ -57,120 +62,146 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-text">
-          {td.greeting}, {profile?.firstName} 👋
-        </h1>
-        <p className="mt-1 text-sm text-muted">
-          {format(today, 'EEEE, d MMMM yyyy', { locale: dateLocale })}
-        </p>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Left column: stats + plate calculator */}
-        <div className="space-y-6">
-          <motion.div
-            initial={shouldReduce ? false : 'hidden'}
-            animate="visible"
-            variants={staggerContainer}
-            className="grid grid-cols-2 gap-3"
+      {/* Header: greeting + plate calculator launcher */}
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-text">
+            {td.greeting}, {profile?.firstName} 👋
+          </h1>
+          <p className="mt-1 text-sm text-muted">
+            {format(today, 'EEEE, d MMMM yyyy', { locale: dateLocale })}
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link to="/insights">
+            <Button variant="primary" size="sm" className="gap-1.5">
+              <Sparkles size={15} />
+              {t.insights.dashboardCta}
+            </Button>
+          </Link>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setPlateCalcOpen(true)}
+            className="gap-1.5"
           >
-            <StatCard icon={<Flame size={20} className="text-warning" />}     iconBg="var(--xn-warning-bg)" label={td.streak} value={`${profile?.currentStreak ?? 0} ${tc.days}`} />
-            <StatCard icon={<TrendingUp size={20} className="text-success" />} iconBg="var(--xn-success-bg)" label={td.weight} value={profile?.latestBodyweight ? `${profile.latestBodyweight} kg` : '—'} />
-            <StatCard icon={<Calendar size={20} className="text-primary" />}  iconBg="var(--xn-clay-100)"   label="BMI"        value={profile?.bmi ? profile.bmi.toFixed(1) : '—'} sub={profile?.bmiCategory ?? undefined} />
-            <StatCard icon={<Dumbbell size={20} className="text-muted" />}     iconBg="var(--xn-ink-100)"    label="DOTS"       value={profile?.dotsScore ? profile.dotsScore.toFixed(1) : '—'} />
-          </motion.div>
-
-          <PlateCalculatorCard
-            input={plateInput}
-            onInputChange={setPlateInput}
-            calculator={plateCalculator}
-          />
-        </div>
-
-        {/* Right column: today's training + active plan */}
-        <div className="space-y-6">
-          {activePlan && (
-            <motion.div variants={slideUp} initial={shouldReduce ? false : 'hidden'} animate="visible">
-              <TodayTrainingCard
-                todayDay={todayDay ?? null}
-                td={td}
-                tc={tc}
-                dateLocale={dateLocale}
-              />
-            </motion.div>
-          )}
-
-          {activePlan ? (
-            <Card className="space-y-3">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted">{td.activePlanLabel}</p>
-                  <h2 className="mt-1 text-lg font-semibold text-text">{activePlan.name}</h2>
-                  <p className="text-sm text-muted">
-                    {format(new Date(activePlan.startDate), 'dd/MM/yyyy')} → {format(new Date(activePlan.endDate), 'dd/MM/yyyy')}
-                  </p>
-                </div>
-                <Badge variant="success">{tc.active}</Badge>
-              </div>
-
-              {/* Plan overall progress */}
-              <div>
-                <div className="mb-1 flex justify-between text-xs text-muted">
-                  <span>{activePlan.completedDays} / {activePlan.totalDays} {tc.days}</span>
-                  <span>{progressPct}%</span>
-                </div>
-                <div className="h-2 w-full overflow-hidden rounded-full" style={{ background: 'var(--border-1)' }}>
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${progressPct}%` }}
-                    transition={{ duration: 0.8, ease: 'easeOut' }}
-                    className="h-full rounded-full bg-primary"
-                  />
-                </div>
-              </div>
-
-              {/* This week's progress */}
-              {currentWeek && currentWeek.totalDays > 0 && (() => {
-                const weekPct  = Math.round((currentWeek.completedDays / currentWeek.totalDays) * 100)
-                const weekDone = currentWeek.completedDays === currentWeek.totalDays
-                return (
-                  <div
-                    className="rounded-lg px-3 py-2.5 space-y-1.5"
-                    style={{ background: 'var(--bg-3)', border: '1px solid var(--border-1)' }}
-                  >
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-medium text-muted">{td.thisWeek}</span>
-                      <span className="font-bold" style={{ color: weekDone ? 'var(--xn-success)' : 'var(--color-primary)' }}>
-                        {currentWeek.completedDays}/{currentWeek.totalDays} {tc.days} · {weekPct}%
-                      </span>
-                    </div>
-                    <div className="h-1.5 w-full overflow-hidden rounded-full" style={{ background: 'var(--border-1)' }}>
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${weekPct}%` }}
-                        transition={{ duration: 0.6, ease: 'easeOut' }}
-                        className="h-full rounded-full"
-                        style={{ background: weekDone ? 'var(--xn-success)' : 'var(--color-primary)' }}
-                      />
-                    </div>
-                  </div>
-                )
-              })()}
-
-              <Link to={`/plans/${activePlan.id}`} className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
-                {td.viewDetails} <ChevronRight size={14} />
-              </Link>
-            </Card>
-          ) : (
-            <Card className="flex flex-col items-center gap-3 py-10 text-center">
-              <Dumbbell size={40} className="text-muted/40" />
-              <p className="text-muted">{td.noActivePlan}</p>
-              <Link to="/plans" className="text-sm font-medium text-primary hover:underline">{td.createPlanLink}</Link>
-            </Card>
-          )}
+            <Calculator size={15} />
+            {td.plateCalculator}
+          </Button>
         </div>
       </div>
+
+      <DailyTipCard />
+
+      {/* Stats — full-width row */}
+      <motion.div
+        initial={shouldReduce ? false : 'hidden'}
+        animate="visible"
+        variants={staggerContainer}
+        className="grid gap-3 grid-cols-2 lg:grid-cols-4"
+      >
+        <StatCard icon={<Flame size={20} className="text-warning" />}     iconBg="var(--xn-warning-bg)" label={td.streak} value={`${profile?.currentStreak ?? 0} ${tc.days}`} />
+        <StatCard icon={<TrendingUp size={20} className="text-success" />} iconBg="var(--xn-success-bg)" label={td.weight} value={profile?.latestBodyweight ? `${profile.latestBodyweight} kg` : '—'} />
+        <StatCard icon={<Calendar size={20} className="text-primary" />}  iconBg="var(--xn-clay-100)"   label="BMI"        value={profile?.bmi ? profile.bmi.toFixed(1) : '—'} sub={profile?.bmiCategory ?? undefined} />
+        <StatCard icon={<Dumbbell size={20} className="text-muted" />}     iconBg="var(--xn-ink-100)"    label="DOTS"       value={profile?.dotsScore ? profile.dotsScore.toFixed(1) : '—'} />
+      </motion.div>
+
+      {/* Today's Training + Active plan — 2-col row on lg+ */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {activePlan && (
+          <motion.div variants={slideUp} initial={shouldReduce ? false : 'hidden'} animate="visible">
+            <TodayTrainingCard
+              todayDay={todayDay ?? null}
+              td={td}
+              tc={tc}
+              dateLocale={dateLocale}
+            />
+          </motion.div>
+        )}
+
+        {activePlan ? (
+          <Card className="space-y-3">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-muted">{td.activePlanLabel}</p>
+                <h2 className="mt-1 text-lg font-semibold text-text">{activePlan.name}</h2>
+                <p className="text-sm text-muted">
+                  {format(new Date(activePlan.startDate), 'dd/MM/yyyy')} → {format(new Date(activePlan.endDate), 'dd/MM/yyyy')}
+                </p>
+              </div>
+              <Badge variant="success">{tc.active}</Badge>
+            </div>
+
+            {/* Plan overall progress */}
+            <div>
+              <div className="mb-1 flex justify-between text-xs text-muted">
+                <span>{activePlan.completedDays} / {activePlan.totalDays} {tc.days}</span>
+                <span>{progressPct}%</span>
+              </div>
+              <div className="h-2 w-full overflow-hidden rounded-full" style={{ background: 'var(--border-1)' }}>
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${progressPct}%` }}
+                  transition={{ duration: 0.8, ease: 'easeOut' }}
+                  className="h-full rounded-full bg-primary"
+                />
+              </div>
+            </div>
+
+            {/* This week's progress */}
+            {currentWeek && currentWeek.totalDays > 0 && (() => {
+              const weekPct  = Math.round((currentWeek.completedDays / currentWeek.totalDays) * 100)
+              const weekDone = currentWeek.completedDays === currentWeek.totalDays
+              return (
+                <div
+                  className="rounded-lg px-3 py-2.5 space-y-1.5"
+                  style={{ background: 'var(--bg-3)', border: '1px solid var(--border-1)' }}
+                >
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-medium text-muted">{td.thisWeek}</span>
+                    <span className="font-bold" style={{ color: weekDone ? 'var(--xn-success)' : 'var(--color-primary)' }}>
+                      {currentWeek.completedDays}/{currentWeek.totalDays} {tc.days} · {weekPct}%
+                    </span>
+                  </div>
+                  <div className="h-1.5 w-full overflow-hidden rounded-full" style={{ background: 'var(--border-1)' }}>
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${weekPct}%` }}
+                      transition={{ duration: 0.6, ease: 'easeOut' }}
+                      className="h-full rounded-full"
+                      style={{ background: weekDone ? 'var(--xn-success)' : 'var(--color-primary)' }}
+                    />
+                  </div>
+                </div>
+              )
+            })()}
+
+            <Link to={`/plans/${activePlan.id}`} className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
+              {td.viewDetails} <ChevronRight size={14} />
+            </Link>
+          </Card>
+        ) : (
+          <Card className="flex flex-col items-center gap-3 py-10 text-center">
+            <Dumbbell size={40} className="text-muted/40" />
+            <p className="text-muted">{td.noActivePlan}</p>
+            <Link to="/plans" className="text-sm font-medium text-primary hover:underline">{td.createPlanLink}</Link>
+          </Card>
+        )}
+      </div>
+
+      {/* Plate Calculator modal */}
+      <Modal
+        open={plateCalcOpen}
+        onClose={() => setPlateCalcOpen(false)}
+        title={td.plateCalculator}
+        className="max-w-2xl"
+      >
+        <PlateCalculatorBody
+          input={plateInput}
+          onInputChange={setPlateInput}
+          calculator={plateCalculator}
+        />
+      </Modal>
     </div>
   )
 }
@@ -234,7 +265,7 @@ function getPlateLoad(totalWeight: number, barWeight: number, plates: number[]):
   }
 }
 
-function PlateCalculatorCard({
+function PlateCalculatorBody({
   input,
   onInputChange,
   calculator,
@@ -247,11 +278,8 @@ function PlateCalculatorCard({
   const lbsValue = input.unit === 'lbs' ? input.value : calculator.lbs ? roundDisplay(calculator.lbs) : ''
 
   return (
-    <Card className="space-y-4">
-      <div>
-        <h2 className="text-lg font-semibold text-text">Plate Calculator</h2>
-        <p className="mt-1 text-sm text-muted">20kg bar by default. Plate counts are shown per side.</p>
-      </div>
+    <div className="space-y-4">
+      <p className="text-sm text-muted">20kg bar by default. Plate counts are shown per side.</p>
 
       <div className="grid gap-3 sm:grid-cols-2">
         <Input
@@ -272,11 +300,11 @@ function PlateCalculatorCard({
         />
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-2">
         <PlateLoadPanel title="KG plates" unit="kg" barLabel="20kg bar" load={calculator.kgLoad} />
         <PlateLoadPanel title="LB plates" unit="lb" barLabel={`${roundDisplay(BAR_KG * KG_TO_LBS)}lb bar`} load={calculator.lbsLoad} />
       </div>
-    </Card>
+    </div>
   )
 }
 
@@ -355,6 +383,20 @@ interface TodayTrainingCardProps {
 
 function TodayTrainingCard({ todayDay, td, tc, dateLocale }: TodayTrainingCardProps) {
   const isRest = !todayDay || todayDay.totalExercises === 0
+  const { data: exercises } = useExercises(todayDay?.id ?? '')
+
+  const { totalSets, totalVolume, muscleGroups } = useMemo(() => {
+    if (!exercises || exercises.length === 0) {
+      return { totalSets: 0, totalVolume: 0, muscleGroups: [] as string[] }
+    }
+    const sets = exercises.reduce((s, e) => s + e.plannedSets, 0)
+    const volume = exercises.reduce(
+      (s, e) => s + e.plannedSets * e.plannedReps * (e.plannedWeight ?? 0),
+      0,
+    )
+    const groups = Array.from(new Set(exercises.map((e) => e.primaryMuscleGroup)))
+    return { totalSets: sets, totalVolume: volume, muscleGroups: groups }
+  }, [exercises])
 
   if (isRest) {
     return (
@@ -393,6 +435,29 @@ function TodayTrainingCard({ todayDay, td, tc, dateLocale }: TodayTrainingCardPr
               <span className="ml-2">· {todayDay.completedExercises}/{todayDay.totalExercises} {tc.exercises}</span>
             )}
           </p>
+
+          {exercises && exercises.length > 0 && (
+            <p className="mt-0.5 text-sm text-muted">
+              <span className="font-semibold text-text">{totalSets}</span> {td.sets}
+              {totalVolume > 0 && (
+                <>
+                  {' · '}
+                  <span className="font-semibold text-text">{totalVolume.toLocaleString()}</span> kg
+                </>
+              )}
+            </p>
+          )}
+
+          {muscleGroups.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {muscleGroups.slice(0, 4).map((mg) => (
+                <Badge key={mg} variant="default">{mg}</Badge>
+              ))}
+              {muscleGroups.length > 4 && (
+                <Badge variant="default">+{muscleGroups.length - 4}</Badge>
+              )}
+            </div>
+          )}
         </div>
 
         {todayDay.isCompleted ? (
@@ -403,7 +468,7 @@ function TodayTrainingCard({ todayDay, td, tc, dateLocale }: TodayTrainingCardPr
         ) : (
           <Link
             to={`/days/${todayDay.id}`}
-            state={{ canEdit: true, weeklyWorkoutId: todayDay.weeklyWorkoutId }}
+            state={{ canEdit: true, canComplete: true, weeklyWorkoutId: todayDay.weeklyWorkoutId }}
             className="flex w-full flex-shrink-0 items-center justify-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-opacity hover:opacity-80 sm:w-auto sm:py-1.5"
             style={{ background: 'var(--accent)', color: 'var(--fg-on-clay)' }}
           >

@@ -18,6 +18,7 @@ export {
   useUpdateCustomExerciseTemplate,
   useDeleteCustomExerciseTemplate,
   useCreateCustomExerciseTemplateForClient,
+  useLastExercisePerformance,
 } from './api/useExerciseTemplates'
 export type {
   WeeklyWorkoutResponse,
@@ -25,6 +26,7 @@ export type {
   ExerciseResponse,
   ExerciseSetResponse,
   ExerciseTemplateResponse,
+  LastExercisePerformanceResponse,
   CustomExerciseTemplateRequest,
   CreateExerciseRequest,
   UpdateExerciseRequest,

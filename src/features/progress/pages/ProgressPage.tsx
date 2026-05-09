@@ -12,18 +12,24 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { AlertTriangle, CheckCircle2, Dumbbell, Gauge, Info, Target, TrendingUp, Weight, Users, Zap } from 'lucide-react'
+import { AlertTriangle, BarChart3, CheckCircle2, Dumbbell, Gauge, Info, Target, TrendingUp, Weight, Users, Zap } from 'lucide-react'
 import { Card } from '@/shared/components/Card'
+import { Select } from '@/shared/components/Select'
 import { Spinner } from '@/shared/components/Spinner'
-import { slideUp } from '@/shared/utils/motion'
 import { cn } from '@/shared/utils/cn'
+import { slideUp } from '@/shared/utils/motion'
 import { useT } from '@/shared/i18n'
 import { useAuthStore } from '@/features/auth'
 import { usePlans, useCoachPlanOverview } from '@/features/plans'
 import { useMyClients } from '@/features/coach-client'
 import { RequireTier } from '@/features/billing/components/RequireTier'
 import { usePlanAnalytics } from '../api/usePlanAnalytics'
-import type { MuscleGroupPoint, PlanAnalyticsResponse, TrainingInsightResponse, TrainingInsightSeverity } from '../types'
+import { useClientPowerlifting } from '../api/useClientPowerlifting'
+import { PowerliftingPanel } from '../components/powerlifting/PowerliftingPanel'
+import { InlineTip } from '@/features/tips'
+import type { MuscleGroupPoint, PlanAnalyticsResponse, PowerliftingSection, TrainingInsightResponse, TrainingInsightSeverity } from '../types'
+
+type ProgressTab = 'overview' | 'powerlifting'
 
 const CHART_TOOLTIP_STYLE = {
   background: 'var(--bg-2)',
@@ -87,6 +93,7 @@ function IndividualProgressView({
       isLoading={isLoading}
       isError={isError}
       analytics={analytics}
+      powerlifting={analytics?.powerlifting ?? null}
       tp={tp}
       planSelector={
         plans && plans.length > 0 ? (
@@ -157,6 +164,9 @@ function CoachProgressView({
     selectedPlanId || null,
   )
 
+  // Coach powerlifting view is longitudinal across all plans for the selected client.
+  const { data: powerliftingData } = useClientPowerlifting(selectedClientId || null)
+
   const isLoading = loadingClients || loadingCoachPlans || (!!selectedPlanId && loadingAnalytics)
   const noClients = !loadingClients && activeClients.length === 0
 
@@ -168,6 +178,7 @@ function CoachProgressView({
       isLoading={isLoading}
       isError={isError}
       analytics={analytics}
+      powerlifting={powerliftingData?.powerlifting ?? analytics?.powerlifting ?? null}
       tp={tp}
       planSelector={
         activeClients.length > 0 ? (
@@ -175,16 +186,12 @@ function CoachProgressView({
             {/* Client selector */}
             <div className="flex items-center gap-2">
               <Users size={15} style={{ color: 'var(--fg-3)' }} />
-              <select
+              <Select
+                options={activeClients.map((c) => ({ value: c.clientId, label: c.fullName }))}
                 value={selectedClientId}
-                onChange={(e) => setSelectedClientId(e.target.value)}
-                className={cn('rounded-xl border px-3 py-2 text-sm font-medium outline-none bg-surface text-text')}
-                style={{ borderColor: 'var(--border-1)' }}
-              >
-                {activeClients.map((c) => (
-                  <option key={c.clientId} value={c.clientId}>{c.fullName}</option>
-                ))}
-              </select>
+                onChange={setSelectedClientId}
+                className="min-w-40"
+              />
             </div>
 
             {/* Plan selector for selected client */}
@@ -219,6 +226,7 @@ function ProgressShell({
   isLoading,
   isError,
   analytics,
+  powerlifting,
   tp,
   planSelector,
   emptyNode,
@@ -229,10 +237,19 @@ function ProgressShell({
   isLoading: boolean
   isError: boolean
   analytics: PlanAnalyticsResponse | undefined
+  powerlifting?: PowerliftingSection | null
   tp: Record<string, string>
   planSelector?: React.ReactNode
   emptyNode?: React.ReactNode
 }) {
+  const [tab, setTab] = useState<ProgressTab>('overview')
+  const hasPowerlifting = !!powerlifting
+
+  // Reset to overview if user switches to a context without powerlifting data.
+  useEffect(() => {
+    if (!hasPowerlifting && tab === 'powerlifting') setTab('overview')
+  }, [hasPowerlifting, tab])
+
   return (
     <div className="space-y-6">
       {/* Header + selectors */}
@@ -270,6 +287,73 @@ function ProgressShell({
 
       {!emptyNode && !isLoading && !isError && analytics && (
         <>
+          {hasPowerlifting && (
+            <ProgressTabs current={tab} onChange={setTab} />
+          )}
+
+          {tab === 'powerlifting' && powerlifting ? (
+            <>
+              <InlineTip placement="progress" />
+              <PowerliftingPanel section={powerlifting} />
+            </>
+          ) : (
+            <OverviewSection analytics={analytics} shouldReduce={shouldReduce} tp={tp} />
+          )}
+        </>
+      )}
+    </div>
+  )
+}
+
+function ProgressTabs({
+  current,
+  onChange,
+}: {
+  current: ProgressTab
+  onChange: (tab: ProgressTab) => void
+}) {
+  const items: Array<{ id: ProgressTab; label: string; icon: React.ReactNode }> = [
+    { id: 'overview', label: 'Overview', icon: <BarChart3 size={14} /> },
+    { id: 'powerlifting', label: 'Powerlifting', icon: <Dumbbell size={14} /> },
+  ]
+  return (
+    <div
+      className="inline-flex items-center gap-1 rounded-xl p-1"
+      style={{ background: 'var(--bg-2)', border: '1px solid var(--border-1)' }}
+    >
+      {items.map((it) => {
+        const active = current === it.id
+        return (
+          <button
+            key={it.id}
+            type="button"
+            onClick={() => onChange(it.id)}
+            className={cn(
+              'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
+              active ? 'text-text' : 'text-muted hover:text-text',
+            )}
+            style={active ? { background: 'var(--bg-3)', border: '1px solid var(--border-1)' } : undefined}
+          >
+            {it.icon}
+            {it.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+function OverviewSection({
+  analytics,
+  shouldReduce,
+  tp,
+}: {
+  analytics: PlanAnalyticsResponse
+  shouldReduce: boolean
+  tp: Record<string, string>
+}) {
+  return (
+    <div className="space-y-6">
           {/* Summary cards */}
           <motion.div
             initial={shouldReduce ? false : 'hidden'}
@@ -402,9 +486,6 @@ function ProgressShell({
               )}
             </Card>
           </motion.div>
-
-        </>
-      )}
     </div>
   )
 }
@@ -458,18 +539,12 @@ function PlanSelect({
   activeLabel: string
 }) {
   return (
-    <select
+    <Select
+      options={plans.map((p) => ({ value: p.id, label: p.isActive ? `${p.name} (${activeLabel})` : p.name }))}
       value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className={cn('rounded-xl border px-3 py-2 text-sm font-medium outline-none bg-surface text-text')}
-      style={{ borderColor: 'var(--border-1)' }}
-    >
-      {plans.map((p) => (
-        <option key={p.id} value={p.id}>
-          {p.name}{p.isActive ? ` (${activeLabel})` : ''}
-        </option>
-      ))}
-    </select>
+      onChange={onChange}
+      className="min-w-40"
+    />
   )
 }
 

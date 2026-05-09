@@ -13,10 +13,11 @@ import { staggerContainer, slideUp } from '@/shared/utils/motion'
 import { useT } from '@/shared/i18n'
 import { useConfirm } from '@/shared/components/ConfirmModal'
 import { useCoaches, useCoachProfile } from '../index'
-import { useMyCoach, useRequestCoach, useTerminateRelationship, useRequestTermination, useAcceptTermination, useRejectTermination } from '@/features/coach-client'
+import { InlineTip } from '@/features/tips'
+import { useMyCoach, useTerminateRelationship, useRequestTermination, useAcceptTermination, useRejectTermination, useAcceptRenewal, useRejectRenewal } from '@/features/coach-client'
+import { ConnectCoachModal } from '@/features/coach-client/components/ConnectCoachModal'
+import { RenewalModal } from '@/features/coach-client/components/RenewalModal'
 import { useAuthStore } from '@/features/auth'
-import type { AxiosError } from 'axios'
-import type { ApiError } from '@/shared/types/api'
 
 export function CoachesPage() {
   const shouldReduce = useReducedMotion()
@@ -35,20 +36,33 @@ export function CoachesPage() {
     !loadingMyCoach && !hasCoach,
   )
   const currentUserId = useAuthStore((s) => s.user?.id ?? '')
-  const { mutate: requestCoach, isPending: requesting, error: reqError } = useRequestCoach()
   const { mutate: terminate, isPending: terminating } = useTerminateRelationship()
   const { mutate: requestTermination, isPending: requestingTermination } = useRequestTermination()
   const { mutate: acceptTermination, isPending: acceptingTermination } = useAcceptTermination()
   const { mutate: rejectTermination, isPending: rejectingTermination } = useRejectTermination()
+  const { mutate: acceptRenewal, isPending: acceptingRenewal } = useAcceptRenewal()
+  const { mutate: rejectRenewal, isPending: rejectingRenewal } = useRejectRenewal()
   const { confirm, ConfirmDialog } = useConfirm()
+  const [connectTarget, setConnectTarget] = useState<{ id: string; name: string } | null>(null)
+  const [renewalOpen, setRenewalOpen] = useState(false)
 
   const isPendingTermination = myCoach?.status === 'PendingTermination'
   const iInitiatedTermination = isPendingTermination && myCoach?.terminationRequestedBy === currentUserId
   const coachInitiatedTermination = isPendingTermination && myCoach?.terminationRequestedBy !== currentUserId
+  const isExpired = myCoach?.status === 'Expired'
+  const isPendingRenewal = myCoach?.status === 'PendingRenewal'
+  const iInitiatedRenewal = isPendingRenewal && myCoach?.renewalRequestedBy === currentUserId
+  const coachInitiatedRenewal = isPendingRenewal && myCoach?.renewalRequestedBy !== currentUserId
   const anyTerminationPending = requestingTermination || acceptingTermination || rejectingTermination
+  const anyRenewalPending = acceptingRenewal || rejectingRenewal
 
-  const apiError = (reqError as AxiosError<ApiError>)?.response?.data?.message
   const currentCoach = coachProfile ?? coaches?.find((coach) => coach.id === myCoach?.coachId)
+
+  function formatDate(value: string | null): string {
+    if (!value) return 'chưa đặt'
+    const [y, m, d] = value.split('-')
+    return `${d}/${m}/${y}`
+  }
 
   function openCoachProfile(coachId: string) {
     navigate(`/coaches/${coachId}`)
@@ -69,6 +83,8 @@ export function CoachesPage() {
         <h1 className="text-2xl font-bold text-text">{hasCoach ? tco.coachTitle : tco.title}</h1>
         <p className="mt-1 text-sm text-muted">{hasCoach ? tco.coachSubtitle : tco.subtitle}</p>
       </div>
+
+      <InlineTip placement="coaches" audience="individual" />
 
       {loadingMyCoach || (hasCoach && loadingCoachProfile) ? (
         <div className="flex h-32 items-center justify-center">
@@ -101,6 +117,10 @@ export function CoachesPage() {
                       ? tco.connected
                       : myCoach.status === 'PendingTermination'
                       ? (iInitiatedTermination ? tco.disconnectPendingByYou : tco.disconnectPendingByOther)
+                      : myCoach.status === 'Expired'
+                      ? 'Hợp đồng đã hết hạn'
+                      : myCoach.status === 'PendingRenewal'
+                      ? (iInitiatedRenewal ? 'Chờ phản hồi gia hạn' : 'Đối tác đề nghị gia hạn')
                       : tco.pending}
                   </Badge>
                 </div>
@@ -127,6 +147,62 @@ export function CoachesPage() {
                   </Button>
                 )}
                 {myCoach.status === 'Active' && (
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    className="w-full min-[390px]:w-auto"
+                    loading={terminating}
+                    onClick={async () => {
+                      if (await confirm(tco.disconnectConfirm, { confirmLabel: tco.disconnect, danger: true })) {
+                        requestTermination(myCoach.id)
+                      }
+                    }}
+                  >
+                    <UserMinus size={15} /> {tco.disconnect}
+                  </Button>
+                )}
+                {(isExpired || iInitiatedRenewal) && (
+                  <Button
+                    size="sm"
+                    className="w-full min-[390px]:w-auto"
+                    onClick={() => setRenewalOpen(true)}
+                  >
+                    Gia hạn
+                  </Button>
+                )}
+                {coachInitiatedRenewal && (
+                  <>
+                    <Button
+                      size="sm"
+                      className="w-full min-[390px]:w-auto"
+                      loading={anyRenewalPending}
+                      onClick={() => acceptRenewal(myCoach.id)}
+                    >
+                      Chấp nhận gia hạn
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full min-[390px]:w-auto"
+                      loading={anyRenewalPending}
+                      onClick={() => rejectRenewal(myCoach.id)}
+                    >
+                      Từ chối
+                    </Button>
+                  </>
+                )}
+                {iInitiatedRenewal && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full min-[390px]:w-auto"
+                    loading={anyRenewalPending}
+                    onClick={() => rejectRenewal(myCoach.id)}
+                  >
+                    Hủy yêu cầu gia hạn
+                  </Button>
+                )}
+                {(isExpired || isPendingRenewal) && myCoach.status !== 'PendingTermination' && (
                   <Button
                     variant="danger"
                     size="sm"
@@ -190,6 +266,24 @@ export function CoachesPage() {
               </div>
             </div>
 
+            <div className="rounded-lg border border-border bg-panel px-3 py-3 text-sm text-muted">
+              <p className="font-medium text-text">Hợp đồng huấn luyện</p>
+              <p className="mt-1">
+                {formatDate(myCoach.startDate)} → {formatDate(myCoach.endDate)}
+              </p>
+              {isPendingRenewal && myCoach.proposedEndDate && (
+                <p className="mt-1 text-warning">
+                  Đề xuất gia hạn đến {formatDate(myCoach.proposedEndDate)}
+                </p>
+              )}
+            </div>
+
+            {isExpired && (
+              <div className="rounded-lg border border-warning/40 bg-warning/10 px-3 py-3 text-sm text-text">
+                Hợp đồng đã hết hạn. Bạn có thể gửi yêu cầu gia hạn hoặc kết thúc hợp đồng. Bạn vẫn có thể tiếp tục plan hiện tại trong khi chờ.
+              </div>
+            )}
+
             <p className="text-sm text-muted">{tco.coachDescription}</p>
           </Card>
 
@@ -213,8 +307,6 @@ export function CoachesPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-
-          {apiError && <p className="text-sm text-danger">{apiError}</p>}
 
           {isLoading ? (
             <div className="flex h-32 items-center justify-center">
@@ -260,10 +352,9 @@ export function CoachesPage() {
                       </p>
                       <Button
                         size="sm"
-                        loading={requesting}
                         onClick={(event) => {
                           event.stopPropagation()
-                          requestCoach({ coachId: coach.id })
+                          setConnectTarget({ id: coach.id, name: coach.fullName })
                         }}
                       >
                         <UserPlus size={15} /> {tco.connectBtn}
@@ -280,6 +371,22 @@ export function CoachesPage() {
         </>
       )}
     </div>
+    {connectTarget && (
+      <ConnectCoachModal
+        open={!!connectTarget}
+        coachId={connectTarget.id}
+        coachName={connectTarget.name}
+        onClose={() => setConnectTarget(null)}
+      />
+    )}
+    {myCoach && (
+      <RenewalModal
+        open={renewalOpen}
+        relationshipId={myCoach.id}
+        currentEndDate={myCoach.endDate}
+        onClose={() => setRenewalOpen(false)}
+      />
+    )}
     </>
   )
 }

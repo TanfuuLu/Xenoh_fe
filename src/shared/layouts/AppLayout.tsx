@@ -7,7 +7,7 @@ import {
   UserCheck, Menu, X, LogOut, ChevronDown,
   PanelLeftClose, PanelLeftOpen, ChartNoAxesCombined, TrendingUp,
   LockKeyhole, Lock, BookOpen, CreditCard,
-  Shield, Utensils,
+  Shield, Utensils, Ban, Sparkles,
 } from 'lucide-react'
 import { cn } from '@/shared/utils/cn'
 import { Link as RouterLink } from 'react-router'
@@ -42,8 +42,11 @@ export function AppLayout() {
 
   useNotificationHub()
 
+  const insightsLabel = t.insights.title
+
   const individualNav = [
     { to: '/dashboard',    icon: LayoutDashboard, label: tn.dashboard },
+    { to: '/insights',     icon: Sparkles,        label: insightsLabel },
     { to: '/plans',        icon: ClipboardList,   label: tn.myPlans },
     { to: '/exercise-library', icon: BookOpen, label: exerciseLibraryLabel },
     { to: '/exercise-tracking', icon: ChartNoAxesCombined, label: tn.exerciseTracking },
@@ -57,6 +60,7 @@ export function AppLayout() {
 
   const coachNav = [
     { to: '/dashboard',     icon: LayoutDashboard, label: tn.overview },
+    { to: '/insights',      icon: Sparkles,        label: insightsLabel },
     { to: '/plans',         icon: ClipboardList,   label: tn.myPlans },
     { to: '/exercise-library', icon: BookOpen, label: exerciseLibraryLabel },
     { to: '/progress',      icon: TrendingUp,      label: tn.progress },
@@ -240,6 +244,15 @@ export function AppLayout() {
                         >
                           <LockKeyhole size={15} />
                           {changePasswordLabel}
+                        </NavLink>
+                        <NavLink
+                          to="/settings/blocklist"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="xn-nav-item"
+                          style={{ fontSize: 13 }}
+                        >
+                          <Ban size={15} />
+                          Blocklist
                         </NavLink>
                         <button
                           onClick={handleLogout}

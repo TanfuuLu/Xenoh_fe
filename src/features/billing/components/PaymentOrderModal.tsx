@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { Copy, Check, Clock, RefreshCw, CheckCircle, QrCode, AlignJustify } from 'lucide-react'
 import { format, formatDistanceToNow } from 'date-fns'
+import { vi as viLocale, enUS as enLocale } from 'date-fns/locale'
 import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/shared/utils/cn'
 import { Modal } from '@/shared/components/Modal'
 import { Button } from '@/shared/components/Button'
 import { Spinner } from '@/shared/components/Spinner'
+import { useT, useLangStore } from '@/shared/i18n'
 import { useSubscription, useRefreshSubscription } from '../api/useSubscription'
 import { refreshAuth } from '@/features/auth'
 import { TIER_LABELS } from '../types'
@@ -94,13 +96,15 @@ function CopyField({ label, value, highlight }: { label: string; value: string; 
 
 // ── QR tab ────────────────────────────────────────────────────────────────────
 function QrTab({ order }: { order: PaymentOrderResponse }) {
+  const t = useT()
+  const ts = t.subscription
   const [imgError, setImgError] = useState(false)
   const qrUrl = buildVietQrUrl(order)
 
   return (
     <div className="flex flex-col items-center gap-4">
       <p className="text-sm text-center" style={{ color: 'var(--fg-3)' }}>
-        Mở app ngân hàng → Quét mã QR. Thông tin chuyển khoản sẽ được điền tự động.
+        {ts.paymentQrInstruction}
       </p>
 
       {imgError ? (
@@ -109,7 +113,7 @@ function QrTab({ order }: { order: PaymentOrderResponse }) {
           style={{ border: '1px dashed var(--border-1)', color: 'var(--fg-3)' }}
         >
           <QrCode size={32} />
-          <span className="text-xs text-center px-4">Không tải được QR. Dùng tab Manual để chuyển khoản thủ công.</span>
+          <span className="text-xs text-center px-4">{ts.paymentQrFailed}</span>
         </div>
       ) : (
         <div className="rounded-2xl overflow-hidden p-3" style={{ background: '#fff' }}>
@@ -126,11 +130,11 @@ function QrTab({ order }: { order: PaymentOrderResponse }) {
 
       {/* Transfer description reminder */}
       <div className="w-full">
-        <CopyField label="Nội dung chuyển khoản (bắt buộc)" value={order.transferCode} highlight />
+        <CopyField label={ts.paymentTransferContent} value={order.transferCode} highlight />
       </div>
 
       <p className="text-xs text-center" style={{ color: 'var(--fg-3)' }}>
-        Nếu app ngân hàng không tự điền nội dung, hãy copy và điền thủ công.
+        {ts.paymentTransferContentHint}
       </p>
     </div>
   )
@@ -138,13 +142,15 @@ function QrTab({ order }: { order: PaymentOrderResponse }) {
 
 // ── Manual tab ────────────────────────────────────────────────────────────────
 function ManualTab({ order }: { order: PaymentOrderResponse }) {
+  const t = useT()
+  const ts = t.subscription
   return (
     <div className="flex flex-col gap-2.5">
-      <CopyField label="Ngân hàng" value={order.bankName} />
-      <CopyField label="Số tài khoản" value={order.bankAccountNumber} />
-      <CopyField label="Tên tài khoản" value={order.bankAccountName} />
-      <CopyField label="Số tiền (VND)" value={order.amount.toLocaleString('vi-VN')} />
-      <CopyField label="Nội dung chuyển khoản (bắt buộc)" value={order.transferCode} highlight />
+      <CopyField label={ts.paymentBank} value={order.bankName} />
+      <CopyField label={ts.paymentAccountNumber} value={order.bankAccountNumber} />
+      <CopyField label={ts.paymentAccountName} value={order.bankAccountName} />
+      <CopyField label={ts.paymentAmount} value={order.amount.toLocaleString('vi-VN')} />
+      <CopyField label={ts.paymentTransferContent} value={order.transferCode} highlight />
     </div>
   )
 }
@@ -158,6 +164,11 @@ interface Props {
 type Tab = 'qr' | 'manual'
 
 export function PaymentOrderModal({ order, onClose }: Props) {
+  const t = useT()
+  const ts = t.subscription
+  const lang = useLangStore((s) => s.lang)
+  const dateLocale = lang === 'vi' ? viLocale : enLocale
+
   const [tab, setTab] = useState<Tab>('qr')
   const [checking, setChecking] = useState(false)
   const [activated, setActivated] = useState(false)
@@ -187,13 +198,14 @@ export function PaymentOrderModal({ order, onClose }: Props) {
         clearInterval(pollRef.current!)
         await refreshAuth()
         setActivated(true)
-        toast.success('🎉 Đã kích hoạt subscription!', {
-          description: `Bạn đang dùng ${TIER_LABELS[newTier]}.`,
+        toast.success(ts.paymentToastActivatedTitle, {
+          description: ts.paymentToastActivatedDesc.replace('{tier}', TIER_LABELS[newTier]),
           duration: 6000,
         })
       }
     }, 15_000)
     return () => { if (pollRef.current) clearInterval(pollRef.current) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [order, refetch])
 
   async function handleCheckStatus() {
@@ -204,13 +216,13 @@ export function PaymentOrderModal({ order, onClose }: Props) {
       if (newTier && prevTierRef.current && newTier !== prevTierRef.current) {
         await refreshAuth()
         setActivated(true)
-        toast.success('🎉 Đã kích hoạt subscription!', {
-          description: `Bạn đang dùng ${TIER_LABELS[newTier]}.`,
+        toast.success(ts.paymentToastActivatedTitle, {
+          description: ts.paymentToastActivatedDesc.replace('{tier}', TIER_LABELS[newTier]),
           duration: 6000,
         })
       } else {
-        toast.info('Chưa xác nhận thanh toán', {
-          description: 'SePay đang xử lý. Thử lại sau vài giây.',
+        toast.info(ts.paymentToastNotConfirmedTitle, {
+          description: ts.paymentToastNotConfirmedDesc,
         })
       }
     } finally {
@@ -235,7 +247,7 @@ export function PaymentOrderModal({ order, onClose }: Props) {
     <Modal
       open={!!order}
       onClose={handleClose}
-      title={activated ? 'Thanh toán thành công 🎉' : 'Hoàn tất thanh toán'}
+      title={activated ? ts.paymentSuccessTitle : ts.paymentCompleteTitle}
       className="max-w-sm"
     >
       <AnimatePresence mode="wait">
@@ -251,13 +263,17 @@ export function PaymentOrderModal({ order, onClose }: Props) {
               <CheckCircle size={36} className="text-green-500" />
             </div>
             <div>
-              <p className="text-lg font-bold" style={{ color: 'var(--fg-1)' }}>Chào mừng đến {tierLabel}!</p>
+              <p className="text-lg font-bold" style={{ color: 'var(--fg-1)' }}>
+                {ts.paymentWelcome.replace('{tier}', tierLabel)}
+              </p>
               <p className="text-sm mt-1" style={{ color: 'var(--fg-3)' }}>
-                Subscription của bạn đã được kích hoạt.
-                {subscription?.expiresAt && <> Hết hạn {format(new Date(subscription.expiresAt), 'dd/MM/yyyy')}.</>}
+                {ts.paymentActivated}
+                {subscription?.expiresAt && (
+                  <>{ts.paymentExpiresOn.replace('{date}', format(new Date(subscription.expiresAt), 'dd/MM/yyyy'))}</>
+                )}
               </p>
             </div>
-            <Button onClick={handleClose} className="w-full">Bắt đầu dùng Pro</Button>
+            <Button onClick={handleClose} className="w-full">{ts.paymentStartUsing}</Button>
           </motion.div>
         )}
 
@@ -268,14 +284,14 @@ export function PaymentOrderModal({ order, onClose }: Props) {
             {/* Amount */}
             <div className="rounded-xl p-4 text-center" style={{ background: 'var(--bg-2)', border: '1px solid var(--border-1)' }}>
               <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: 'var(--fg-3)' }}>
-                {tierLabel} · {order.durationMonths} tháng
+                {ts.paymentAmountForMonths.replace('{tier}', tierLabel).replace('{n}', String(order.durationMonths))}
               </p>
               <p className="text-3xl font-bold" style={{ color: 'var(--fg-1)' }}>{formatVnd(order.amount)}</p>
             </div>
 
             {/* Tab toggle */}
             <div className="flex rounded-xl p-1 gap-1" style={{ background: 'var(--bg-2)' }}>
-              {([['qr', QrCode, 'QR Code'], ['manual', AlignJustify, 'Manual']] as const).map(([t, Icon, label]) => (
+              {([['qr', QrCode, ts.paymentTabQr], ['manual', AlignJustify, ts.paymentTabManual]] as const).map(([t, Icon, label]) => (
                 <button
                   key={t}
                   onClick={() => setTab(t)}
@@ -308,29 +324,31 @@ export function PaymentOrderModal({ order, onClose }: Props) {
             {isExpired ? (
               <div className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs" style={{ background: 'rgba(239,68,68,0.08)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' }}>
                 <Clock size={13} className="shrink-0" />
-                Order đã hết hạn. Đóng và tạo lại.
+                {ts.paymentOrderExpired}
               </div>
             ) : (
               <div className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs" style={{ background: 'var(--bg-3)', color: 'var(--fg-3)' }}>
                 <Clock size={13} className="shrink-0" />
-                Hết hạn {formatDistanceToNow(new Date(order.expiresAt), { addSuffix: true })} · {format(new Date(order.expiresAt), 'HH:mm dd/MM/yyyy')}
+                {ts.paymentExpiresIn
+                  .replace('{when}', formatDistanceToNow(new Date(order.expiresAt), { addSuffix: true, locale: dateLocale }))
+                  .replace('{datetime}', format(new Date(order.expiresAt), 'HH:mm dd/MM/yyyy'))}
               </div>
             )}
 
             {/* Polling notice */}
             <div className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs" style={{ background: 'var(--bg-3)', color: 'var(--fg-3)' }}>
               <Spinner size="sm" />
-              Tự động kiểm tra trạng thái mỗi 15 giây…
+              {ts.paymentAutoChecking}
             </div>
 
             {/* Actions */}
             <div className="flex flex-col gap-2">
               <Button onClick={() => void handleCheckStatus()} loading={checking} variant="secondary" className="w-full gap-2">
                 <RefreshCw size={14} />
-                Kiểm tra ngay
+                {ts.paymentCheckNow}
               </Button>
               <Button variant="ghost" onClick={handleClose} className="w-full text-sm">
-                Để sau
+                {ts.paymentLater}
               </Button>
             </div>
 

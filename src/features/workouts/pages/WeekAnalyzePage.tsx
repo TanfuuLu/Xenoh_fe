@@ -13,7 +13,7 @@ import { Button } from '@/shared/components/Button'
 import { Spinner } from '@/shared/components/Spinner'
 import { NotFoundPage } from '@/shared/components/NotFoundPage'
 import { motionProps, staggerContainer, slideUp } from '@/shared/utils/motion'
-import { useLangStore } from '@/shared/i18n'
+import { useT, useLangStore } from '@/shared/i18n'
 import { RequireTier } from '@/features/billing/components/RequireTier'
 import { useDailyWorkouts, useWeeklyWorkouts } from '../index'
 import type { ExerciseResponse } from '../types'
@@ -142,6 +142,8 @@ export function WeekAnalyzePage() {
   const shouldReduce = useReducedMotion()
   const lang = useLangStore((s) => s.lang)
   const dateLocale = lang === 'vi' ? viLocale : enUS
+  const t = useT()
+  const ta = t.weekAnalyze
 
   const { data: allWeeks, isError: weeksError } = useWeeklyWorkouts(planId)
   const { data: days, isLoading: daysLoading, isError: daysError } = useDailyWorkouts(weekId)
@@ -203,8 +205,8 @@ export function WeekAnalyzePage() {
   const totalActualVol = chartData.reduce((s, d) => s + d.actual, 0)
   const totalPlannedVol = chartData.reduce((s, d) => s + d.planned, 0)
   const totalEstimatedCalories = chartData.reduce((s, d) => s + d.calories, 0)
-  const completionPct = currentWeek && currentWeek.totalDays > 0
-    ? Math.round((currentWeek.completedDays / currentWeek.totalDays) * 100)
+  const completionPct = currentWeek && currentWeek.effectiveTotalDays > 0
+    ? Math.round((currentWeek.completedDays / currentWeek.effectiveTotalDays) * 100)
     : 0
 
   // Muscle group distribution (across whole week)
@@ -230,6 +232,7 @@ export function WeekAnalyzePage() {
     weekAverageRpe,
     muscleEntries,
     totalMuscleScore,
+    ta,
   })
 
   return (
@@ -244,10 +247,10 @@ export function WeekAnalyzePage() {
         </Link>
         <div className="min-w-0">
           <h1 className="break-words text-2xl font-bold text-text">
-            Weekly Analysis
+            {ta.title}
             {currentWeek && (
               <span className="block text-lg font-normal sm:ml-2 sm:inline" style={{ color: 'var(--fg-3)' }}>
-                — Week {currentWeek.weekNumber}
+                — {ta.week} {currentWeek.weekNumber}
               </span>
             )}
           </h1>
@@ -270,58 +273,58 @@ export function WeekAnalyzePage() {
       >
         <StatCard
           icon={<Calendar size={18} />}
-          label="Days Trained"
-          value={`${trainedDays} / ${orderedDays.filter((d) => d.totalExercises > 0).length}`}
-          sub={`${completionPct}% completion`}
+          label={ta.daysCompleted}
+          value={`${currentWeek?.completedDays ?? 0} / ${currentWeek?.effectiveTotalDays ?? orderedDays.length}`}
+          sub={`${completionPct}% · ${trainedDays} ${trainedDays !== 1 ? ta.workoutDays : ta.workoutDay}`}
         />
         <StatCard
           icon={<TrendingUp size={18} />}
-          label="Actual Volume"
+          label={ta.actualVolume}
           value={totalActualVol.toLocaleString()}
-          sub="kg · reps"
+          sub={ta.kgReps}
         />
         <StatCard
           icon={<Zap size={18} />}
-          label="Volume vs Plan"
+          label={ta.volumeVsPlan}
           value={`${volumeRatio}%`}
-          sub={totalPlannedVol > 0 ? `of ${totalPlannedVol.toLocaleString()} planned` : 'No plan set'}
+          sub={totalPlannedVol > 0 ? ta.ofPlanned.replace('{v}', totalPlannedVol.toLocaleString()) : ta.noPlanSet}
         />
         <StatCard
           icon={<Flame size={18} />}
-          label="Estimated Calories"
+          label={ta.estimatedCalories}
           value={totalEstimatedCalories > 0 ? totalEstimatedCalories.toLocaleString() : '—'}
-          sub={totalEstimatedCalories > 0 ? 'kcal this week' : 'No timed exercises'}
+          sub={totalEstimatedCalories > 0 ? ta.kcalThisWeek : ta.noTimedExercises}
         />
         <StatCard
           icon={<Timer size={18} />}
-          label="Total Time"
+          label={ta.totalTime}
           value={totalDurationSeconds > 0 ? formatDuration(totalDurationSeconds) : '—'}
-          sub={totalDurationSeconds > 0 ? 'timed exercises' : 'No timed exercises'}
+          sub={totalDurationSeconds > 0 ? ta.timedExercises : ta.noTimedExercises}
         />
         <StatCard
           icon={<Activity size={18} />}
-          label="Avg RPE"
+          label={ta.avgRpe}
           value={weekAverageRpe != null ? weekAverageRpe.toFixed(1) : '—'}
-          sub={weekAverageRpe != null ? 'rate of perceived exertion' : 'No RPE logged'}
+          sub={weekAverageRpe != null ? ta.rpeDesc : ta.noRpeLogged}
         />
         <StatCard
           icon={<AlertTriangle size={18} />}
-          label="Below Target"
+          label={ta.belowTarget}
           value={warnDays}
-          sub={warnDays === 1 ? 'day with warnings' : 'days with warnings'}
+          sub={warnDays === 1 ? ta.dayWithWarnings : ta.daysWithWarnings}
         />
         <StatCard
           icon={<BedDouble size={18} />}
-          label="Rest Days"
+          label={ta.restDays}
           value={restDays}
-          sub="intentional rest"
+          sub={ta.intentionalRest}
           accent="var(--xn-clay-200)"
         />
         <StatCard
           icon={<XCircle size={18} />}
-          label="Missed Days"
+          label={ta.missedDays}
           value={missedDays}
-          sub={missedDays === 1 ? 'day skipped' : 'days skipped'}
+          sub={missedDays === 1 ? ta.daySkipped : ta.daysSkipped}
           accent="rgba(239,68,68,0.1)"
         />
       </motion.div>
@@ -334,7 +337,7 @@ export function WeekAnalyzePage() {
         >
           <div className="flex items-center gap-2">
             <Zap size={16} style={{ color: 'var(--color-primary)' }} />
-            <h2 className="text-sm font-semibold text-text">Recommendations</h2>
+            <h2 className="text-sm font-semibold text-text">{ta.recommendations}</h2>
           </div>
           <div className="grid gap-3 lg:grid-cols-3">
             {weekInsights.map((insight) => (
@@ -350,7 +353,7 @@ export function WeekAnalyzePage() {
         className="rounded-xl p-4 space-y-3"
         style={{ background: 'var(--bg-2)', border: '1px solid var(--border-1)' }}
       >
-        <h2 className="text-sm font-semibold text-text">Training Days</h2>
+        <h2 className="text-sm font-semibold text-text">{ta.trainingDays}</h2>
         <div className="flex gap-2 overflow-x-auto pb-1 sm:overflow-visible sm:pb-0">
           {orderedDays.map((day) => {
             const dayLabel = format(new Date(day.date), 'EEE', { locale: dateLocale })
@@ -394,23 +397,23 @@ export function WeekAnalyzePage() {
         <div className="flex flex-wrap items-center gap-3 text-xs" style={{ color: 'var(--fg-3)' }}>
           <span className="flex items-center gap-1">
             <span className="inline-block w-3 h-3 rounded-sm" style={{ background: 'var(--color-primary)' }} />
-            Completed
+            {ta.completedLegend}
           </span>
           <span className="flex items-center gap-1">
             <span className="inline-block w-3 h-3 rounded-sm" style={{ background: 'var(--color-warning)' }} />
-            Below target
+            {ta.belowTargetLegend}
           </span>
           <span className="flex items-center gap-1">
             <span className="inline-block w-3 h-3 rounded-sm" style={{ background: 'var(--xn-clay-300)' }} />
-            Rest Day
+            {ta.restDayLegend}
           </span>
           <span className="flex items-center gap-1">
             <span className="inline-block w-3 h-3 rounded-sm" style={{ background: 'rgba(239,68,68,0.18)' }} />
-            Missed
+            {ta.missedLegend}
           </span>
           <span className="flex items-center gap-1">
             <span className="inline-block w-3 h-3 rounded-sm" style={{ background: 'var(--bg-3)' }} />
-            Pending
+            {ta.pendingLegend}
           </span>
         </div>
       </motion.div>
@@ -421,9 +424,9 @@ export function WeekAnalyzePage() {
         className="rounded-xl p-4 space-y-3"
         style={{ background: 'var(--bg-2)', border: '1px solid var(--border-1)' }}
       >
-        <h2 className="text-sm font-semibold text-text">Volume per Day (kg · reps)</h2>
+        <h2 className="text-sm font-semibold text-text">{ta.volumeChart}</h2>
         {totalPlannedVol === 0 && totalActualVol === 0 ? (
-          <p className="py-8 text-center text-sm text-muted">No exercise data for this week.</p>
+          <p className="py-8 text-center text-sm text-muted">{ta.noExerciseData}</p>
         ) : (
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }} barGap={4}>
@@ -447,8 +450,8 @@ export function WeekAnalyzePage() {
                 iconType="circle"
                 iconSize={8}
               />
-              <Bar dataKey="planned" name="Planned" fill="var(--border-1)" radius={[4, 4, 0, 0]} maxBarSize={32} />
-              <Bar dataKey="actual" name="Actual" fill="var(--color-primary)" radius={[4, 4, 0, 0]} maxBarSize={32} />
+              <Bar dataKey="planned" name={ta.planned} fill="var(--border-1)" radius={[4, 4, 0, 0]} maxBarSize={32} />
+              <Bar dataKey="actual" name={ta.actual} fill="var(--color-primary)" radius={[4, 4, 0, 0]} maxBarSize={32} />
             </BarChart>
           </ResponsiveContainer>
         )}
@@ -460,9 +463,9 @@ export function WeekAnalyzePage() {
         className="rounded-xl p-4 space-y-3"
         style={{ background: 'var(--bg-2)', border: '1px solid var(--border-1)' }}
       >
-        <h2 className="text-sm font-semibold text-text">Estimated Calories per Day</h2>
+        <h2 className="text-sm font-semibold text-text">{ta.caloriesChart}</h2>
         {totalEstimatedCalories === 0 ? (
-          <p className="py-8 text-center text-sm text-muted">No calorie estimates for this week.</p>
+          <p className="py-8 text-center text-sm text-muted">{ta.noCaloriesData}</p>
         ) : (
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
@@ -480,10 +483,10 @@ export function WeekAnalyzePage() {
                 width={48}
               />
               <Tooltip
-                formatter={(value) => [`${Number(value ?? 0).toLocaleString()} kcal`, 'Estimated']}
+                formatter={(value) => [`${Number(value ?? 0).toLocaleString()} kcal`, ta.estimated]}
                 cursor={{ fill: 'rgba(255,255,255,0.04)' }}
               />
-              <Bar dataKey="calories" name="Estimated" fill="var(--color-primary)" radius={[4, 4, 0, 0]} maxBarSize={36} />
+              <Bar dataKey="calories" name={ta.estimated} fill="var(--color-primary)" radius={[4, 4, 0, 0]} maxBarSize={36} />
             </BarChart>
           </ResponsiveContainer>
         )}
@@ -496,7 +499,7 @@ export function WeekAnalyzePage() {
           className="rounded-xl p-4 space-y-3"
           style={{ background: 'var(--bg-2)', border: '1px solid var(--border-1)' }}
         >
-          <h2 className="text-sm font-semibold text-text">Muscle Group Focus</h2>
+          <h2 className="text-sm font-semibold text-text">{ta.muscleFocus}</h2>
           <div className="space-y-2">
             {muscleEntries.map(([muscle, count]) => {
               const pct = totalMuscleScore > 0 ? Math.round((count / totalMuscleScore) * 100) : 0
@@ -560,6 +563,7 @@ function buildWeekInsights({
   weekAverageRpe,
   muscleEntries,
   totalMuscleScore,
+  ta,
 }: {
   completionPct: number
   volumeRatio: number
@@ -569,31 +573,32 @@ function buildWeekInsights({
   weekAverageRpe: number | null
   muscleEntries: [string, number][]
   totalMuscleScore: number
+  ta: ReturnType<typeof useT>['weekAnalyze']
 }): WeekInsight[] {
   const insights: WeekInsight[] = []
 
   if (completionPct < 50 || missedDays >= 2) {
     insights.push({
       severity: 'Critical',
-      title: 'Repeat or simplify this week',
-      message: 'Completion is low. Do not progress load until the key sessions are completed more consistently.',
-      metricLabel: 'Completion',
+      title: ta.insightRepeatTitle,
+      message: ta.insightRepeatMsg,
+      metricLabel: ta.completion,
       metricValue: `${completionPct}%`,
     })
   } else if (completionPct < 85 || warnDays > 0) {
     insights.push({
       severity: 'Warning',
-      title: 'Hold progression steady',
-      message: 'Some sessions missed target. Keep load stable and aim for cleaner execution next week.',
-      metricLabel: 'Warnings',
+      title: ta.insightHoldTitle,
+      message: ta.insightHoldMsg,
+      metricLabel: ta.warnings,
       metricValue: String(warnDays),
     })
   } else {
     insights.push({
       severity: 'Positive',
-      title: 'Good week for progression',
-      message: 'Completion is strong. Add a small load or rep increase to priority lifts if recovery feels good.',
-      metricLabel: 'Completion',
+      title: ta.insightProgressTitle,
+      message: ta.insightProgressMsg,
+      metricLabel: ta.completion,
       metricValue: `${completionPct}%`,
     })
   }
@@ -601,17 +606,17 @@ function buildWeekInsights({
   if (volumeRatio > 130) {
     insights.push({
       severity: 'Warning',
-      title: 'Volume exceeded plan',
-      message: 'Actual volume is far above planned volume. Watch fatigue and avoid another large jump immediately.',
-      metricLabel: 'Volume vs plan',
+      title: ta.insightVolumeHighTitle,
+      message: ta.insightVolumeHighMsg,
+      metricLabel: ta.volumeVsPlanLabel,
       metricValue: `${volumeRatio}%`,
     })
   } else if (volumeRatio > 0 && volumeRatio < 80) {
     insights.push({
       severity: 'Warning',
-      title: 'Volume below plan',
-      message: 'Actual volume is below planned work. Repeat this target before increasing load.',
-      metricLabel: 'Volume vs plan',
+      title: ta.insightVolumeLowTitle,
+      message: ta.insightVolumeLowMsg,
+      metricLabel: ta.volumeVsPlanLabel,
       metricValue: `${volumeRatio}%`,
     })
   }
@@ -619,9 +624,9 @@ function buildWeekInsights({
   if (weekAverageRpe != null && weekAverageRpe >= 8.5) {
     insights.push({
       severity: 'Warning',
-      title: 'Fatigue risk is high',
-      message: 'Average RPE is high. Use recovery work, rest, or a lighter week before pushing harder.',
-      metricLabel: 'Avg RPE',
+      title: ta.insightFatigueTitle,
+      message: ta.insightFatigueMsg,
+      metricLabel: ta.avgRpe,
       metricValue: weekAverageRpe.toFixed(1),
     })
   }
@@ -632,8 +637,8 @@ function buildWeekInsights({
     if (topPercent > 45) {
       insights.push({
         severity: 'Warning',
-        title: 'Muscle focus is narrow',
-        message: `${topMuscle[0]} dominates this week. Add balance if this was not intentional.`,
+        title: ta.insightNarrowTitle,
+        message: ta.insightNarrowMsg.replace('{muscle}', topMuscle[0]),
         metricLabel: topMuscle[0],
         metricValue: `${topPercent}%`,
       })
@@ -643,9 +648,9 @@ function buildWeekInsights({
   if (restDays === 0 && completionPct >= 85 && weekAverageRpe != null && weekAverageRpe >= 8) {
     insights.push({
       severity: 'Info',
-      title: 'Add recovery room',
-      message: 'Hard training with no rest days can accumulate fatigue. Consider at least one recovery day.',
-      metricLabel: 'Rest days',
+      title: ta.insightRecoveryTitle,
+      message: ta.insightRecoveryMsg,
+      metricLabel: ta.restDaysLabel,
       metricValue: '0',
     })
   }

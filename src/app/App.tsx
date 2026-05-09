@@ -4,10 +4,16 @@ import { QueryProvider } from './QueryProvider'
 import { router } from './Router'
 import { useEffect } from 'react'
 import { useAuthStore } from '@/features/auth'
+import { useLangStore } from '@/shared/i18n'
 import { initAxiosInterceptors } from '@/shared/api/axios'
 
 export function App() {
   const { setAuth, clear } = useAuthStore()
+  const lang = useLangStore((s) => s.lang)
+
+  useEffect(() => {
+    document.documentElement.lang = lang
+  }, [lang])
 
   useEffect(() => {
     initAxiosInterceptors(

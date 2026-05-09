@@ -18,6 +18,7 @@ import { useT } from '@/shared/i18n'
 import { useConfirm } from '@/shared/components/ConfirmModal'
 import { useCoachPlanOverview, useCreatePlanForUser, useDeletePlan } from '../index'
 import { useMyClients } from '@/features/coach-client'
+import { InlineTip } from '@/features/tips'
 import type { AxiosError } from 'axios'
 import type { ApiError } from '@/shared/types/api'
 
@@ -82,6 +83,8 @@ export function CoachPlansPage() {
           </Button>
         )}
       </div>
+
+      <InlineTip placement="coach-plans" audience="coach" />
 
       <motion.div
         initial={shouldReduce ? false : 'hidden'}

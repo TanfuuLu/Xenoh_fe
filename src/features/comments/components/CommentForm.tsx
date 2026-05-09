@@ -39,6 +39,12 @@ export function CommentForm({ onSubmit, isPending }: Props) {
             outline: 'none',
             lineHeight: 1.5,
           }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+              e.preventDefault()
+              if (!isPending) handleSubmit(submit)()
+            }
+          }}
           onFocus={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-primary)' }}
           onBlur={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-1)' }}
         />

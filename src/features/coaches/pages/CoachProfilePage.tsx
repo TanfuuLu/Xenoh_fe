@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { motion } from 'framer-motion'
-import { ChevronLeft, Users, Mail, FileText, Star, Flag, Trash2 } from 'lucide-react'
+import { ChevronLeft, Users, Mail, FileText, Star, Flag, Trash2, UserPlus, Ban } from 'lucide-react'
 import { Button } from '@/shared/components/Button'
 import { Card } from '@/shared/components/Card'
 import { Modal } from '@/shared/components/Modal'
@@ -11,6 +11,10 @@ import { UserAvatar } from '@/shared/components/UserAvatar'
 import { slideUp, staggerContainer } from '@/shared/utils/motion'
 import { useT } from '@/shared/i18n'
 import { useCreateUserReport } from '@/features/reports'
+import { useMyCoach } from '@/features/coach-client'
+import { ConnectCoachModal } from '@/features/coach-client/components/ConnectCoachModal'
+import { BlockUserModal } from '@/features/blocks/components/BlockUserModal'
+import { useAuthStore } from '@/features/auth'
 import type { ReportReason } from '@/shared/types/api'
 import { useCoachProfile, useCreateCoachRating, useDeleteCoachRating, useUpdateCoachRating } from '../index'
 
@@ -26,6 +30,10 @@ export function CoachProfilePage() {
   const [reportOpen, setReportOpen] = useState(false)
   const [reportReason, setReportReason] = useState<ReportReason>('Other')
   const [reportDetails, setReportDetails] = useState('')
+  const [connectOpen, setConnectOpen] = useState(false)
+  const [blockOpen, setBlockOpen] = useState(false)
+  const { data: myCoach } = useMyCoach()
+  const isCoachRole = useAuthStore((s) => s.user?.roles?.includes('Coach'))
   const t   = useT()
   const tcp = t.coachProfile
 
@@ -40,6 +48,7 @@ export function CoachProfilePage() {
   if (!coach) return <p className="text-muted">{tcp.notFound}</p>
 
   const myRating = coach.myRating
+  const canConnect = !myCoach && !isCoachRole
 
   function submitRating() {
     const payload = { rating, comment: comment.trim() || null }
@@ -111,9 +120,19 @@ export function CoachProfilePage() {
               </p>
             </div>
 
-            <Button variant="ghost" size="sm" onClick={() => setReportOpen(true)}>
-              <Flag size={15} /> Report user
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              {canConnect && (
+                <Button size="sm" onClick={() => setConnectOpen(true)}>
+                  <UserPlus size={15} /> Kết nối
+                </Button>
+              )}
+              <Button variant="ghost" size="sm" onClick={() => setReportOpen(true)}>
+                <Flag size={15} /> Báo cáo
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setBlockOpen(true)}>
+                <Ban size={15} /> Chặn
+              </Button>
+            </div>
           </Card>
         </motion.div>
 
@@ -223,6 +242,20 @@ export function CoachProfilePage() {
           </div>
         </div>
       </Modal>
+
+      <ConnectCoachModal
+        open={connectOpen}
+        coachId={coachId}
+        coachName={coach.fullName}
+        onClose={() => setConnectOpen(false)}
+      />
+
+      <BlockUserModal
+        open={blockOpen}
+        userId={coachId}
+        userName={coach.fullName}
+        onClose={() => setBlockOpen(false)}
+      />
     </div>
   )
 }

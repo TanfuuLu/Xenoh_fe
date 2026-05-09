@@ -10,6 +10,8 @@ export interface WeeklyWorkoutResponse {
   totalDays: number
   completedDays: number
   hasWarning: boolean
+  isCompleted: boolean
+  effectiveTotalDays: number
 }
 
 export interface DailyWorkoutResponse {
@@ -74,6 +76,15 @@ export interface ExerciseTemplateResponse {
   isCustom: boolean
   ownerId: string | null
   imageUrl: string | null
+}
+
+export interface LastExercisePerformanceResponse {
+  exerciseTemplateId: string
+  lastActualWeight: number | null
+  lastActualReps: number | null
+  lastRpe: number | null
+  performedAt: string | null
+  workoutDate: string | null
 }
 
 export interface CustomExerciseTemplateRequest {

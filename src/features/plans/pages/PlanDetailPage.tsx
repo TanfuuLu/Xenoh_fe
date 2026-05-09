@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
-import { ChevronRight, ChevronLeft, Pencil, CheckCircle2, AlertTriangle } from 'lucide-react'
+import { ChevronRight, ChevronLeft, Pencil, CheckCircle2, AlertTriangle, Sparkles } from 'lucide-react'
 import { format } from 'date-fns'
 import { useQueries } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
@@ -18,8 +18,9 @@ import { staggerContainer, slideUp } from '@/shared/utils/motion'
 import { useAuthStore } from '@/features/auth'
 import { useT } from '@/shared/i18n'
 import { NotFoundPage } from '@/shared/components/NotFoundPage'
-import { usePlan } from '../index'
+import { usePlan, usePlanBalanceCheck } from '../index'
 import { useWeeklyWorkouts, useUpdateWeeklyWorkout } from '@/features/workouts'
+import { InlineTip } from '@/features/tips'
 import type { DailyWorkoutResponse, WeeklyWorkoutResponse } from '@/features/workouts'
 import { CommentSection } from '@/features/comments/components/CommentSection'
 import { usePlanComments, useAddPlanComment, useDeletePlanComment } from '@/features/comments/api/usePlanComments'
@@ -39,6 +40,7 @@ export function PlanDetailPage() {
   const { data: comments = [], isLoading: commentsLoading } = usePlanComments(planId)
   const { mutateAsync: addComment, isPending: addingComment } = useAddPlanComment(planId)
   const { mutate: deleteComment, isPending: deletingComment } = useDeletePlanComment(planId)
+  const { mutate: runBalanceCheck, data: balanceReview, isPending: checkingBalance, error: balanceError } = usePlanBalanceCheck(planId)
   const t   = useT()
   const tpd = t.planDetail
   const tc  = t.common
@@ -100,7 +102,7 @@ export function PlanDetailPage() {
         <Link to="/plans">
           <Button variant="ghost" size="sm"><ChevronLeft size={16} /></Button>
         </Link>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <h1 className="min-w-0 break-words text-2xl font-bold text-text">{plan.name}</h1>
             {plan.isActive && <Badge variant="success">{tc.active}</Badge>}
@@ -110,7 +112,60 @@ export function PlanDetailPage() {
             &nbsp;·&nbsp;{plan.totalWeeks} {tc.weeks}
           </p>
         </div>
+        <Button
+          variant="secondary"
+          size="sm"
+          className="gap-1.5"
+          onClick={() => runBalanceCheck()}
+          loading={checkingBalance}
+        >
+          <Sparkles size={15} /> Balance check
+        </Button>
       </div>
+
+      <InlineTip placement="plan-detail" />
+
+      {balanceReview && (
+        <div
+          className="rounded-xl border p-4"
+          style={{ borderColor: 'var(--border-1)', background: 'var(--bg-2)' }}
+        >
+          <div className="flex flex-wrap items-center gap-2">
+            <Sparkles size={16} style={{ color: 'var(--xn-clay-700)' }} />
+            <h2 className="font-semibold text-text">{balanceReview.headline}</h2>
+            <Badge variant={balanceReview.severity === 'High' ? 'danger' : balanceReview.severity === 'Medium' ? 'warning' : 'success'}>
+              {balanceReview.severity}
+            </Badge>
+          </div>
+          <p className="mt-2 text-sm text-muted">{balanceReview.summary}</p>
+          {(balanceReview.warnings.length > 0 || balanceReview.suggestions.length > 0) && (
+            <div className="mt-3 grid gap-3 md:grid-cols-2">
+              {balanceReview.warnings.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted">Warnings</p>
+                  <ul className="mt-1 space-y-1 text-sm text-text">
+                    {balanceReview.warnings.map((item, index) => <li key={index}>- {item}</li>)}
+                  </ul>
+                </div>
+              )}
+              {balanceReview.suggestions.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted">Suggestions</p>
+                  <ul className="mt-1 space-y-1 text-sm text-text">
+                    {balanceReview.suggestions.map((item, index) => <li key={index}>- {item}</li>)}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {balanceError && (
+        <p className="text-sm text-danger">
+          {((balanceError as { response?: { data?: { message?: string } } }).response?.data?.message) ?? 'Could not run balance check.'}
+        </p>
+      )}
 
       <div className="space-y-2">
         <div className="flex justify-end gap-2">

@@ -43,10 +43,21 @@ export const ENDPOINTS = {
     requestTermination: (id: string) => `/api/coach-client/${id}/request-termination`,
     acceptTermination: (id: string) => `/api/coach-client/${id}/accept-termination`,
     rejectTermination: (id: string) => `/api/coach-client/${id}/reject-termination`,
+    requestRenewal: (id: string) => `/api/coach-client/${id}/request-renewal`,
+    acceptRenewal: (id: string) => `/api/coach-client/${id}/accept-renewal`,
+    rejectRenewal: (id: string) => `/api/coach-client/${id}/reject-renewal`,
     pendingRequests: '/api/coach-client/pending-requests',
     myCoach: '/api/coach-client/my-coach',
     myClients: '/api/coach-client/my-clients',
     dashboard: '/api/coach-client/dashboard',
+    clientPowerlifting: (clientId: string) => `/api/coach-client/clients/${clientId}/powerlifting`,
+  },
+
+  // Blocks
+  blocks: {
+    block: (userId: string) => `/api/users/${userId}/block`,
+    unblock: (userId: string) => `/api/users/${userId}/block`,
+    list: '/api/users/me/blocks',
   },
 
   // Plans
@@ -61,6 +72,8 @@ export const ENDPOINTS = {
     analytics: (id: string) => `/api/plans/${id}/analytics`,
     coachOverview: '/api/plans/coach-overview',
     forUser: '/api/plans/for-user',
+    starterAi: '/api/plans/starter-ai',
+    balanceCheck: (id: string, lang: 'en' | 'vi') => `/api/plans/${id}/balance-check?lang=${lang}`,
   },
 
   // Weekly Workouts
@@ -96,6 +109,8 @@ export const ENDPOINTS = {
     custom: '/api/exercise-templates/custom',
     customById: (id: string) => `/api/exercise-templates/custom/${id}`,
     customForClient: (clientId: string) => `/api/exercise-templates/custom/for-client/${clientId}`,
+    lastPerformance: (exerciseTemplateId: string, dailyWorkoutId: string) =>
+      `/api/exercise-templates/${exerciseTemplateId}/last-performance?dailyWorkoutId=${dailyWorkoutId}`,
   },
 
   // Leaderboard
@@ -134,6 +149,11 @@ export const ENDPOINTS = {
     clientLog: (clientId: string, date: string) => `/api/nutrition/clients/${clientId}/logs/${date}`,
     clientHistory: (clientId: string, from: string, to: string) =>
       `/api/nutrition/clients/${clientId}/history?from=${from}&to=${to}`,
+  },
+
+  // Insights (AI-generated user analysis)
+  insights: {
+    me: (lang: 'en' | 'vi') => `/api/insights/me?lang=${lang}`,
   },
 
   // Notifications

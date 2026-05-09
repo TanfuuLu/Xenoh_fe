@@ -1,6 +1,7 @@
 import { Lock } from 'lucide-react'
 import { useNavigate } from 'react-router'
 import { Button } from '@/shared/components/Button'
+import { useT } from '@/shared/i18n'
 import { TIER_LABELS } from '../types'
 import type { PlanTier } from '../types'
 
@@ -10,6 +11,8 @@ interface Props {
 }
 
 export function UpgradePrompt({ feature, requiredTier }: Props) {
+  const t = useT()
+  const ts = t.subscription
   const navigate = useNavigate()
 
   return (
@@ -24,13 +27,15 @@ export function UpgradePrompt({ feature, requiredTier }: Props) {
         <Lock size={22} style={{ color: 'var(--fg-3)' }} />
       </div>
       <div className="flex flex-col gap-1">
-        <p className="font-semibold" style={{ color: 'var(--fg-1)' }}>{feature} is a Pro feature</p>
+        <p className="font-semibold" style={{ color: 'var(--fg-1)' }}>
+          {ts.upgradeFeatureProTitle.replace('{feature}', feature)}
+        </p>
         <p className="text-sm" style={{ color: 'var(--fg-3)' }}>
-          Upgrade to {TIER_LABELS[requiredTier]} to unlock this feature.
+          {ts.upgradeUnlockHint.replace('{tier}', TIER_LABELS[requiredTier])}
         </p>
       </div>
       <Button onClick={() => navigate('/subscription')} size="sm" className="gap-1.5">
-        View Plans
+        {ts.upgradeViewPlans}
       </Button>
     </div>
   )

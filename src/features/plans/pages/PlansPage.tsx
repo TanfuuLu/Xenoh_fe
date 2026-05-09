@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useNavigate } from 'react-router'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
-import { Plus, ChevronRight, Zap, ZapOff, Trash2, BarChart2 } from 'lucide-react'
+import { Plus, ChevronRight, Zap, ZapOff, Trash2, BarChart2, Sparkles } from 'lucide-react'
 import { format } from 'date-fns'
 import { Card } from '@/shared/components/Card'
 import { Button } from '@/shared/components/Button'
@@ -18,10 +18,14 @@ import { useConfirm } from '@/shared/components/ConfirmModal'
 import { staggerContainer, slideUp } from '@/shared/utils/motion'
 import { useT } from '@/shared/i18n'
 import { useAuthStore } from '@/features/auth'
+import { useSubscription } from '@/features/billing/api/useSubscription'
 import { useMyClients } from '@/features/coach-client'
+import { InlineTip } from '@/features/tips'
+import { useLangStore } from '@/shared/i18n'
 import {
   usePlans,
   useCreatePlan,
+  useCreateAiStarterPlan,
   useActivatePlan,
   useDeactivatePlan,
   useDeletePlan,
@@ -37,12 +41,14 @@ export function PlansPage() {
   const navigate = useNavigate()
   const isCoach = useAuthStore((s) => s.user?.roles?.includes('Coach') ?? false)
   const [showCreate, setShowCreate] = useState(false)
+  const [showStarterPlan, setShowStarterPlan] = useState(false)
   const [showCreateClientPlan, setShowCreateClientPlan] = useState(false)
 
   const { data: plans, isLoading } = usePlans()
   const { data: clientPlans, isLoading: clientPlansLoading } = useCoachPlanOverview(isCoach)
   const { data: clients, isLoading: clientsLoading } = useMyClients(isCoach)
   const { mutate: createPlan, isPending: creating, error: createError } = useCreatePlan()
+  const { mutate: createStarterPlan, isPending: creatingStarterPlan, error: starterPlanError } = useCreateAiStarterPlan()
   const { mutate: createClientPlan, isPending: creatingClientPlan, error: createClientPlanError } = useCreatePlanForUser()
   const { mutate: activate } = useActivatePlan()
   const { mutate: deactivate } = useDeactivatePlan()
@@ -53,11 +59,12 @@ export function PlansPage() {
   const tp = t.plans
   const tcp = t.coachPlans
   const tc = t.common
+  const lang = useLangStore((s) => s.lang)
 
   const activeClients = clients?.filter((c) => c.status === 'Active') ?? []
-  // TEMP TEST BYPASS: every user can create unlimited personal plans while testing.
-  const subscriptionLoading = false
-  const hasUnlimitedPlans = true
+  const isAdmin = useAuthStore((s) => s.user?.roles?.includes('Admin') ?? false)
+  const { data: subscription, isLoading: subscriptionLoading } = useSubscription()
+  const hasUnlimitedPlans = isAdmin || (subscription?.isActive === true && subscription?.tier !== 'Free')
   const canCreatePersonalPlan = hasUnlimitedPlans || (plans?.length ?? 0) < 3
   const planLimitLabel = hasUnlimitedPlans ? 'unlimited' : '3'
   const displayedPlans = useMemo(
@@ -88,8 +95,22 @@ export function PlansPage() {
     path: ['endDate'],
   })
 
+  const starterPlanSchema = z.object({
+    goal: z.enum(['strength', 'hypertrophy', 'general_fitness', 'fat_loss']),
+    experience: z.enum(['beginner', 'intermediate', 'advanced']),
+    daysPerWeek: z.number().min(2).max(5),
+    equipment: z.enum(['full_gym', 'barbell', 'dumbbells', 'home_gym', 'bodyweight']),
+    startDate: z.string().min(1, tp.requiredError),
+    endDate: z.string().min(1, tp.requiredError),
+    description: z.string().max(500).optional(),
+  }).refine((d) => d.endDate > d.startDate, {
+    message: tp.endDateError,
+    path: ['endDate'],
+  })
+
   type FormData = z.infer<typeof schema>
   type ClientPlanFormData = z.infer<typeof clientPlanSchema>
+  type StarterPlanFormData = z.infer<typeof starterPlanSchema>
 
   const {
     register,
@@ -106,6 +127,22 @@ export function PlansPage() {
     control: clientPlanControl,
     formState: { errors: clientPlanErrors },
   } = useForm<ClientPlanFormData>({ resolver: zodResolver(clientPlanSchema) })
+
+  const {
+    register: registerStarterPlan,
+    handleSubmit: handleSubmitStarterPlan,
+    reset: resetStarterPlan,
+    control: starterPlanControl,
+    formState: { errors: starterPlanErrors },
+  } = useForm<StarterPlanFormData>({
+    resolver: zodResolver(starterPlanSchema),
+    defaultValues: {
+      goal: 'strength',
+      experience: 'beginner',
+      daysPerWeek: 3,
+      equipment: 'full_gym',
+    },
+  })
 
   function onSubmit(data: FormData) {
     createPlan(data, {
@@ -125,6 +162,16 @@ export function PlansPage() {
     })
   }
 
+  function onSubmitStarterPlan(data: StarterPlanFormData) {
+    createStarterPlan({ ...data, language: lang }, {
+      onSuccess: (plan) => {
+        resetStarterPlan()
+        setShowStarterPlan(false)
+        navigate(`/plans/${plan.id}`)
+      },
+    })
+  }
+
   async function handleClientPlanDelete(id: string, name: string) {
     if (await confirm(tcp.deleteConfirm.replace('{name}', name), { confirmLabel: t.common.delete, danger: true })) {
       deletePlan(id)
@@ -132,6 +179,7 @@ export function PlansPage() {
   }
 
   const apiError = (createError as AxiosError<ApiError>)?.response?.data?.message
+  const starterPlanApiError = (starterPlanError as AxiosError<ApiError>)?.response?.data?.message
   const clientPlanApiError = (createClientPlanError as AxiosError<ApiError>)?.response?.data?.message
   const loading = isLoading || subscriptionLoading || (isCoach && (clientPlansLoading || clientsLoading))
 
@@ -156,11 +204,18 @@ export function PlansPage() {
           </p>
         </div>
         {canCreatePersonalPlan && (
-          <Button onClick={() => setShowCreate(true)} size="sm" className="w-full sm:w-auto">
-            <Plus size={16} /> {tp.createPlan}
-          </Button>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button onClick={() => setShowStarterPlan(true)} size="sm" variant="secondary" className="w-full gap-1.5 sm:w-auto">
+              <Sparkles size={16} /> AI starter
+            </Button>
+            <Button onClick={() => setShowCreate(true)} size="sm" className="w-full sm:w-auto">
+              <Plus size={16} /> {tp.createPlan}
+            </Button>
+          </div>
         )}
       </div>
+
+      <InlineTip placement="plans" />
 
       <section className="space-y-3">
         <motion.div
@@ -284,6 +339,130 @@ export function PlansPage() {
             </Button>
             <Button type="submit" className="w-full sm:w-auto" loading={creating}>
               {tp.create}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal open={showStarterPlan} onClose={() => setShowStarterPlan(false)} title="AI starter plan">
+        <form onSubmit={handleSubmitStarterPlan(onSubmitStarterPlan)} className="space-y-4">
+          <Controller
+            name="goal"
+            control={starterPlanControl}
+            render={({ field }) => (
+              <Select
+                label="Goal"
+                value={field.value}
+                onChange={field.onChange}
+                error={starterPlanErrors.goal?.message}
+                options={[
+                  { value: 'strength', label: 'Strength' },
+                  { value: 'hypertrophy', label: 'Hypertrophy' },
+                  { value: 'general_fitness', label: 'General fitness' },
+                  { value: 'fat_loss', label: 'Fat loss' },
+                ]}
+              />
+            )}
+          />
+          <Controller
+            name="experience"
+            control={starterPlanControl}
+            render={({ field }) => (
+              <Select
+                label="Experience"
+                value={field.value}
+                onChange={field.onChange}
+                error={starterPlanErrors.experience?.message}
+                options={[
+                  { value: 'beginner', label: 'Beginner' },
+                  { value: 'intermediate', label: 'Intermediate' },
+                  { value: 'advanced', label: 'Advanced' },
+                ]}
+              />
+            )}
+          />
+          <Controller
+            name="daysPerWeek"
+            control={starterPlanControl}
+            render={({ field }) => (
+              <Select
+                label="Days per week"
+                value={String(field.value ?? '')}
+                onChange={(value) => field.onChange(Number(value))}
+                error={starterPlanErrors.daysPerWeek?.message}
+                options={[
+                  { value: '2', label: '2 days' },
+                  { value: '3', label: '3 days' },
+                  { value: '4', label: '4 days' },
+                  { value: '5', label: '5 days' },
+                ]}
+              />
+            )}
+          />
+          <Controller
+            name="equipment"
+            control={starterPlanControl}
+            render={({ field }) => (
+              <Select
+                label="Equipment"
+                value={field.value}
+                onChange={field.onChange}
+                error={starterPlanErrors.equipment?.message}
+                options={[
+                  { value: 'full_gym', label: 'Full gym' },
+                  { value: 'barbell', label: 'Barbell focused' },
+                  { value: 'dumbbells', label: 'Dumbbells' },
+                  { value: 'home_gym', label: 'Home gym' },
+                  { value: 'bodyweight', label: 'Bodyweight' },
+                ]}
+              />
+            )}
+          />
+          <Controller
+            name="startDate"
+            control={starterPlanControl}
+            render={({ field: startField }) => (
+              <Controller
+                name="endDate"
+                control={starterPlanControl}
+                render={({ field: endField }) => (
+                  <DateRangePicker
+                    startLabel={tp.startDateLabel}
+                    endLabel={tp.endDateLabel}
+                    startValue={startField.value}
+                    endValue={endField.value}
+                    onStartChange={startField.onChange}
+                    onEndChange={endField.onChange}
+                    startError={starterPlanErrors.startDate?.message}
+                    endError={starterPlanErrors.endDate?.message}
+                  />
+                )}
+              />
+            )}
+          />
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium" style={{ color: 'var(--fg-1)' }}>
+              Plan description
+            </label>
+            <textarea
+              rows={4}
+              maxLength={500}
+              placeholder="Optional: injuries to avoid, preferred split, weak points, time limits..."
+              className="xn-input min-h-28 resize-none"
+              {...registerStarterPlan('description')}
+            />
+            <div className="flex justify-between gap-2 text-xs text-muted">
+              <span>{starterPlanErrors.description?.message}</span>
+              <span>Max 500 characters</span>
+            </div>
+          </div>
+          {starterPlanApiError && <p className="text-sm text-danger">{starterPlanApiError}</p>}
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variant="secondary" type="button" className="w-full sm:w-auto" onClick={() => setShowStarterPlan(false)}>
+              {tc.cancel}
+            </Button>
+            <Button type="submit" className="w-full gap-1.5 sm:w-auto" loading={creatingStarterPlan}>
+              <Sparkles size={15} /> Create plan
             </Button>
           </div>
         </form>
