@@ -2,13 +2,15 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/shared/api/axios'
 import { ENDPOINTS } from '@/shared/api/endpoints'
 import { coachKeys } from '@/features/coaches/api/useCoaches'
-import type { ClientResponse, CoachClientDashboardResponse, CoachRelationshipResponse, RequestCoachRequest, RequestRenewalRequest } from '../types'
+import { useLangStore } from '@/shared/i18n'
+import type { ClientResponse, CoachClientAiBriefResponse, CoachClientDashboardResponse, CoachRelationshipResponse, RequestCoachRequest, RequestRenewalRequest } from '../types'
 
 export const coachClientKeys = {
   pendingRequests: ['coach-client', 'pending'] as const,
   myCoach: ['coach-client', 'my-coach'] as const,
   myClients: ['coach-client', 'my-clients'] as const,
   dashboard: ['coach-client', 'dashboard'] as const,
+  aiBrief: (clientId: string, lang: 'en' | 'vi') => ['coach-client', clientId, 'ai-brief', lang] as const,
 }
 
 export function usePendingRequests() {
@@ -21,13 +23,14 @@ export function usePendingRequests() {
   })
 }
 
-export function useMyCoach() {
+export function useMyCoach(enabled = true) {
   return useQuery({
     queryKey: coachClientKeys.myCoach,
     queryFn: () =>
       api
         .get<CoachRelationshipResponse | null>(ENDPOINTS.coachClient.myCoach)
         .then((r) => r.data),
+    enabled,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
     // Poll every 8s while waiting for coach to accept so client sees update without manual refresh
@@ -50,6 +53,19 @@ export function useCoachDashboard(enabled = true) {
     queryFn: () =>
       api.get<CoachClientDashboardResponse[]>(ENDPOINTS.coachClient.dashboard).then((r) => r.data),
     enabled,
+  })
+}
+
+export function useCoachClientAiBrief(clientId: string, enabled = true) {
+  const lang = useLangStore((s) => s.lang)
+  return useQuery({
+    queryKey: coachClientKeys.aiBrief(clientId, lang),
+    queryFn: () =>
+      api
+        .get<CoachClientAiBriefResponse>(ENDPOINTS.coachClient.aiBrief(clientId, lang))
+        .then((r) => r.data),
+    enabled: enabled && !!clientId,
+    retry: false,
   })
 }
 

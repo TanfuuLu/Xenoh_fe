@@ -4,7 +4,7 @@ import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { motion } from 'framer-motion'
-import { ChevronLeft, Activity, Flame, Scale, Dumbbell, Plus, Ruler, CalendarDays, Users, ClipboardList, Utensils, Pencil, Trash2 } from 'lucide-react'
+import { ChevronLeft, Activity, Flame, Scale, Dumbbell, Plus, Ruler, CalendarDays, Users, ClipboardList, Utensils, Pencil, Trash2, Sparkles } from 'lucide-react'
 import { format } from 'date-fns'
 import {
   CartesianGrid,
@@ -218,16 +218,23 @@ export function ClientProfilePage() {
       {ConfirmDialog}
 
       {/* Header */}
-      <div className="flex items-start gap-2">
-        <Link to="/coach/clients">
-          <Button variant="ghost" size="sm"><ChevronLeft size={16} /></Button>
-        </Link>
-        <div className="min-w-0">
-          <h1 className="break-words text-2xl font-bold text-text">
-            {profile.firstName} {profile.lastName}
-          </h1>
-          <p className="truncate text-sm text-muted">{profile.email}</p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex min-w-0 items-start gap-2">
+          <Link to="/coach/clients">
+            <Button variant="ghost" size="sm"><ChevronLeft size={16} /></Button>
+          </Link>
+          <div className="min-w-0">
+            <h1 className="break-words text-2xl font-bold text-text">
+              {profile.firstName} {profile.lastName}
+            </h1>
+            <p className="truncate text-sm text-muted">{profile.email}</p>
+          </div>
         </div>
+        <Link to={`/coach/clients/${clientId}/ai-insight`} className="self-start">
+          <Button type="button" size="sm" variant="secondary">
+            <Sparkles size={15} /> AI Insight
+          </Button>
+        </Link>
       </div>
 
       {/* Key stats */}

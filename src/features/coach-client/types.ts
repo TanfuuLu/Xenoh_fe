@@ -68,3 +68,15 @@ export interface CoachClientDashboardResponse {
   attentionLevel: 'None' | 'Low' | 'Medium' | 'High'
   attentionReasons: string[]
 }
+
+export interface CoachClientAiBriefResponse {
+  language: 'en' | 'vi'
+  generatedAt: string
+  cached: boolean
+  headline: string
+  attentionLevel: 'None' | 'Low' | 'Medium' | 'High'
+  progressSummary: string
+  risks: string[]
+  opportunities: string[]
+  suggestedMessage: string
+}

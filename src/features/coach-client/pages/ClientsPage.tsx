@@ -611,6 +611,7 @@ export function ClientsPage() {
           onClose={() => setRenewalTarget(null)}
         />
       )}
+
     </div>
     </>
   )

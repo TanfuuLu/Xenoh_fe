@@ -51,6 +51,8 @@ export const ENDPOINTS = {
     myClients: '/api/coach-client/my-clients',
     dashboard: '/api/coach-client/dashboard',
     clientPowerlifting: (clientId: string) => `/api/coach-client/clients/${clientId}/powerlifting`,
+    aiBrief: (clientId: string, lang: 'en' | 'vi') =>
+      `/api/coach-client/clients/${clientId}/ai-brief?lang=${lang}`,
   },
 
   // Blocks
@@ -87,6 +89,8 @@ export const ENDPOINTS = {
     byWeek: (weeklyWorkoutId: string) => `/api/weeks/${weeklyWorkoutId}/days`,
     copy: (sourceDailyWorkoutId: string) => `/api/days/${sourceDailyWorkoutId}/copy`,
     markStatus: (dailyWorkoutId: string) => `/api/days/${dailyWorkoutId}/status`,
+    aiGuidance: (dailyWorkoutId: string, lang: 'en' | 'vi') =>
+      `/api/days/${dailyWorkoutId}/ai-guidance?lang=${lang}`,
   },
 
   // Exercises

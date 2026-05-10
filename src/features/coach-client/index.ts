@@ -12,6 +12,7 @@ export {
   useMyCoach,
   useMyClients,
   useCoachDashboard,
+  useCoachClientAiBrief,
 } from './api/useCoachClient'
 export type {
   CoachRelationshipResponse,
@@ -19,5 +20,6 @@ export type {
   RequestCoachRequest,
   RequestRenewalRequest,
   CoachClientDashboardResponse,
+  CoachClientAiBriefResponse,
   BigThreePRs,
 } from './types'

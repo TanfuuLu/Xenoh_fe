@@ -135,3 +135,14 @@ export interface CopyDayResponse {
   targetDailyWorkoutId: string
   exercisesCopied: number
 }
+
+export interface WorkoutGuidanceResponse {
+  language: 'en' | 'vi'
+  generatedAt: string
+  cached: boolean
+  headline: string
+  readiness: 'Low' | 'Moderate' | 'High'
+  recommendedAdjustments: string[]
+  cautionFlags: string[]
+  nextBestActions: string[]
+}

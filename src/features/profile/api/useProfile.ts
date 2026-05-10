@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/shared/api/axios'
 import { ENDPOINTS } from '@/shared/api/endpoints'
 import { useAuthStore } from '@/features/auth'
+import { coachKeys } from '@/features/coaches/api/useCoaches'
 import type {
   BodyweightLogResponse,
   LogBodyweightRequest,
@@ -37,6 +38,8 @@ export function useUpdateProfile() {
         fullName: `${data.firstName} ${data.lastName}`.trim(),
         avatarUrl: data.avatarUrl,
       })
+      void qc.invalidateQueries({ queryKey: coachKeys.all })
+      void qc.invalidateQueries({ queryKey: coachKeys.profile(data.id) })
     },
   })
 }

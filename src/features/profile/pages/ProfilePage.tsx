@@ -112,7 +112,6 @@ export function ProfilePage() {
 
   function onSaveProfile(data: ProfileForm) {
     updateProfile({
-      ...data,
       firstName: data.firstName.trim(),
       lastName: data.lastName.trim(),
       bio: data.bio?.trim() || undefined,

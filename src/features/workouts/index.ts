@@ -1,5 +1,5 @@
 export { useWeeklyWorkouts, useUpdateWeeklyWorkout } from './api/useWeeklyWorkouts'
-export { useDailyWorkouts, useCopyDay, useMarkDayStatus } from './api/useDailyWorkouts'
+export { useDailyWorkouts, useCopyDay, useMarkDayStatus, useDailyWorkoutGuidance } from './api/useDailyWorkouts'
 export {
   useExercises,
   useCreateExercise,
@@ -34,4 +34,5 @@ export type {
   ReorderExercisesRequest,
   CopyDayRequest,
   CopyDayResponse,
+  WorkoutGuidanceResponse,
 } from './types'

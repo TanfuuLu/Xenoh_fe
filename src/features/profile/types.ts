@@ -1,4 +1,5 @@
 import type { Gender } from '@/shared/types/api'
+import type { CoachMarketplaceProfile, CoachPackage } from '@/features/coaches'
 
 export interface UserProfileResponse {
   id: string
@@ -19,6 +20,8 @@ export interface UserProfileResponse {
   totalXp: number
   xpToNextLevel: number
   title: string
+  coachMarketplaceProfile: CoachMarketplaceProfile | null
+  coachPackages: CoachPackage[] | null
 }
 
 export interface PublicUserProfileResponse {
@@ -43,6 +46,8 @@ export interface UpdateProfileRequest {
   height?: number
   gender?: Gender
   dateOfBirth?: string
+  coachMarketplaceProfile?: CoachMarketplaceProfile
+  coachPackages?: CoachPackage[]
 }
 
 export interface BodyweightLogResponse {

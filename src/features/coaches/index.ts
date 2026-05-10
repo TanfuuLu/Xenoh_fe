@@ -5,4 +5,11 @@ export {
   useUpdateCoachRating,
   useDeleteCoachRating,
 } from './api/useCoaches'
-export type { CoachResponse, CoachProfileResponse, CoachRatingResponse, CoachRatingRequest } from './types'
+export type {
+  CoachMarketplaceProfile,
+  CoachPackage,
+  CoachProfileResponse,
+  CoachRatingRequest,
+  CoachRatingResponse,
+  CoachResponse,
+} from './types'

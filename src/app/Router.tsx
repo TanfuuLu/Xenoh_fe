@@ -22,8 +22,10 @@ const ProfilePage = lazy(() => import('@/features/profile/pages/ProfilePage').th
 const ChangePasswordPage = lazy(() => import('@/features/profile/pages/ChangePasswordPage').then((m) => ({ default: m.ChangePasswordPage })))
 const ExerciseTrackingPage = lazy(() => import('@/features/exercise-tracking/pages/ExerciseTrackingPage').then((m) => ({ default: m.ExerciseTrackingPage })))
 const CoachesPage = lazy(() => import('@/features/coaches/pages/CoachesPage').then((m) => ({ default: m.CoachesPage })))
+const CoachMarketplacePage = lazy(() => import('@/features/coaches/pages/CoachMarketplacePage').then((m) => ({ default: m.CoachMarketplacePage })))
 const ClientsPage = lazy(() => import('@/features/coach-client/pages/ClientsPage').then((m) => ({ default: m.ClientsPage })))
 const ClientProfilePage = lazy(() => import('@/features/profile/pages/ClientProfilePage').then((m) => ({ default: m.ClientProfilePage })))
+const ClientAiInsightPage = lazy(() => import('@/features/profile/pages/ClientAiInsightPage').then((m) => ({ default: m.ClientAiInsightPage })))
 const CoachProfilePage = lazy(() => import('@/features/coaches/pages/CoachProfilePage').then((m) => ({ default: m.CoachProfilePage })))
 const ProgressPage = lazy(() => import('@/features/progress/pages/ProgressPage').then((m) => ({ default: m.ProgressPage })))
 const NutritionPage = lazy(() => import('@/features/nutrition/pages/NutritionPage').then((m) => ({ default: m.NutritionPage })))
@@ -186,8 +188,16 @@ export const router = createBrowserRouter([
                 element: <Suspended><ClientProfilePage /></Suspended>,
               },
               {
+                path: 'coach/clients/:clientId/ai-insight',
+                element: <Suspended><ClientAiInsightPage /></Suspended>,
+              },
+              {
                 path: 'coach/clients/:clientId/nutrition',
                 element: <Suspended><NutritionPage /></Suspended>,
+              },
+              {
+                path: 'coach/marketplace',
+                element: <Suspended><CoachMarketplacePage /></Suspended>,
               },
               {
                 path: 'coach/plans',

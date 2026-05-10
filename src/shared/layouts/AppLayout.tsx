@@ -7,7 +7,7 @@ import {
   UserCheck, Menu, X, LogOut, ChevronDown,
   PanelLeftClose, PanelLeftOpen, ChartNoAxesCombined, TrendingUp,
   LockKeyhole, Lock, BookOpen, CreditCard,
-  Shield, Utensils, Ban, Sparkles,
+  Shield, Utensils, Ban, BadgeCheck,
 } from 'lucide-react'
 import { cn } from '@/shared/utils/cn'
 import { Link as RouterLink } from 'react-router'
@@ -19,6 +19,7 @@ import { UserAvatar } from '@/shared/components/UserAvatar'
 import { NotificationBell } from '@/features/notifications/components/NotificationBell'
 import { useNotificationHub } from '@/features/notifications/hooks/useNotificationHub'
 import { exerciseTrackingKeys } from '@/features/exercise-tracking'
+import { useMyCoach } from '@/features/coach-client'
 
 const MINI_WIDTH  = 64
 const FULL_WIDTH  = 240
@@ -30,6 +31,7 @@ export function AppLayout() {
   const user      = useAuthStore((s) => s.user)
   const isCoach   = useAuthStore((s) => s.user?.roles?.includes('Coach') ?? false)
   const isAdmin   = useAuthStore((s) => s.user?.roles?.includes('Admin') ?? false)
+  const isIndividual = !isCoach && !isAdmin
   const { mutate: logout } = useLogout()
   const queryClient = useQueryClient()
   const navigate  = useNavigate()
@@ -41,31 +43,30 @@ export function AppLayout() {
   const isWeekDetailPage = /^\/plans\/[^/]+\/weeks\/[^/]+$/.test(location.pathname)
 
   useNotificationHub()
-
-  const insightsLabel = t.insights.title
+  const { data: myCoach } = useMyCoach(isIndividual)
+  const coachNavLabel = myCoach ? t.coaches.coachTitle : tn.findCoach
 
   const individualNav = [
     { to: '/dashboard',    icon: LayoutDashboard, label: tn.dashboard },
-    { to: '/insights',     icon: Sparkles,        label: insightsLabel },
     { to: '/plans',        icon: ClipboardList,   label: tn.myPlans },
     { to: '/exercise-library', icon: BookOpen, label: exerciseLibraryLabel },
     { to: '/exercise-tracking', icon: ChartNoAxesCombined, label: tn.exerciseTracking },
     { to: '/progress',     icon: TrendingUp,      label: tn.progress },
     { to: '/nutrition',    icon: Utensils,        label: 'Nutrition' },
     { to: '/coach/clients', icon: UserCheck,      label: tn.clients },
-    { to: '/coaches',      icon: Users,           label: tn.findCoach },
+    { to: '/coaches',      icon: Users,           label: coachNavLabel },
     { to: '/profile',      icon: User,            label: tn.profile },
     { to: '/subscription', icon: CreditCard,      label: 'Subscription' },
   ]
 
   const coachNav = [
     { to: '/dashboard',     icon: LayoutDashboard, label: tn.overview },
-    { to: '/insights',      icon: Sparkles,        label: insightsLabel },
     { to: '/plans',         icon: ClipboardList,   label: tn.myPlans },
     { to: '/exercise-library', icon: BookOpen, label: exerciseLibraryLabel },
     { to: '/progress',      icon: TrendingUp,      label: tn.progress },
     { to: '/nutrition',     icon: Utensils,        label: 'Nutrition' },
     { to: '/coach/clients', icon: UserCheck,       label: tn.clients },
+    { to: '/coach/marketplace', icon: BadgeCheck,  label: 'Marketplace' },
     { to: '/coaches',       icon: Users,           label: tn.findCoach },
     { to: '/profile',       icon: User,            label: tn.profile },
     { to: '/subscription',  icon: CreditCard,      label: 'Subscription' },

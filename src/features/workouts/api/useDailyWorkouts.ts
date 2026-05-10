@@ -1,11 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/shared/api/axios'
 import { ENDPOINTS } from '@/shared/api/endpoints'
+import { useLangStore } from '@/shared/i18n'
 import type { DayStatus } from '@/shared/types/api'
-import type { CopyDayRequest, CopyDayResponse, DailyWorkoutResponse } from '../types'
+import type { CopyDayRequest, CopyDayResponse, DailyWorkoutResponse, WorkoutGuidanceResponse } from '../types'
 
 export const dayKeys = {
   byWeek: (weekId: string) => ['days', weekId] as const,
+  aiGuidance: (dailyWorkoutId: string, lang: 'en' | 'vi') =>
+    ['days', dailyWorkoutId, 'ai-guidance', lang] as const,
 }
 
 export function useDailyWorkouts(weeklyWorkoutId: string) {
@@ -45,5 +48,18 @@ export function useCopyDay(weeklyWorkoutId: string) {
       qc.invalidateQueries({ queryKey: dayKeys.byWeek(weeklyWorkoutId) })
       qc.invalidateQueries({ queryKey: ['exercises', result.targetDailyWorkoutId] })
     },
+  })
+}
+
+export function useDailyWorkoutGuidance(dailyWorkoutId: string, enabled = true) {
+  const lang = useLangStore((s) => s.lang)
+  return useQuery({
+    queryKey: dayKeys.aiGuidance(dailyWorkoutId, lang),
+    queryFn: () =>
+      api
+        .get<WorkoutGuidanceResponse>(ENDPOINTS.days.aiGuidance(dailyWorkoutId, lang))
+        .then((r) => r.data),
+    enabled: enabled && !!dailyWorkoutId,
+    retry: false,
   })
 }
