@@ -10,6 +10,7 @@ import {
   Flag,
   Mail,
   Star,
+  Tags,
   Trash2,
   UserMinus,
   UserPlus,
@@ -37,6 +38,8 @@ import {
   useTerminateRelationship,
 } from '@/features/coach-client'
 import type { CoachRelationshipResponse } from '@/features/coach-client'
+import { formatContractPrice, formatContractSelection } from '@/features/coach-client/utils/contractDisplay'
+import type { CoachMarketplaceProfile } from '../types'
 import { RenewalModal } from '@/features/coach-client/components/RenewalModal'
 import { ConnectCoachModal } from '@/features/coach-client/components/ConnectCoachModal'
 import { useCreateUserReport } from '@/features/reports'
@@ -98,6 +101,8 @@ export function CoachProfileContent({
 
   const activeRelationship = relationship ?? null
   const marketplace = coach.marketplaceProfile
+  const contractPrices = getContractPrices(marketplace)
+  const hasContractPrices = contractPrices.length > 0
   const myRating = coach.myRating
   const canConnect = !activeRelationship && !myCoach && !isCoachRole
   const isPendingTermination = activeRelationship?.status === 'PendingTermination'
@@ -220,12 +225,34 @@ export function CoachProfileContent({
                 {marketplace?.responseTime && <InfoLine icon={<Mail size={15} />} label={marketplace.responseTime} />}
               </div>
 
+              {contractPrices.length > 0 && (
+                <div className="grid gap-2 text-sm sm:grid-cols-2">
+                  {contractPrices.map((price) => (
+                    <div key={price.type} className="rounded-lg border border-border bg-panel px-3 py-2">
+                      <p className="text-xs text-muted">{price.label}</p>
+                      <p className="font-semibold text-text">{formatContractPrice(price.amount, price.currency)}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {activeRelationship && (
                 <div className="rounded-lg border border-border bg-panel px-3 py-3 text-sm text-muted">
                   <p className="font-medium text-text">Coaching contract</p>
                   <p className="mt-1">
                     {formatDate(activeRelationship.startDate)} - {formatDate(activeRelationship.endDate)}
                   </p>
+                  {activeRelationship.selectedCoachingType && (
+                    <p className="mt-1 flex items-center gap-1 text-text">
+                      <Tags size={13} />
+                      {formatContractSelection({
+                        type: activeRelationship.selectedCoachingType,
+                        price: activeRelationship.selectedPriceAmount,
+                        currency: activeRelationship.selectedCurrency ?? 'VND',
+                        quantity: activeRelationship.selectedQuantity,
+                      })}
+                    </p>
+                  )}
                   {isPendingRenewal && activeRelationship.proposedEndDate && (
                     <p className="mt-1 text-warning">
                       Proposed renewal until {formatDate(activeRelationship.proposedEndDate)}
@@ -242,7 +269,7 @@ export function CoachProfileContent({
 
               <div className="flex flex-wrap gap-2">
                 {canConnect && (
-                  <Button size="sm" onClick={() => setConnectOpen(true)}>
+                  <Button size="sm" disabled={!hasContractPrices} onClick={() => setConnectOpen(true)}>
                     <UserPlus size={15} /> Connect
                   </Button>
                 )}
@@ -476,4 +503,13 @@ function InfoLine({ icon, label }: { icon: ReactNode; label: string }) {
     </span>
   )
 }
+
+function getContractPrices(marketplace: CoachMarketplaceProfile | null | undefined) {
+  const currency = marketplace?.currency ?? 'VND'
+  return [
+    { type: 'Monthly', label: 'Price per month', amount: marketplace?.monthlyPriceAmount ?? null, currency },
+    { type: 'Session', label: 'Price per session', amount: marketplace?.sessionPriceAmount ?? null, currency },
+  ].filter((price) => price.amount !== null)
+}
+
 

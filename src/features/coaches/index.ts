@@ -7,7 +7,6 @@ export {
 } from './api/useCoaches'
 export type {
   CoachMarketplaceProfile,
-  CoachPackage,
   CoachProfileResponse,
   CoachRatingRequest,
   CoachRatingResponse,

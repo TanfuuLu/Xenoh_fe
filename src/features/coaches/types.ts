@@ -20,8 +20,9 @@ export interface CoachResponse {
   headline: string | null
   specialties: string[]
   experienceYears: number | null
-  startingPackagePrice: number | null
-  packageCount: number
+  startingPrice: number | null
+  currency: string
+  hasContractPrices: boolean
 }
 
 export interface CoachMarketplaceProfile {
@@ -36,17 +37,9 @@ export interface CoachMarketplaceProfile {
   availability: string | null
   responseTime: string | null
   coachingStyle: string | null
-}
-
-export interface CoachPackage {
-  id?: string
-  name: string
-  priceAmount: number | null
+  monthlyPriceAmount: number | null
+  sessionPriceAmount: number | null
   currency: string
-  durationLabel: string
-  description: string | null
-  type: string | null
-  displayOrder: number
 }
 
 export interface CoachProfileResponse {
@@ -62,7 +55,6 @@ export interface CoachProfileResponse {
   myRating: CoachRatingResponse | null
   ratings: CoachRatingResponse[]
   marketplaceProfile: CoachMarketplaceProfile | null
-  packages: CoachPackage[]
 }
 
 export interface CoachRatingRequest {

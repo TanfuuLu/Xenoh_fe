@@ -7,7 +7,7 @@ import {
   UserCheck, Menu, X, LogOut, ChevronDown,
   PanelLeftClose, PanelLeftOpen, ChartNoAxesCombined, TrendingUp,
   LockKeyhole, Lock, BookOpen, CreditCard,
-  Shield, Utensils, Ban, BadgeCheck,
+  Shield, Utensils, Ban,
 } from 'lucide-react'
 import { cn } from '@/shared/utils/cn'
 import { Link as RouterLink } from 'react-router'
@@ -66,7 +66,6 @@ export function AppLayout() {
     { to: '/progress',      icon: TrendingUp,      label: tn.progress },
     { to: '/nutrition',     icon: Utensils,        label: 'Nutrition' },
     { to: '/coach/clients', icon: UserCheck,       label: tn.clients },
-    { to: '/coach/marketplace', icon: BadgeCheck,  label: 'Marketplace' },
     { to: '/coaches',       icon: Users,           label: tn.findCoach },
     { to: '/profile',       icon: User,            label: tn.profile },
     { to: '/subscription',  icon: CreditCard,      label: 'Subscription' },

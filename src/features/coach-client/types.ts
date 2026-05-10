@@ -14,6 +14,10 @@ export interface CoachRelationshipResponse {
   endDate: string | null
   renewalRequestedBy: string | null
   proposedEndDate: string | null
+  selectedCoachingType: CoachingType | null
+  selectedQuantity: number | null
+  selectedPriceAmount: number | null
+  selectedCurrency: string | null
 }
 
 export interface ClientResponse {
@@ -29,13 +33,21 @@ export interface ClientResponse {
   endDate: string | null
   renewalRequestedBy: string | null
   proposedEndDate: string | null
+  selectedCoachingType: CoachingType | null
+  selectedQuantity: number | null
+  selectedPriceAmount: number | null
+  selectedCurrency: string | null
 }
 
 export interface RequestCoachRequest {
   coachId: string
   startDate: string
   endDate: string
+  coachingType: CoachingType
+  quantity: number
 }
+
+export type CoachingType = 'Monthly' | 'Session'
 
 export interface RequestRenewalRequest {
   proposedEndDate: string

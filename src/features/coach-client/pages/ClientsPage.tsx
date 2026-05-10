@@ -5,7 +5,7 @@ import {
   CheckCircle2, XCircle, User, Users, Clock, Mail, FileText,
   Flame, Dumbbell, Ruler, Weight, AlertTriangle, TrendingUp,
   CalendarDays, Scale, UserMinus, RefreshCw,
-  ClipboardList,
+  ClipboardList, Tags,
 } from 'lucide-react'
 import { useAuthStore } from '@/features/auth'
 import { format, differenceInDays, formatDistanceToNow } from 'date-fns'
@@ -34,6 +34,7 @@ import {
   useRejectRenewal,
 } from '../index'
 import { RenewalModal } from '../components/RenewalModal'
+import { formatContractSelection } from '../utils/contractDisplay'
 
 function formatContractDate(value: string | null): string {
   if (!value) return 'chưa đặt'
@@ -123,6 +124,21 @@ function RequesterProfileModal({
           <p className="text-xs text-muted">
             Requested on {format(new Date(req.createdAt), 'dd/MM/yyyy HH:mm')}
           </p>
+          <p className="flex items-center gap-1 text-sm text-text">
+            <CalendarDays size={14} />
+            Requested contract: {formatContractDate(req.startDate)} - {formatContractDate(req.endDate)}
+          </p>
+          {req.selectedCoachingType && (
+            <p className="flex items-center gap-1 text-sm text-text">
+              <Tags size={14} />
+              {formatContractSelection({
+                type: req.selectedCoachingType,
+                price: req.selectedPriceAmount,
+                currency: req.selectedCurrency ?? 'VND',
+                quantity: req.selectedQuantity,
+              })}
+            </p>
+          )}
 
           <div className="flex justify-end gap-2 pt-1">
             <Button variant="secondary" onClick={onClose}>Cancel</Button>
@@ -287,6 +303,17 @@ function ClientCard({ client, stats, currentUserId, onView, onDisconnect, onCanc
 
       <div className="px-4 pb-2 text-xs text-muted">
         Hợp đồng: {formatContractDate(client.startDate)} → {formatContractDate(client.endDate)}
+        {client.selectedCoachingType && (
+          <span className="ml-2 inline-flex items-center gap-1 text-text">
+            <Tags size={11} />
+            {formatContractSelection({
+              type: client.selectedCoachingType,
+              price: client.selectedPriceAmount,
+              currency: client.selectedCurrency ?? 'VND',
+              quantity: client.selectedQuantity,
+            })}
+          </span>
+        )}
         {isPendingRenewal && client.proposedEndDate && (
           <span className="ml-1 text-warning">(đề xuất {formatContractDate(client.proposedEndDate)})</span>
         )}
@@ -522,6 +549,23 @@ export function ClientsPage() {
                         <Clock size={11} />
                         <span>{format(new Date(req.createdAt), 'dd/MM/yyyy HH:mm')}</span>
                       </div>
+                      <div className="mt-0.5 flex items-center gap-1 text-xs text-muted">
+                        <CalendarDays size={11} />
+                        <span>{formatContractDate(req.startDate)} - {formatContractDate(req.endDate)}</span>
+                      </div>
+                      {req.selectedCoachingType && (
+                        <div className="mt-0.5 flex items-center gap-1 text-xs text-muted">
+                          <Tags size={11} />
+                          <span>
+                            {formatContractSelection({
+                type: req.selectedCoachingType,
+                price: req.selectedPriceAmount,
+                currency: req.selectedCurrency ?? 'VND',
+                quantity: req.selectedQuantity,
+              })}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="flex w-full gap-2 sm:w-auto">
@@ -616,3 +660,5 @@ export function ClientsPage() {
     </>
   )
 }
+
+

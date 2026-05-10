@@ -124,9 +124,9 @@ export function CoachesPage() {
                         <BriefcaseBusiness size={13} /> {coach.experienceYears} yrs
                       </span>
                     )}
-                    {coach.packageCount > 0 && (
+                    {coach.hasContractPrices && (
                       <span className="flex items-center gap-1.5">
-                        <Tags size={13} /> {formatStartingPrice(coach.startingPackagePrice)}
+                        <Tags size={13} /> {formatStartingPrice(coach.startingPrice, coach.currency)}
                       </span>
                     )}
                   </div>
@@ -138,6 +138,7 @@ export function CoachesPage() {
                     </p>
                     <Button
                       size="sm"
+                      disabled={!coach.hasContractPrices}
                       onClick={(event) => {
                         event.stopPropagation()
                         setConnectTarget({ id: coach.id, name: coach.fullName })
@@ -168,7 +169,7 @@ export function CoachesPage() {
   )
 }
 
-function formatStartingPrice(price: number | null) {
-  if (price === null) return 'Packages'
-  return `From ${new Intl.NumberFormat('vi-VN').format(price)}`
+function formatStartingPrice(price: number | null, currency: string) {
+  if (price === null) return 'Pricing'
+  return `From ${new Intl.NumberFormat('vi-VN').format(price)} ${currency}`
 }
