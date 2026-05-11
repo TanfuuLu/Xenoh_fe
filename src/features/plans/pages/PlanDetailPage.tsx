@@ -105,6 +105,7 @@ export function PlanDetailPage() {
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <h1 className="min-w-0 break-words text-2xl font-bold text-text">{plan.name}</h1>
+            <InlineTip placement="plan-detail" />
             {plan.isActive && <Badge variant="success">{tc.active}</Badge>}
           </div>
           <p className="text-sm text-muted">
@@ -122,8 +123,6 @@ export function PlanDetailPage() {
           <Sparkles size={15} /> Balance check
         </Button>
       </div>
-
-      <InlineTip placement="plan-detail" />
 
       {balanceReview && (
         <div

@@ -44,6 +44,8 @@ import { InlineTip } from '@/features/tips'
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
+const VALID_EXERCISE_DURATION_SECONDS = 60
+
 export function DayWorkoutPage() {
   const { dailyWorkoutId = '' } = useParams()
   const { state } = useLocation()
@@ -60,6 +62,9 @@ export function DayWorkoutPage() {
   const [orderedExercises, setOrderedExercises] = useState<ExerciseResponse[]>([])
   const [draggedExerciseId, setDraggedExerciseId] = useState<string | null>(null)
   const [plannedWeightEdited, setPlannedWeightEdited] = useState(false)
+  const [aiGuidanceRequested, setAiGuidanceRequested] = useState(false)
+  const [showAiGuidance, setShowAiGuidance] = useState(false)
+  const [showDayResult, setShowDayResult] = useState(false)
   const [listHeight, setListHeight] = useState(400)
   const autoScrollFrame = useRef<number | null>(null)
   const autoScrollSpeed = useRef(0)
@@ -96,7 +101,7 @@ export function DayWorkoutPage() {
     isFetching: aiGuidanceFetching,
     isError: aiGuidanceError,
     refetch: refetchAiGuidance,
-  } = useDailyWorkoutGuidance(dailyWorkoutId, canComplete)
+  } = useDailyWorkoutGuidance(dailyWorkoutId, canComplete && aiGuidanceRequested)
   const { confirm, ConfirmDialog } = useConfirm()
 
   const currentDay = siblingDays?.find((d) => d.id === dailyWorkoutId)
@@ -315,7 +320,7 @@ export function DayWorkoutPage() {
   const averageRpe = rpeValues.length > 0 ? rpeValues.reduce((a, b) => a + b, 0) / rpeValues.length : null
   const lastPerformanceText = lastPerformance?.lastActualWeight != null
     ? [
-        `Last time: ${lastPerformance.lastActualWeight} kg`,
+        `${tdw.lastTime}: ${lastPerformance.lastActualWeight} kg`,
         lastPerformance.lastActualReps != null ? `× ${lastPerformance.lastActualReps}` : null,
         lastPerformance.lastRpe != null ? `RPE ${lastPerformance.lastRpe}` : null,
         lastPerformance.workoutDate
@@ -335,13 +340,30 @@ export function DayWorkoutPage() {
             <Button variant="ghost" size="sm"><ChevronLeft size={16} /></Button>
           </Link>
           <div className="min-w-0">
-            <h1 className="break-words text-2xl font-bold text-text">{tdw.title}</h1>
+            <div className="flex min-w-0 items-center gap-2">
+              <h1 className="break-words text-2xl font-bold text-text">{tdw.title}</h1>
+              <InlineTip placement="day-workout" />
+            </div>
             {totalSets > 0 && (
-              <p className="text-xs text-muted">{doneSets}/{totalSets} sets · {pct}%</p>
+              <p className="text-xs text-muted">{doneSets}/{totalSets} {tdw.setsUnit} · {pct}%</p>
             )}
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+          {canComplete && (
+            <Button
+              size="sm"
+              variant="secondary"
+              className="flex-1 min-[390px]:flex-none"
+              onClick={() => {
+                setAiGuidanceRequested(true)
+                setShowAiGuidance(true)
+              }}
+            >
+              <Sparkles size={15} className={aiGuidanceFetching ? 'animate-spin' : ''} />
+              {tdw.aiGuidance}
+            </Button>
+          )}
           {canComplete && !isDayCompleted && (
             <Button
               variant="secondary"
@@ -375,39 +397,20 @@ export function DayWorkoutPage() {
         </div>
       </div>
 
-      {/* Overall progress bar */}
-      {totalSets > 0 && (
-        <div className="h-1.5 w-full overflow-hidden rounded-full" style={{ background: 'var(--border-1)' }}>
-          <div
-            className="h-full rounded-full bg-primary transition-all duration-500 ease-out"
-            style={{ width: `${pct}%` }}
-          />
-        </div>
-      )}
-
-      {isDayCompleted && (
-        <DayResultCard
-          exerciseCount={exercises?.length ?? 0}
-          warningCount={warningExercises.length}
-          volume={dayVolume}
-          estimatedCalories={estimatedCalories}
-          totalDurationSeconds={totalDurationSeconds}
-          averageRpe={averageRpe}
-        />
-      )}
-
-      {/* Contextual hint shown above the exercise list */}
-      <InlineTip placement="day-workout" />
-
-      {canComplete && (
-        <WorkoutGuidancePanel
-          guidance={aiGuidance}
-          loading={aiGuidanceLoading}
-          fetching={aiGuidanceFetching}
-          error={aiGuidanceError}
-          onRefresh={() => refetchAiGuidance()}
-        />
-      )}
+      <SessionSummaryBar
+        exerciseCount={exercises?.length ?? 0}
+        completedExercises={completedExercises}
+        doneSets={doneSets}
+        totalSets={totalSets}
+        pct={pct}
+        isDayCompleted={isDayCompleted}
+        dayStatus={dayStatus}
+        warningCount={warningExercises.length}
+        volume={dayVolume}
+        totalDurationSeconds={totalDurationSeconds}
+        averageRpe={averageRpe}
+        onOpenResult={isDayCompleted ? () => setShowDayResult(true) : undefined}
+      />
 
       {/* Exercise list */}
       <div
@@ -695,6 +698,40 @@ export function DayWorkoutPage() {
           </Modal>
         )}
       </AnimatePresence>
+
+      <Modal
+        open={showAiGuidance}
+        onClose={() => setShowAiGuidance(false)}
+        title={tdw.aiWorkoutGuidance}
+        className="max-w-5xl"
+      >
+        <WorkoutGuidancePanel
+          guidance={aiGuidance}
+          loading={aiGuidanceLoading}
+          fetching={aiGuidanceFetching}
+          error={aiGuidanceError}
+          requested={aiGuidanceRequested}
+          onRequest={() => setAiGuidanceRequested(true)}
+          onRefresh={() => refetchAiGuidance()}
+        />
+      </Modal>
+
+      <Modal
+        open={showDayResult}
+        onClose={() => setShowDayResult(false)}
+        title={tdw.dailyResult}
+        className="max-w-4xl"
+      >
+        <DayResultCard
+          exerciseCount={exercises?.length ?? 0}
+          warningCount={warningExercises.length}
+          volume={dayVolume}
+          estimatedCalories={estimatedCalories}
+          totalDurationSeconds={totalDurationSeconds}
+          averageRpe={averageRpe}
+          embedded
+        />
+      </Modal>
     </div>
     </>
   )
@@ -709,9 +746,112 @@ interface DayResultCardProps {
   estimatedCalories: number
   totalDurationSeconds: number
   averageRpe: number | null
+  embedded?: boolean
 }
 
-function DayResultCard({ exerciseCount, warningCount, volume, estimatedCalories, totalDurationSeconds, averageRpe }: DayResultCardProps) {
+interface SessionSummaryBarProps {
+  exerciseCount: number
+  completedExercises: number
+  doneSets: number
+  totalSets: number
+  pct: number
+  isDayCompleted: boolean
+  dayStatus: DayStatus
+  warningCount: number
+  volume: number
+  totalDurationSeconds: number
+  averageRpe: number | null
+  onOpenResult?: () => void
+}
+
+function SessionSummaryBar({
+  exerciseCount,
+  completedExercises,
+  doneSets,
+  totalSets,
+  pct,
+  isDayCompleted,
+  dayStatus,
+  warningCount,
+  volume,
+  totalDurationSeconds,
+  averageRpe,
+  onOpenResult,
+}: SessionSummaryBarProps) {
+  const { dayWorkout: td } = useT()
+  const formattedVolume = new Intl.NumberFormat(undefined, {
+    maximumFractionDigits: volume % 1 === 0 ? 0 : 1,
+  }).format(volume)
+  const statusLabel =
+    isDayCompleted
+      ? warningCount > 0
+        ? td.statusWarning
+        : td.statusGood
+      : dayStatus === 'Rest'
+      ? td.restDayBtn
+      : dayStatus === 'Missed'
+      ? td.missedBtn
+      : `${pct}%`
+
+  return (
+    <div className="rounded-xl border border-border bg-surface px-4 py-3 shadow-sm">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant={isDayCompleted ? (warningCount > 0 ? 'warning' : 'success') : 'default'}>
+              {statusLabel}
+            </Badge>
+            <span className="text-sm font-semibold text-text">
+              {doneSets}/{totalSets || 0} {td.setsUnit}
+            </span>
+            <span className="text-sm text-muted">
+              {completedExercises}/{exerciseCount || 0} {td.exercisesUnit}
+            </span>
+          </div>
+          <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full" style={{ background: 'var(--border-1)' }}>
+            <div
+              className="h-full rounded-full bg-primary transition-all duration-500 ease-out"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2 text-sm sm:flex sm:items-center sm:gap-4">
+          <MiniStat icon={<Activity size={14} />} value={`${formattedVolume} kg`} label={td.volumeLabel} />
+          <MiniStat icon={<Timer size={14} />} value={totalDurationSeconds > 0 ? formatDuration(totalDurationSeconds) : '—'} label={td.totalTimeLabel} />
+          <MiniStat value={averageRpe != null ? averageRpe.toFixed(1) : '—'} label={td.avgRpeLabel} />
+        </div>
+
+        {onOpenResult && (
+          <Button size="sm" variant="secondary" className="w-full lg:w-auto" onClick={onOpenResult}>
+            <CheckCircle2 size={15} />
+            {td.dailyResult}
+          </Button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+interface MiniStatProps {
+  value: string
+  label: string
+  icon?: ReactNode
+}
+
+function MiniStat({ value, label, icon }: MiniStatProps) {
+  return (
+    <div className="min-w-0">
+      <div className="flex items-center gap-1 font-semibold text-text">
+        {icon}
+        <span className="truncate">{value}</span>
+      </div>
+      <p className="truncate text-[10px] font-medium uppercase tracking-wide text-muted">{label}</p>
+    </div>
+  )
+}
+
+function DayResultCard({ exerciseCount, warningCount, volume, estimatedCalories, totalDurationSeconds, averageRpe, embedded = false }: DayResultCardProps) {
   const { dayWorkout: td, weekAnalyze: ta } = useT()
   const isWarning = warningCount > 0
   const status = isWarning ? td.statusWarning : td.statusGood
@@ -719,30 +859,30 @@ function DayResultCard({ exerciseCount, warningCount, volume, estimatedCalories,
     maximumFractionDigits: volume % 1 === 0 ? 0 : 1,
   }).format(volume)
 
-  return (
-    <Card className="space-y-4">
+  const content = (
+    <>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex min-w-0 items-center gap-3">
+        <div className="flex min-w-0 items-center gap-2.5">
           <div
-            className="flex h-11 w-11 items-center justify-center rounded-xl"
+            className="flex h-8 w-8 items-center justify-center rounded-lg"
             style={{ background: isWarning ? 'rgba(245,158,11,0.12)' : 'var(--xn-sage-200)' }}
           >
             {isWarning ? (
-              <TriangleAlert size={22} className="text-warning" />
+              <TriangleAlert size={17} className="text-warning" />
             ) : (
-              <CheckCircle2 size={22} className="text-success" />
+              <CheckCircle2 size={17} className="text-success" />
             )}
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted">{td.dailyResult}</p>
-            <h2 className="text-lg font-semibold text-text">{td.workoutCompleted}</h2>
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">{td.dailyResult}</p>
+            <h2 className="text-base font-semibold text-text">{td.workoutCompleted}</h2>
           </div>
         </div>
 
         <Badge variant={isWarning ? 'warning' : 'success'}>{status}</Badge>
       </div>
 
-      <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid gap-2 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
         <ResultMetric label={td.exercisesLabel} value={exerciseCount.toString()} />
         <ResultMetric
           label={td.statusLabel}
@@ -775,6 +915,16 @@ function DayResultCard({ exerciseCount, warningCount, volume, estimatedCalories,
           sub={averageRpe != null ? ta.rpeDesc : ta.noRpeLogged}
         />
       </div>
+    </>
+  )
+
+  if (embedded) {
+    return <div className="space-y-3">{content}</div>
+  }
+
+  return (
+    <Card className="space-y-3" style={{ padding: '12px 14px' }}>
+      {content}
     </Card>
   )
 }
@@ -788,13 +938,13 @@ interface ResultMetricProps {
 
 function ResultMetric({ label, value, sub, icon }: ResultMetricProps) {
   return (
-    <div className="rounded-xl border border-border bg-background px-4 py-3">
-      <div className="mb-1 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted">
+    <div className="rounded-lg border border-border bg-background px-3 py-2">
+      <div className="mb-0.5 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-muted">
         {icon}
         {label}
       </div>
-      <p className="text-xl font-bold text-text">{value}</p>
-      {sub && <p className="mt-0.5 text-xs text-muted">{sub}</p>}
+      <p className="text-lg font-bold leading-tight text-text">{value}</p>
+      {sub && <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-muted">{sub}</p>}
     </div>
   )
 }
@@ -1033,15 +1183,20 @@ function WorkoutGuidancePanel({
   loading,
   fetching,
   error,
+  requested,
+  onRequest,
   onRefresh,
 }: {
   guidance: WorkoutGuidanceResponse | undefined
   loading: boolean
   fetching: boolean
   error: boolean
+  requested: boolean
+  onRequest: () => void
   onRefresh: () => void
 }) {
   const lang = useLangStore((s) => s.lang)
+  const tdw = useT().dayWorkout
   const labels = lang === 'vi'
     ? {
         title: 'Gợi ý AI cho buổi tập',
@@ -1054,15 +1209,18 @@ function WorkoutGuidancePanel({
         cached: 'Đã lưu',
       }
     : {
-        title: 'AI workout guidance',
+        title: tdw.aiWorkoutGuidance,
         loading: 'Analyzing this workout...',
-        error: 'AI guidance is unavailable right now.',
-        refresh: 'Refresh',
+        error: tdw.aiGuidanceUnavailable,
+        refresh: tdw.refresh,
         adjustments: 'Recommended adjustments',
         cautions: 'Caution flags',
         actions: 'Next best actions',
-        cached: 'Cached',
+        cached: tdw.cached,
       }
+
+  const showLabel = tdw.showAiGuidance
+  const idleLabel = tdw.aiGuidanceIdle
 
   const readinessVariant =
     guidance?.readiness === 'High' ? 'success' :
@@ -1070,7 +1228,7 @@ function WorkoutGuidancePanel({
     'primary'
 
   return (
-    <Card animate={false} className="space-y-3 p-4">
+    <div className="space-y-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex min-w-0 items-start gap-3">
           <div
@@ -1091,13 +1249,22 @@ function WorkoutGuidancePanel({
               <p className="mt-1 text-sm text-warning">{labels.error}</p>
             ) : guidance ? (
               <p className="mt-1 text-sm text-muted">{guidance.headline}</p>
-            ) : null}
+            ) : (
+              <p className="mt-1 text-sm text-muted">{idleLabel}</p>
+            )}
           </div>
         </div>
-        <Button size="sm" variant="secondary" onClick={onRefresh} disabled={fetching} className="self-start">
-          <RefreshCw size={14} className={fetching ? 'animate-spin' : ''} />
-          {labels.refresh}
-        </Button>
+        {requested ? (
+          <Button size="sm" variant="secondary" onClick={onRefresh} disabled={fetching} className="self-start">
+            <RefreshCw size={14} className={fetching ? 'animate-spin' : ''} />
+            {labels.refresh}
+          </Button>
+        ) : (
+          <Button size="sm" variant="secondary" onClick={onRequest} className="self-start">
+            <Sparkles size={14} />
+            {showLabel}
+          </Button>
+        )}
       </div>
 
       {loading && (
@@ -1113,7 +1280,7 @@ function WorkoutGuidancePanel({
           <GuidanceList title={labels.actions} items={guidance.nextBestActions} />
         </div>
       )}
-    </Card>
+    </div>
   )
 }
 
@@ -1235,7 +1402,7 @@ function ExerciseCard({
             <h3 className="break-words font-semibold text-text">{localizeName(exercise.name)}</h3>
             {isCardio && <Badge variant="primary">Cardio</Badge>}
             {exercise.isCompleted && !hasUnderperformed && <Badge variant="success">{tCard.doneBadge} ✓</Badge>}
-            {exercise.isCompleted && !isCardio && (() => {
+            {exercise.isCompleted && !isCardio && (exercise.durationSeconds ?? 0) > VALID_EXERCISE_DURATION_SECONDS && (() => {
               const xp = exercise.sets
                 .filter(s => s.isCompleted)
                 .reduce((sum, s) => {

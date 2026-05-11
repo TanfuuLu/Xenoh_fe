@@ -55,6 +55,11 @@ export const ENDPOINTS = {
       `/api/coach-client/clients/${clientId}/ai-brief?lang=${lang}`,
   },
 
+  // Dashboard
+  dashboard: {
+    personal: '/api/dashboard/personal',
+  },
+
   // Blocks
   blocks: {
     block: (userId: string) => `/api/users/${userId}/block`,

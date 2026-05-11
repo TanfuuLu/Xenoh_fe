@@ -175,9 +175,12 @@ export function ExerciseLibraryPage() {
               <BookOpen size={14} />
               Exercise library
             </div>
-            <h1 className="font-display text-4xl font-bold leading-none text-text md:text-5xl">
-              All movements in one place.
-            </h1>
+            <div className="flex items-start gap-2">
+              <h1 className="font-display text-4xl font-bold leading-none text-text md:text-5xl">
+                All movements in one place.
+              </h1>
+              <InlineTip placement="exercise-library" />
+            </div>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-muted md:text-base">
               Browse Xenoh exercises, filter by muscle group or type, and create unlimited custom exercises with a Pro subscription.
             </p>
@@ -193,8 +196,6 @@ export function ExerciseLibraryPage() {
           )}
         </div>
       </section>
-
-      <InlineTip placement="exercise-library" />
 
       <div className="grid gap-4 md:grid-cols-3">
         <LibraryStat label="Shared exercises" value={sharedCount.toString()} />

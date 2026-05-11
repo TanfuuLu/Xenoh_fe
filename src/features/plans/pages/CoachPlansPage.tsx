@@ -74,7 +74,10 @@ export function CoachPlansPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-text">{tcp.title}</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-text">{tcp.title}</h1>
+            <InlineTip placement="coach-plans" audience="coach" />
+          </div>
           <p className="mt-1 text-sm text-muted">{plans?.length ?? 0} {tcp.subtitle}</p>
         </div>
         {activeClients.length > 0 && (
@@ -83,8 +86,6 @@ export function CoachPlansPage() {
           </Button>
         )}
       </div>
-
-      <InlineTip placement="coach-plans" audience="coach" />
 
       <motion.div
         initial={shouldReduce ? false : 'hidden'}

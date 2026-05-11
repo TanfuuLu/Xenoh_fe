@@ -257,7 +257,10 @@ function ProgressShell({
         <div className="flex items-center gap-3">
           <TrendingUp size={22} style={{ color: 'var(--color-primary)' }} />
           <div>
-            <h1 className="text-2xl font-bold text-text">{title}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold text-text">{title}</h1>
+              <InlineTip placement="progress" />
+            </div>
             <p className="text-sm text-muted">{subtitle}</p>
           </div>
         </div>
@@ -292,10 +295,7 @@ function ProgressShell({
           )}
 
           {tab === 'powerlifting' && powerlifting ? (
-            <>
-              <InlineTip placement="progress" />
-              <PowerliftingPanel section={powerlifting} />
-            </>
+            <PowerliftingPanel section={powerlifting} />
           ) : (
             <OverviewSection analytics={analytics} shouldReduce={shouldReduce} tp={tp} />
           )}

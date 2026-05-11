@@ -197,7 +197,10 @@ export function PlansPage() {
     <div className="space-y-6 sm:space-y-8">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold text-text">Plans</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-text">Plans</h1>
+            <InlineTip placement="plans" />
+          </div>
           <p className="mt-1 text-sm text-muted">
             {(plans?.length ?? 0)}/{planLimitLabel} {isCoach ? 'personal plans' : 'plans'}
             {isCoach && ` - ${clientPlans?.length ?? 0} ${tcp.subtitle}`}
@@ -214,8 +217,6 @@ export function PlansPage() {
           </div>
         )}
       </div>
-
-      <InlineTip placement="plans" />
 
       <section className="space-y-3">
         <motion.div

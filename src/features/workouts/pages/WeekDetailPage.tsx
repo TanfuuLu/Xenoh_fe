@@ -103,9 +103,12 @@ export function WeekDetailPage() {
             </Button>
           </Link>
           <div className="min-w-0">
-            <h1 className="break-words text-2xl font-bold text-text">
-              {currentWeek ? `${tw.title} ${currentWeek.weekNumber}` : tw.title}
-            </h1>
+            <div className="flex min-w-0 items-center gap-2">
+              <h1 className="break-words text-2xl font-bold text-text">
+                {currentWeek ? `${tw.title} ${currentWeek.weekNumber}` : tw.title}
+              </h1>
+              <InlineTip placement="week-detail" />
+            </div>
             {currentWeek && (
               <p className="text-xs mt-0.5" style={{ color: 'var(--fg-3)' }}>
                 {format(new Date(currentWeek.startDate), 'd MMM', { locale: dateLocale })}
@@ -165,8 +168,6 @@ export function WeekDetailPage() {
           )}
         </div>
       </div>
-
-      <InlineTip placement="week-detail" />
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px] 2xl:grid-cols-[minmax(0,1fr)_400px]">
         <div className="min-w-0 space-y-6">

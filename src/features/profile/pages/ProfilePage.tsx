@@ -294,9 +294,10 @@ export function ProfilePage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-text">{tp.title}</h1>
-
-      <InlineTip placement="profile" />
+      <div className="flex items-center gap-2">
+        <h1 className="text-2xl font-bold text-text">{tp.title}</h1>
+        <InlineTip placement="profile" />
+      </div>
 
       {profile && <LevelCard profile={profile} />}
 

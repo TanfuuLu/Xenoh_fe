@@ -1,199 +1,162 @@
 import React, { useMemo, useState } from 'react'
-import { motion, useReducedMotion } from 'framer-motion'
 import { Link } from 'react-router'
-import { Flame, TrendingUp, Calendar, ChevronRight, Dumbbell, CheckCircle2, Calculator, Sparkles } from 'lucide-react'
-import { format, isSameDay } from 'date-fns'
-import type { Locale } from 'date-fns'
-import { vi as viLocale, enUS } from 'date-fns/locale'
-import { Card } from '@/shared/components/Card'
+import { motion, useReducedMotion } from 'framer-motion'
+import {
+  Activity,
+  ArrowRight,
+  Calculator,
+  Calendar,
+  ClipboardList,
+  Dumbbell,
+  Flame,
+  Sparkles,
+  Target,
+  TrendingUp,
+  Utensils,
+  Weight,
+} from 'lucide-react'
+import { format } from 'date-fns'
+import { enUS, vi as viLocale } from 'date-fns/locale'
 import { Badge } from '@/shared/components/Badge'
-import { Spinner } from '@/shared/components/Spinner'
-import { Input } from '@/shared/components/Input'
 import { Button } from '@/shared/components/Button'
+import { Card } from '@/shared/components/Card'
+import { Input } from '@/shared/components/Input'
 import { Modal } from '@/shared/components/Modal'
+import { Spinner } from '@/shared/components/Spinner'
 import { cn } from '@/shared/utils/cn'
-import { staggerContainer, slideUp } from '@/shared/utils/motion'
-import { useT, useLangStore } from '@/shared/i18n'
-import { useMyProfile } from '@/features/profile'
-import { usePlans } from '@/features/plans'
-import { useWeeklyWorkouts, useDailyWorkouts, useExercises } from '@/features/workouts'
+import { slideUp, staggerContainer } from '@/shared/utils/motion'
+import { useLangStore, useT } from '@/shared/i18n'
 import { DailyTipCard } from '@/features/tips'
-
+import { usePersonalDashboard } from '../api/usePersonalDashboard'
+import type {
+  PersonalDashboardAction,
+  PersonalDashboardInsight,
+  PersonalDashboardNutrition,
+  PersonalDashboardTodayWorkout,
+} from '../types'
 
 export function DashboardPage() {
   const shouldReduce = useReducedMotion()
+  const lang = useLangStore((s) => s.lang)
+  const td = useT().dashboard
+  const dateLocale = lang === 'vi' ? viLocale : enUS
+  const { data, isLoading, isError } = usePersonalDashboard()
+  const [plateCalcOpen, setPlateCalcOpen] = useState(false)
   const [plateInput, setPlateInput] = useState<{ value: string; unit: 'kg' | 'lbs' }>({
     value: '100',
     unit: 'kg',
   })
-  const [plateCalcOpen, setPlateCalcOpen] = useState(false)
-  const { data: profile, isLoading: profileLoading } = useMyProfile()
-  const { data: plans, isLoading: plansLoading } = usePlans()
-  const t   = useT()
-  const td  = t.dashboard
-  const tc  = t.common
-  const lang = useLangStore((s) => s.lang)
-  const dateLocale = lang === 'vi' ? viLocale : enUS
-
-  const activePlan = plans?.find((p) => p.isActive)
   const plateCalculator = useMemo(
     () => getPlateCalculator(Number(plateInput.value), plateInput.unit),
     [plateInput],
   )
 
-  // Find this week in the active plan
-  const { data: weeks } = useWeeklyWorkouts(activePlan?.id ?? '')
-  const today = new Date()
-  const currentWeek = weeks?.find(
-    (w) => new Date(w.startDate) <= today && today <= new Date(w.endDate),
-  )
-
-  // Find today's day in this week
-  const { data: days } = useDailyWorkouts(currentWeek?.id ?? '')
-  const todayDay = days?.find((d) => isSameDay(new Date(d.date), today))
-
-  if (profileLoading || plansLoading) {
+  if (isLoading) {
     return <div className="flex h-64 items-center justify-center"><Spinner size="lg" /></div>
   }
 
-  const progressPct = activePlan
-    ? Math.round((activePlan.completedDays / activePlan.totalDays) * 100)
+  if (isError || !data) {
+    return (
+      <Card>
+        <p className="py-10 text-center text-sm text-muted">{td.loadError}</p>
+      </Card>
+    )
+  }
+
+  const today = new Date()
+  const profile = data.profile
+  const xpAtLevelStart = (profile.level * (profile.level - 1)) / 2 * 1000
+  const xpIntoLevel = Math.max(0, profile.totalXp - xpAtLevelStart)
+  const xpPct = profile.xpToNextLevel > 0
+    ? Math.min(100, Math.round((xpIntoLevel / profile.xpToNextLevel) * 100))
     : 0
 
   return (
     <div className="space-y-6">
-      {/* Header: greeting + plate calculator launcher */}
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-text">
-            {td.greeting}, {profile?.firstName} 👋
-          </h1>
-          <p className="mt-1 text-sm text-muted">
-            {format(today, 'EEEE, d MMMM yyyy', { locale: dateLocale })}
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Link to="/insights">
-            <Button variant="primary" size="sm" className="gap-1.5">
-              <Sparkles size={15} />
-              {t.insights.dashboardCta}
-            </Button>
-          </Link>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => setPlateCalcOpen(true)}
-            className="gap-1.5"
-          >
-            <Calculator size={15} />
-            {td.plateCalculator}
-          </Button>
-        </div>
-      </div>
-
-      <DailyTipCard />
-
-      {/* Stats — full-width row */}
-      <motion.div
-        initial={shouldReduce ? false : 'hidden'}
-        animate="visible"
-        variants={staggerContainer}
-        className="grid gap-3 grid-cols-2 lg:grid-cols-4"
+      <section
+        className="overflow-hidden rounded-2xl border border-border bg-surface p-5 sm:p-6"
+        style={{ background: 'linear-gradient(135deg, var(--bg-2), var(--bg-1))' }}
       >
-        <StatCard icon={<Flame size={20} className="text-warning" />}     iconBg="var(--xn-warning-bg)" label={td.streak} value={`${profile?.currentStreak ?? 0} ${tc.days}`} />
-        <StatCard icon={<TrendingUp size={20} className="text-success" />} iconBg="var(--xn-success-bg)" label={td.weight} value={profile?.latestBodyweight ? `${profile.latestBodyweight} kg` : '—'} />
-        <StatCard icon={<Calendar size={20} className="text-primary" />}  iconBg="var(--xn-clay-100)"   label="BMI"        value={profile?.bmi ? profile.bmi.toFixed(1) : '—'} sub={profile?.bmiCategory ?? undefined} />
-        <StatCard icon={<Dumbbell size={20} className="text-muted" />}     iconBg="var(--xn-ink-100)"    label="DOTS"       value={profile?.dotsScore ? profile.dotsScore.toFixed(1) : '—'} />
-      </motion.div>
-
-      {/* Today's Training + Active plan — 2-col row on lg+ */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        {activePlan && (
-          <motion.div variants={slideUp} initial={shouldReduce ? false : 'hidden'} animate="visible">
-            <TodayTrainingCard
-              todayDay={todayDay ?? null}
-              td={td}
-              tc={tc}
-              dateLocale={dateLocale}
-            />
-          </motion.div>
-        )}
-
-        {activePlan ? (
-          <Card className="space-y-3">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-muted">{td.activePlanLabel}</p>
-                <h2 className="mt-1 text-lg font-semibold text-text">{activePlan.name}</h2>
-                <p className="text-sm text-muted">
-                  {format(new Date(activePlan.startDate), 'dd/MM/yyyy')} → {format(new Date(activePlan.endDate), 'dd/MM/yyyy')}
-                </p>
-              </div>
-              <Badge variant="success">{tc.active}</Badge>
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-muted">
+              {format(today, 'EEEE, d MMMM yyyy', { locale: dateLocale })}
+            </p>
+            <div className="mt-2 flex min-w-0 items-center gap-2">
+              <h1 className="text-2xl font-bold text-text sm:text-3xl">
+                {td.welcomeBack.replace('{name}', profile.firstName || td.fallbackName)}
+              </h1>
+              <DailyTipCard />
             </div>
+            <p className="mt-2 max-w-2xl text-sm text-muted">
+              {td.dailyCommand}
+            </p>
+          </div>
 
-            {/* Plan overall progress */}
-            <div>
-              <div className="mb-1 flex justify-between text-xs text-muted">
-                <span>{activePlan.completedDays} / {activePlan.totalDays} {tc.days}</span>
-                <span>{progressPct}%</span>
-              </div>
-              <div className="h-2 w-full overflow-hidden rounded-full" style={{ background: 'var(--border-1)' }}>
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${progressPct}%` }}
-                  transition={{ duration: 0.8, ease: 'easeOut' }}
-                  className="h-full rounded-full bg-primary"
-                />
-              </div>
-            </div>
-
-            {/* This week's progress */}
-            {currentWeek && currentWeek.totalDays > 0 && (() => {
-              const weekPct  = Math.round((currentWeek.completedDays / currentWeek.totalDays) * 100)
-              const weekDone = currentWeek.completedDays === currentWeek.totalDays
-              return (
-                <div
-                  className="rounded-lg px-3 py-2.5 space-y-1.5"
-                  style={{ background: 'var(--bg-3)', border: '1px solid var(--border-1)' }}
-                >
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-medium text-muted">{td.thisWeek}</span>
-                    <span className="font-bold" style={{ color: weekDone ? 'var(--xn-success)' : 'var(--color-primary)' }}>
-                      {currentWeek.completedDays}/{currentWeek.totalDays} {tc.days} · {weekPct}%
-                    </span>
-                  </div>
-                  <div className="h-1.5 w-full overflow-hidden rounded-full" style={{ background: 'var(--border-1)' }}>
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${weekPct}%` }}
-                      transition={{ duration: 0.6, ease: 'easeOut' }}
-                      className="h-full rounded-full"
-                      style={{ background: weekDone ? 'var(--xn-success)' : 'var(--color-primary)' }}
-                    />
-                  </div>
-                </div>
-              )
-            })()}
-
-            <Link to={`/plans/${activePlan.id}`} className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
-              {td.viewDetails} <ChevronRight size={14} />
+          <div className="flex flex-wrap gap-2">
+            <Link to="/insights">
+              <Button size="sm" className="gap-1.5">
+                <Sparkles size={15} /> {td.aiInsights}
+              </Button>
             </Link>
-          </Card>
-        ) : (
-          <Card className="flex flex-col items-center gap-3 py-10 text-center">
-            <Dumbbell size={40} className="text-muted/40" />
-            <p className="text-muted">{td.noActivePlan}</p>
-            <Link to="/plans" className="text-sm font-medium text-primary hover:underline">{td.createPlanLink}</Link>
-          </Card>
-        )}
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setPlateCalcOpen(true)}
+              className="gap-1.5"
+            >
+              <Calculator size={15} /> {td.plateCalculatorTitle}
+            </Button>
+          </div>
+        </div>
+
+        <motion.div
+          initial={shouldReduce ? false : 'hidden'}
+          animate="visible"
+          variants={staggerContainer}
+          className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
+        >
+          <MetricCard icon={<Flame size={18} />} label={td.streak} value={td.streakValue.replace('{n}', String(profile.currentStreak))} />
+          <MetricCard icon={<TrendingUp size={18} />} label={td.bodyweight} value={profile.latestBodyweight ? `${profile.latestBodyweight} kg` : '-'} />
+          <MetricCard icon={<Activity size={18} />} label="BMI" value={profile.bmi ? profile.bmi.toFixed(1) : '-'} sub={profile.bmiCategory ?? undefined} />
+          <MetricCard icon={<Dumbbell size={18} />} label="DOTS" value={profile.dotsScore ? profile.dotsScore.toFixed(1) : '-'} />
+        </motion.div>
+
+        <div className="mt-5 rounded-xl border border-border bg-panel p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted">{td.level.replace('{n}', String(profile.level))}</p>
+              <p className="text-base font-bold text-text">{profile.title}</p>
+            </div>
+            <p className="text-sm font-semibold text-text">
+              {xpIntoLevel.toLocaleString()} / {profile.xpToNextLevel.toLocaleString()} XP
+            </p>
+          </div>
+          <ProgressBar value={xpPct} className="mt-3" />
+        </div>
+      </section>
+
+      <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+        <TodayPanel workout={data.todayWorkout} />
+        <PlanPanel plan={data.activePlan} />
       </div>
 
-      {/* Plate Calculator modal */}
+      <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+        <NutritionPanel nutrition={data.nutritionToday} />
+        <NextActionsPanel actions={data.nextActions} />
+      </div>
+
+      <ProInsightsPanel
+        unlocked={data.proInsights.isUnlocked}
+        ctaLabel={data.proInsights.ctaLabel}
+        ctaRoute={data.proInsights.ctaRoute}
+        insights={data.proInsights.items}
+      />
+
       <Modal
         open={plateCalcOpen}
         onClose={() => setPlateCalcOpen(false)}
-        title={td.plateCalculator}
+        title={td.plateCalculatorTitle}
         className="max-w-2xl"
       >
         <PlateCalculatorBody
@@ -206,7 +169,337 @@ export function DashboardPage() {
   )
 }
 
-// ─── Today Training Card ──────────────────────────────────────────────────────
+function TodayPanel({ workout }: { workout: PersonalDashboardTodayWorkout | null }) {
+  const td = useT().dashboard
+  if (!workout) {
+    return (
+      <Card className="space-y-4">
+        <PanelHeader icon={<Calendar size={18} />} label={td.today} title={td.noWorkoutScheduled} />
+        <p className="text-sm text-muted">{td.noWorkoutHint}</p>
+        <Link to="/plans">
+          <Button size="sm" variant="secondary">{td.openPlans}</Button>
+        </Link>
+      </Card>
+    )
+  }
+
+  const isRest = workout.status === 'Rest' || workout.totalExercises === 0
+  const setPct = workout.totalSets > 0 ? Math.round((workout.completedSets / workout.totalSets) * 100) : 0
+  const ctaLabel = workout.isCompleted ? td.workoutComplete : workout.completedSets > 0 ? td.continueWorkout : td.startWorkout
+
+  return (
+    <Card className="space-y-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <PanelHeader
+          icon={<Dumbbell size={18} />}
+          label={td.today}
+          title={isRest ? td.restDay : workout.dayOfWeek}
+          subtitle={format(new Date(workout.date), 'd MMM yyyy')}
+        />
+        {workout.isCompleted && <Badge variant="success">{td.done}</Badge>}
+        {isRest && <Badge variant="default">{td.rest}</Badge>}
+      </div>
+
+      {isRest ? (
+        <p className="text-sm text-muted">{td.noExercisesToday}</p>
+      ) : (
+        <>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <SmallStat label={td.exercises} value={`${workout.completedExercises}/${workout.totalExercises}`} />
+            <SmallStat label={td.sets} value={`${workout.completedSets}/${workout.totalSets}`} />
+            <SmallStat label={td.volume} value={workout.plannedVolume > 0 ? `${Math.round(workout.plannedVolume).toLocaleString()} kg` : '-'} />
+          </div>
+          <ProgressBar value={setPct} />
+          {workout.muscleGroups.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {workout.muscleGroups.map((group) => <Badge key={group} variant="default">{group}</Badge>)}
+            </div>
+          )}
+        </>
+      )}
+
+      {!isRest && (
+        <Link
+          to={workout.route}
+          state={{ canEdit: true, canComplete: true, weeklyWorkoutId: workout.weeklyWorkoutId }}
+        >
+          <Button size="sm" disabled={workout.isCompleted} className="gap-1.5">
+            {ctaLabel} <ArrowRight size={15} />
+          </Button>
+        </Link>
+      )}
+    </Card>
+  )
+}
+
+function PlanPanel({
+  plan,
+}: {
+  plan: {
+    id: string
+    name: string
+    startDate: string
+    endDate: string
+    totalDays: number
+    completedDays: number
+    progressPercent: number
+    currentWeek: {
+      name: string
+      totalDays: number
+      completedDays: number
+      progressPercent: number
+    } | null
+  } | null
+}) {
+  const t = useT()
+  const td = t.dashboard
+  const tc = t.common
+  if (!plan) {
+    return (
+      <Card className="space-y-4">
+        <PanelHeader icon={<ClipboardList size={18} />} label={td.activePlanLabel} title={td.noActivePlan} />
+        <p className="text-sm text-muted">{td.createPlanHint}</p>
+        <Link to="/plans"><Button size="sm">{td.createPlan}</Button></Link>
+      </Card>
+    )
+  }
+
+  return (
+    <Card className="space-y-4">
+      <div className="flex items-start justify-between gap-3">
+        <PanelHeader
+          icon={<ClipboardList size={18} />}
+          label={td.activePlanLabel}
+          title={plan.name}
+          subtitle={`${format(new Date(plan.startDate), 'dd/MM/yyyy')} - ${format(new Date(plan.endDate), 'dd/MM/yyyy')}`}
+        />
+        <Badge variant="success">{tc.active}</Badge>
+      </div>
+
+      <div>
+        <div className="mb-1 flex justify-between text-xs text-muted">
+          <span>{plan.completedDays}/{plan.totalDays} {tc.days}</span>
+          <span>{plan.progressPercent}%</span>
+        </div>
+        <ProgressBar value={plan.progressPercent} />
+      </div>
+
+      {plan.currentWeek && (
+        <div className="rounded-xl border border-border bg-panel p-3">
+          <div className="flex justify-between gap-3 text-sm">
+            <span className="font-medium text-text">{plan.currentWeek.name}</span>
+            <span className="text-muted">{plan.currentWeek.completedDays}/{plan.currentWeek.totalDays} {tc.days}</span>
+          </div>
+          <ProgressBar value={plan.currentWeek.progressPercent} className="mt-2" />
+        </div>
+      )}
+
+      <Link to={`/plans/${plan.id}`} className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
+        {td.viewPlan} <ArrowRight size={14} />
+      </Link>
+    </Card>
+  )
+}
+
+function NutritionPanel({ nutrition }: { nutrition: PersonalDashboardNutrition }) {
+  const td = useT().dashboard
+  const hasTargets = nutrition.calorieTarget != null && nutrition.missingProfileFields.length === 0
+  const caloriePct = nutrition.calorieTarget
+    ? Math.min(100, Math.round((nutrition.loggedCalories / nutrition.calorieTarget) * 100))
+    : 0
+
+  return (
+    <Card className="space-y-4">
+      <PanelHeader icon={<Utensils size={18} />} label={td.nutrition} title={td.todaysIntake} />
+
+      {!hasTargets ? (
+        <div className="rounded-xl border border-warning/30 p-4" style={{ background: 'var(--xn-warning-bg)' }}>
+          <p className="font-semibold text-text">{td.nutritionIncomplete}</p>
+          <p className="mt-1 text-sm text-muted">
+            {td.missing}: {nutrition.missingProfileFields.length > 0 ? nutrition.missingProfileFields.join(', ') : td.profileData}
+          </p>
+        </div>
+      ) : (
+        <>
+          <div className="flex items-baseline justify-between gap-3">
+            <div>
+              <p className="text-3xl font-bold text-text">{nutrition.loggedCalories}</p>
+              <p className="text-sm text-muted">{td.ofCalories.replace('{n}', String(nutrition.calorieTarget))}</p>
+            </div>
+            <p className="text-sm font-semibold text-text">
+              {nutrition.remainingCalories != null ? td.kcalLeft.replace('{n}', String(nutrition.remainingCalories)) : '-'}
+            </p>
+          </div>
+          <ProgressBar value={caloriePct} />
+          <div className="grid gap-2 sm:grid-cols-3">
+            <Macro label={td.protein} logged={nutrition.loggedProteinG} target={nutrition.proteinTargetG} />
+            <Macro label={td.carbs} logged={nutrition.loggedCarbsG} target={nutrition.carbsTargetG} />
+            <Macro label={td.fat} logged={nutrition.loggedFatG} target={nutrition.fatTargetG} />
+          </div>
+        </>
+      )}
+
+      <Link to="/nutrition"><Button size="sm" variant="secondary">{td.openNutrition}</Button></Link>
+    </Card>
+  )
+}
+
+function NextActionsPanel({ actions }: { actions: PersonalDashboardAction[] }) {
+  const td = useT().dashboard
+  return (
+    <Card className="space-y-4">
+      <PanelHeader icon={<Target size={18} />} label={td.nextActions} title={td.whatToDoNext} />
+      <div className="space-y-2">
+        {actions.map((action) => (
+          <Link
+            key={`${action.type}-${action.route}`}
+            to={action.route}
+            className="group flex items-center gap-3 rounded-xl border border-border bg-panel p-3 transition-colors hover:border-primary/40"
+          >
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-surface text-primary">
+              <ActionIcon type={action.type} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold text-text group-hover:text-primary">{action.label}</p>
+              <p className="text-sm text-muted">{action.description}</p>
+            </div>
+            <ArrowRight size={16} className="shrink-0 text-muted" />
+          </Link>
+        ))}
+      </div>
+    </Card>
+  )
+}
+
+function ProInsightsPanel({
+  unlocked,
+  ctaLabel,
+  ctaRoute,
+  insights,
+}: {
+  unlocked: boolean
+  ctaLabel: string | null
+  ctaRoute: string | null
+  insights: PersonalDashboardInsight[]
+}) {
+  const td = useT().dashboard
+  return (
+    <Card className="space-y-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <PanelHeader icon={<Sparkles size={18} />} label={td.proInsights} title={unlocked ? td.personalRecommendations : td.unlockDeeperGuidance} />
+        {!unlocked && ctaRoute && (
+          <Link to={ctaRoute}><Button size="sm">{ctaLabel ?? td.upgrade}</Button></Link>
+        )}
+      </div>
+
+      {!unlocked ? (
+        <p className="text-sm text-muted">
+          {td.proFreeHint}
+        </p>
+      ) : insights.length === 0 ? (
+        <p className="text-sm text-muted">{td.proEmpty}</p>
+      ) : (
+        <div className="grid gap-3 lg:grid-cols-3">
+          {insights.map((insight) => (
+            <div
+              key={`${insight.type}-${insight.title}`}
+              className="rounded-xl border p-4"
+              style={insightStyle(insight.severity)}
+            >
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted">{insight.type}</p>
+              <p className="mt-2 font-semibold text-text">{insight.title}</p>
+              <p className="mt-1 text-sm text-muted">{insight.message}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
+  )
+}
+
+function MetricCard({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: string; sub?: string }) {
+  return (
+    <motion.div variants={slideUp} className="rounded-xl border border-border bg-panel p-4">
+      <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-surface text-primary">{icon}</div>
+      <p className="text-xs text-muted">{label}</p>
+      <p className="text-lg font-bold text-text">{value}</p>
+      {sub && <p className="text-xs text-muted">{sub}</p>}
+    </motion.div>
+  )
+}
+
+function SmallStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-border bg-panel p-3">
+      <p className="text-xs text-muted">{label}</p>
+      <p className="mt-1 font-semibold text-text">{value}</p>
+    </div>
+  )
+}
+
+function Macro({ label, logged, target }: { label: string; logged: number; target: number | null }) {
+  return (
+    <div className="rounded-lg border border-border p-3">
+      <p className="text-xs text-muted">{label}</p>
+      <p className="font-semibold text-text">{Math.round(logged)} / {target == null ? '-' : Math.round(target)}g</p>
+    </div>
+  )
+}
+
+function PanelHeader({
+  icon,
+  label,
+  title,
+  subtitle,
+}: {
+  icon: React.ReactNode
+  label: string
+  title: string
+  subtitle?: string
+}) {
+  return (
+    <div className="flex min-w-0 items-start gap-3">
+      <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-panel text-primary">
+        {icon}
+      </div>
+      <div className="min-w-0">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</p>
+        <h2 className="mt-0.5 break-words text-lg font-semibold text-text">{title}</h2>
+        {subtitle && <p className="text-sm text-muted">{subtitle}</p>}
+      </div>
+    </div>
+  )
+}
+
+function ProgressBar({ value, className }: { value: number; className?: string }) {
+  return (
+    <div className={cn('h-2 w-full overflow-hidden rounded-full', className)} style={{ background: 'var(--border-1)' }}>
+      <div
+        className="h-full rounded-full bg-primary transition-all duration-500"
+        style={{ width: `${Math.max(0, Math.min(100, value))}%` }}
+      />
+    </div>
+  )
+}
+
+function ActionIcon({ type }: { type: string }) {
+  if (type.includes('Workout')) return <Dumbbell size={17} />
+  if (type.includes('Nutrition')) return <Utensils size={17} />
+  if (type.includes('Bodyweight')) return <Weight size={17} />
+  if (type.includes('Profile')) return <Activity size={17} />
+  if (type.includes('Plan')) return <ClipboardList size={17} />
+  return <Sparkles size={17} />
+}
+
+function insightStyle(severity: string): React.CSSProperties {
+  if (severity === 'Warning' || severity === 'Critical') {
+    return { borderColor: 'rgba(245,158,11,0.28)', background: 'rgba(245,158,11,0.08)' }
+  }
+  if (severity === 'Positive') {
+    return { borderColor: 'rgba(34,197,94,0.25)', background: 'rgba(34,197,94,0.08)' }
+  }
+  return { borderColor: 'var(--border-1)', background: 'var(--bg-2)' }
+}
 
 interface PlateCalculatorResult {
   kg: number | null
@@ -274,16 +567,17 @@ function PlateCalculatorBody({
   onInputChange: (input: { value: string; unit: 'kg' | 'lbs' }) => void
   calculator: PlateCalculatorResult
 }) {
+  const td = useT().dashboard
   const kgValue = input.unit === 'kg' ? input.value : calculator.kg ? roundDisplay(calculator.kg) : ''
   const lbsValue = input.unit === 'lbs' ? input.value : calculator.lbs ? roundDisplay(calculator.lbs) : ''
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted">20kg bar by default. Plate counts are shown per side.</p>
+      <p className="text-sm text-muted">{td.plateCalculatorHint}</p>
 
       <div className="grid gap-3 sm:grid-cols-2">
         <Input
-          label="Kilograms"
+          label={td.kilograms}
           type="number"
           min="0"
           step="0.5"
@@ -291,7 +585,7 @@ function PlateCalculatorBody({
           onChange={(event) => onInputChange({ value: event.target.value, unit: 'kg' })}
         />
         <Input
-          label="Pounds"
+          label={td.pounds}
           type="number"
           min="0"
           step="1"
@@ -301,8 +595,8 @@ function PlateCalculatorBody({
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <PlateLoadPanel title="KG plates" unit="kg" barLabel="20kg bar" load={calculator.kgLoad} />
-        <PlateLoadPanel title="LB plates" unit="lb" barLabel={`${roundDisplay(BAR_KG * KG_TO_LBS)}lb bar`} load={calculator.lbsLoad} />
+        <PlateLoadPanel title={td.kgPlates} unit="kg" barLabel={td.kgBar} load={calculator.kgLoad} />
+        <PlateLoadPanel title={td.lbPlates} unit="lb" barLabel={td.lbBar.replace('{n}', roundDisplay(BAR_KG * KG_TO_LBS))} load={calculator.lbsLoad} />
       </div>
     </div>
   )
@@ -319,6 +613,7 @@ function PlateLoadPanel({
   barLabel: string
   load: PlateLoadResult | null
 }) {
+  const td = useT().dashboard
   return (
     <div className="rounded-xl border border-border bg-panel p-4">
       <div className="mb-3 flex items-center justify-between gap-3">
@@ -326,17 +621,13 @@ function PlateLoadPanel({
           <p className="text-sm font-semibold text-text">{title}</p>
           <p className="text-xs text-muted">{barLabel}</p>
         </div>
-        {load && (
-          <p className="text-sm font-semibold text-text">
-            {roundDisplay(load.totalLoadedWeight)} {unit}
-          </p>
-        )}
+        {load && <p className="text-sm font-semibold text-text">{roundDisplay(load.totalLoadedWeight)} {unit}</p>}
       </div>
 
       {!load ? (
-        <p className="text-sm text-muted">Enter a weight at or above the bar weight.</p>
+        <p className="text-sm text-muted">{td.enterAboveBar}</p>
       ) : load.plates.length === 0 ? (
-        <p className="text-sm text-muted">Bar only.</p>
+        <p className="text-sm text-muted">{td.barOnly}</p>
       ) : (
         <div className="flex flex-wrap gap-2">
           {load.plates.map((plate) => (
@@ -353,7 +644,7 @@ function PlateLoadPanel({
 
       {load && load.remainder > 0.01 && (
         <p className="mt-3 text-xs text-muted">
-          Nearest load. Remaining per side: {roundDisplay(load.remainder)} {unit}.
+          {td.nearestLoad.replace('{n}', roundDisplay(load.remainder)).replace('{unit}', unit)}
         </p>
       )}
     </div>
@@ -362,154 +653,4 @@ function PlateLoadPanel({
 
 function roundDisplay(value: number) {
   return Number(value.toFixed(2)).toString()
-}
-
-interface TodayDayShape {
-  id: string
-  dayOfWeek: string
-  date: string
-  totalExercises: number
-  completedExercises: number
-  isCompleted: boolean
-  weeklyWorkoutId: string
-}
-
-interface TodayTrainingCardProps {
-  todayDay: TodayDayShape | null
-  td: Record<string, string>
-  tc: Record<string, string>
-  dateLocale: Locale
-}
-
-function TodayTrainingCard({ todayDay, td, tc, dateLocale }: TodayTrainingCardProps) {
-  const isRest = !todayDay || todayDay.totalExercises === 0
-  const { data: exercises } = useExercises(todayDay?.id ?? '')
-
-  const { totalSets, totalVolume, muscleGroups } = useMemo(() => {
-    if (!exercises || exercises.length === 0) {
-      return { totalSets: 0, totalVolume: 0, muscleGroups: [] as string[] }
-    }
-    const sets = exercises.reduce((s, e) => s + e.plannedSets, 0)
-    const volume = exercises.reduce(
-      (s, e) => s + e.plannedSets * e.plannedReps * (e.plannedWeight ?? 0),
-      0,
-    )
-    const groups = Array.from(new Set(exercises.map((e) => e.primaryMuscleGroup)))
-    return { totalSets: sets, totalVolume: volume, muscleGroups: groups }
-  }, [exercises])
-
-  if (isRest) {
-    return (
-      <Card className="flex items-center gap-4">
-        <div
-          className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl"
-          style={{ background: 'var(--bg-3)' }}
-        >
-          <Dumbbell size={22} className="text-muted" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted">{td.todayTraining}</p>
-          <p className="mt-0.5 text-base font-semibold text-text">{td.restDay}</p>
-        </div>
-      </Card>
-    )
-  }
-
-  const pct = Math.round((todayDay.completedExercises / todayDay.totalExercises) * 100)
-
-  return (
-    <Card className="space-y-3">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0 flex-1">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted">{td.todayTraining}</p>
-          <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-            <h2 className="text-lg font-semibold text-text">{todayDay.dayOfWeek}</h2>
-            <span className="text-sm text-muted">
-              {format(new Date(todayDay.date), 'd MMM', { locale: dateLocale })}
-            </span>
-          </div>
-          <p className="mt-0.5 text-sm text-muted">
-            <span className="font-semibold text-text">{todayDay.totalExercises}</span>{' '}
-            {td.exercisesPlanned}
-            {todayDay.completedExercises > 0 && !todayDay.isCompleted && (
-              <span className="ml-2">· {todayDay.completedExercises}/{todayDay.totalExercises} {tc.exercises}</span>
-            )}
-          </p>
-
-          {exercises && exercises.length > 0 && (
-            <p className="mt-0.5 text-sm text-muted">
-              <span className="font-semibold text-text">{totalSets}</span> {td.sets}
-              {totalVolume > 0 && (
-                <>
-                  {' · '}
-                  <span className="font-semibold text-text">{totalVolume.toLocaleString()}</span> kg
-                </>
-              )}
-            </p>
-          )}
-
-          {muscleGroups.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {muscleGroups.slice(0, 4).map((mg) => (
-                <Badge key={mg} variant="default">{mg}</Badge>
-              ))}
-              {muscleGroups.length > 4 && (
-                <Badge variant="default">+{muscleGroups.length - 4}</Badge>
-              )}
-            </div>
-          )}
-        </div>
-
-        {todayDay.isCompleted ? (
-          <div className="flex flex-shrink-0 items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium" style={{ background: 'var(--xn-sage-200)', color: 'var(--xn-success)' }}>
-            <CheckCircle2 size={15} />
-            {td.dayCompleted}
-          </div>
-        ) : (
-          <Link
-            to={`/days/${todayDay.id}`}
-            state={{ canEdit: true, canComplete: true, weeklyWorkoutId: todayDay.weeklyWorkoutId }}
-            className="flex w-full flex-shrink-0 items-center justify-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-opacity hover:opacity-80 sm:w-auto sm:py-1.5"
-            style={{ background: 'var(--accent)', color: 'var(--fg-on-clay)' }}
-          >
-            {todayDay.completedExercises > 0 ? td.continueWorkout : td.startWorkout}
-            <ChevronRight size={14} />
-          </Link>
-        )}
-      </div>
-
-      {/* Progress bar */}
-      {!todayDay.isCompleted && (
-        <div>
-          <div className="h-1.5 w-full overflow-hidden rounded-full" style={{ background: 'var(--border-1)' }}>
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${pct}%` }}
-              transition={{ duration: 0.6, ease: 'easeOut' }}
-              className="h-full rounded-full bg-success"
-            />
-          </div>
-        </div>
-      )}
-    </Card>
-  )
-}
-
-// ─── Stat card ────────────────────────────────────────────────────────────────
-
-interface StatCardProps { icon: React.ReactNode; label: string; value: string; sub?: string; iconBg?: string }
-function StatCard({ icon, label, value, sub, iconBg }: StatCardProps) {
-  return (
-    <motion.div variants={slideUp} className={cn('rounded-xl border border-border bg-surface p-4')}>
-      <div
-        className="mb-3 w-fit rounded-lg p-2"
-        style={{ background: iconBg ?? 'var(--xn-clay-100)' }}
-      >
-        {icon}
-      </div>
-      <p className="text-xs text-muted">{label}</p>
-      <p className="text-lg font-bold text-text">{value}</p>
-      {sub && <p className="text-xs text-muted">{sub}</p>}
-    </motion.div>
-  )
 }

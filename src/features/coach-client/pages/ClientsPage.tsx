@@ -496,7 +496,10 @@ export function ClientsPage() {
       {/* Page header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-text">{tcl.title}</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-text">{tcl.title}</h1>
+            <InlineTip placement="clients" audience="coach" />
+          </div>
           <p className="mt-1 text-sm text-muted">
             {activeClients.length} active client{activeClients.length !== 1 ? 's' : ''}
             {inactiveCount > 0 && (
@@ -508,8 +511,6 @@ export function ClientsPage() {
           </p>
         </div>
       </div>
-
-      <InlineTip placement="clients" audience="coach" />
 
       <div className="grid gap-3 min-[390px]:grid-cols-2 lg:grid-cols-4">
         <StatCard icon={<Users size={15} />} label="Active clients" value={String(activeClients.length)} />

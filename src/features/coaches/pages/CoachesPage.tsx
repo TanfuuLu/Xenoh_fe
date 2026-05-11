@@ -57,11 +57,12 @@ export function CoachesPage() {
     <>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-text">{tco.title}</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-text">{tco.title}</h1>
+            <InlineTip placement="coaches" audience="individual" />
+          </div>
           <p className="mt-1 text-sm text-muted">{tco.subtitle}</p>
         </div>
-
-        <InlineTip placement="coaches" audience="individual" />
 
         <Input
           placeholder={tco.searchPlaceholder}

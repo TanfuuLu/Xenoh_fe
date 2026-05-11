@@ -9,6 +9,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import { useT } from '@/shared/i18n'
 import type { LiftE1RmPoint, LiftSeries } from '../../types'
 
 const TICK_STYLE = { fill: 'var(--fg-3)', fontSize: 11 }
@@ -34,10 +35,11 @@ interface CombinedPoint {
 }
 
 export function LiftTrendChart({ squat, bench, deadlift }: Props) {
+  const tp = useT().progress
   const data = useMemo(() => combine(squat.e1Rm, bench.e1Rm, deadlift.e1Rm), [squat, bench, deadlift])
 
   if (data.length === 0) {
-    return <p className="text-sm text-muted">No e1RM data yet.</p>
+    return <p className="text-sm text-muted">{tp.noE1rmData}</p>
   }
 
   return (

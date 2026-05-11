@@ -1,5 +1,6 @@
 import { motion, useReducedMotion } from 'framer-motion'
 import { slideUp } from '@/shared/utils/motion'
+import { useT } from '@/shared/i18n'
 import type { CompetitionLift, LiftPrEvent } from '../../types'
 
 interface PrEventWithLift extends LiftPrEvent {
@@ -14,9 +15,15 @@ interface Props {
 
 export function PrTimeline({ events, limit = 12 }: Props) {
   const shouldReduce = useReducedMotion()
+  const tp = useT().progress
   const rows = events.slice(0, limit)
+  const scrollable = rows.length > 5
 
   return (
+    <div
+      className={scrollable ? 'max-h-[340px] overflow-y-auto pr-1' : undefined}
+      aria-label={scrollable ? tp.scrollablePrTimeline : undefined}
+    >
     <motion.ol
       initial={shouldReduce ? false : 'hidden'}
       animate="visible"
@@ -30,24 +37,25 @@ export function PrTimeline({ events, limit = 12 }: Props) {
           className="flex items-center justify-between rounded-xl px-3 py-2"
           style={{ background: 'var(--bg-3)', border: '1px solid var(--border-1)' }}
         >
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-3">
             <span
-              className="rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
+              className="shrink-0 rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
               style={{ background: liftAccent(ev.lift, 0.16), color: liftAccent(ev.lift, 1) }}
             >
               {ev.lift}
             </span>
-            <div className="text-sm text-text">
+            <div className="truncate text-sm text-text">
               {ev.weight.toFixed(1)} kg × {ev.reps}
             </div>
           </div>
-          <div className="text-right">
+          <div className="shrink-0 pl-3 text-right">
             <p className="text-sm font-semibold text-text">{ev.e1Rm.toFixed(1)} kg</p>
-            <p className="text-[10px] text-muted">e1RM · {ev.date}</p>
+            <p className="text-[10px] text-muted">{tp.e1rm} · {ev.date}</p>
           </div>
         </motion.li>
       ))}
     </motion.ol>
+    </div>
   )
 }
 
