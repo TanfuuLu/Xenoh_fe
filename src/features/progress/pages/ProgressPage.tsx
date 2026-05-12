@@ -27,7 +27,14 @@ import { usePlanAnalytics } from '../api/usePlanAnalytics'
 import { useClientPowerlifting } from '../api/useClientPowerlifting'
 import { PowerliftingPanel } from '../components/powerlifting/PowerliftingPanel'
 import { InlineTip } from '@/features/tips'
-import type { MuscleGroupPoint, PlanAnalyticsResponse, PowerliftingSection, TrainingInsightResponse, TrainingInsightSeverity } from '../types'
+import type {
+  MuscleGroupBalancePoint,
+  MuscleGroupPoint,
+  PlanAnalyticsResponse,
+  PowerliftingSection,
+  TrainingInsightResponse,
+  TrainingInsightSeverity,
+} from '../types'
 
 type ProgressTab = 'overview' | 'powerlifting'
 
@@ -383,6 +390,13 @@ function OverviewSection({
             </motion.div>
           )}
 
+          <motion.div {...(shouldReduce ? {} : slideUp)}>
+            <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+              <MuscleHeatmapPanel analytics={analytics} tp={tp} />
+              <BodyBalanceDiagram balance={analytics.muscleGroupBalance} tp={tp} />
+            </div>
+          </motion.div>
+
           {/* Weekly Compliance */}
           <motion.div {...(shouldReduce ? {} : slideUp)}>
             <Card>
@@ -523,8 +537,146 @@ function MuscleGroupVolumeList({
   )
 }
 
+function MuscleHeatmapPanel({
+  analytics,
+  tp,
+}: {
+  analytics: PlanAnalyticsResponse
+  tp: Record<string, string>
+}) {
+  const rows = analytics.muscleGroupHeatmap
+    .filter((row) => row.totalVolume > 0)
+    .slice(0, 8)
+  const weeks = Array.from(
+    new Map(
+      rows
+        .flatMap((row) => row.weeks)
+        .map((week) => [week.weekNumber, week.weekName] as const),
+    ),
+  ).sort(([a], [b]) => a - b)
+  const maxVolume = Math.max(0, ...rows.flatMap((row) => row.weeks.map((week) => week.volume)))
+
+  return (
+    <Card>
+      <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="text-base font-semibold text-text">{tp.muscleGroupHeatmap}</h2>
+        <span className="text-xs text-muted">{tp.weightedVolume}</span>
+      </div>
+      {rows.length === 0 || weeks.length === 0 ? (
+        <p className="text-sm text-muted">{tp.noData}</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <div
+            className="grid min-w-[520px] gap-1.5"
+            style={{ gridTemplateColumns: `minmax(92px, 1fr) repeat(${weeks.length}, minmax(42px, 56px))` }}
+          >
+            <div />
+            {weeks.map(([weekNumber, weekName]) => (
+              <div key={weekNumber} className="truncate text-center text-[11px] font-medium text-muted">
+                {weekName}
+              </div>
+            ))}
+            {rows.map((row) => (
+              <div key={row.muscleGroup} className="contents">
+                <div className="truncate pr-2 text-xs font-medium text-text">{row.muscleGroup}</div>
+                {weeks.map(([weekNumber]) => {
+                  const volume = row.weeks.find((week) => week.weekNumber === weekNumber)?.volume ?? 0
+                  return (
+                    <div
+                      key={`${row.muscleGroup}-${weekNumber}`}
+                      className="flex h-9 items-center justify-center rounded-md text-[10px] font-semibold text-text"
+                      style={{
+                        background: heatmapColor(volume, maxVolume),
+                        border: '1px solid var(--border-1)',
+                      }}
+                      title={`${row.muscleGroup}: ${formatKg(volume)}`}
+                    >
+                      {volume > 0 ? formatCompactKg(volume) : '-'}
+                    </div>
+                  )
+                })}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </Card>
+  )
+}
+
+function BodyBalanceDiagram({
+  balance,
+  tp,
+}: {
+  balance: MuscleGroupBalancePoint
+  tp: Record<string, string>
+}) {
+  const pairs = [
+    [
+      { label: tp.front, value: balance.frontVolume, color: 'var(--color-primary)' },
+      { label: tp.back, value: balance.backVolume, color: 'var(--xn-success)' },
+    ],
+    [
+      { label: tp.upper, value: balance.upperVolume, color: 'var(--xn-clay-700)' },
+      { label: tp.lower, value: balance.lowerVolume, color: 'var(--xn-warning)' },
+    ],
+    [
+      { label: tp.other, value: balance.otherVolume, color: 'var(--fg-3)' },
+    ],
+  ]
+  const maxVolume = Math.max(balance.maxVolume, 1)
+  const hasVolume = balance.maxVolume > 0
+
+  return (
+    <Card>
+      <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="text-base font-semibold text-text">{tp.bodyHeatmap}</h2>
+        <span className="text-xs text-muted">{tp.muscleGroupVolume}</span>
+      </div>
+      {!hasVolume ? (
+        <p className="text-sm text-muted">{tp.noData}</p>
+      ) : (
+        <div className="space-y-5">
+          {pairs.map((pair) => (
+            <div key={pair.map((item) => item.label).join('-')} className="space-y-3">
+              {pair.map((item) => (
+                <div key={item.label}>
+                  <div className="mb-1 flex items-center justify-between gap-2 text-xs">
+                    <span className="font-medium text-text">{item.label}</span>
+                    <span className="text-muted">{formatKg(item.value)}</span>
+                  </div>
+                  <div className="h-3 overflow-hidden rounded-full" style={{ background: 'var(--bg-3)' }}>
+                    <div
+                      className="h-full rounded-full"
+                      style={{
+                        width: `${Math.max(4, (item.value / maxVolume) * 100)}%`,
+                        background: item.color,
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
+  )
+}
+
 function formatKg(value: number) {
   return `${Math.round(value).toLocaleString()} kg`
+}
+
+function formatCompactKg(value: number) {
+  if (value >= 1000) return `${(value / 1000).toFixed(1)}t`
+  return `${Math.round(value)}kg`
+}
+
+function heatmapColor(value: number, max: number) {
+  if (value <= 0 || max <= 0) return 'var(--bg-3)'
+  const intensity = Math.max(16, Math.round((value / max) * 88))
+  return `color-mix(in srgb, var(--color-primary) ${intensity}%, var(--bg-3))`
 }
 
 function PlanSelect({

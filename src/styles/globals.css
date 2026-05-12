@@ -66,7 +66,7 @@
   --border-1: #c1aa95;  /* clearer component borders */
   --border-2: #8f735e;
 
-  --accent:       var(--xn-clay-800);  /* was clay-700 — darker */
+  --accent:       var(--xn-clay-800);
   --accent-hover: var(--xn-clay-900);
   --accent-press: #3b2515;
   --accent-soft:  var(--xn-clay-200);
@@ -96,6 +96,83 @@
   --dur-slow: 420ms;
 }
 
+html[data-theme="dark"] {
+  color-scheme: dark;
+
+  --xn-clay-900: #f5dfc8;
+  --xn-clay-800: #e6c09d;
+  --xn-clay-700: #c98f68;
+  --xn-clay-600: #a87556;
+  --xn-clay-500: #805843;
+  --xn-clay-400: #614335;
+  --xn-clay-300: #4b372f;
+  --xn-clay-200: #332822;
+  --xn-clay-100: #241d19;
+  --xn-clay-050: #171312;
+
+  --xn-sage-700: #e4edbd;
+  --xn-sage-600: #cdd89b;
+  --xn-sage-500: #aab66f;
+  --xn-sage-400: #87925a;
+  --xn-sage-300: #56603c;
+  --xn-sage-200: #303821;
+  --xn-sage-100: #202718;
+
+  --xn-ink-900: #f6f0e8;
+  --xn-ink-800: #e7d8c7;
+  --xn-ink-700: #d0bda8;
+  --xn-ink-600: #b7a18b;
+  --xn-ink-500: #978270;
+  --xn-ink-400: #756354;
+  --xn-ink-300: #57483d;
+  --xn-ink-200: #3d322b;
+  --xn-ink-100: #251f1b;
+  --xn-ink-050: #181412;
+
+  --xn-paper: #12100f;
+  --xn-paper-alt: #1c1714;
+
+  --xn-success: #dce7aa;
+  --xn-success-bg: #263119;
+  --xn-warning: #ffd08a;
+  --xn-warning-bg: #382612;
+  --xn-danger: #ffb2a5;
+  --xn-danger-bg: #3a1d18;
+  --xn-info: #c5d8e6;
+  --xn-info-bg: #1d2931;
+
+  --fg-1: var(--xn-ink-900);
+  --fg-2: var(--xn-ink-700);
+  --fg-3: var(--xn-ink-600);
+  --fg-4: var(--xn-ink-500);
+  --fg-on-clay: #15110f;
+
+  --bg-1: #12100f;
+  --bg-2: #1c1714;
+  --bg-3: #2a211c;
+  --bg-4: #211a16;
+  --bg-inverse: var(--xn-ink-900);
+
+  --border-1: #3f332b;
+  --border-2: #685144;
+
+  --accent: var(--xn-clay-700);
+  --accent-hover: var(--xn-clay-800);
+  --accent-press: #f1d0b2;
+  --accent-soft:  var(--xn-clay-200);
+  --accent-on: var(--fg-on-clay);
+
+  --accent-2: var(--xn-sage-500);
+  --accent-2-soft: var(--xn-sage-100);
+
+  --sh-xs: 0 1px 4px rgba(0, 0, 0, 0.28);
+  --sh-sm: 0 4px 12px rgba(0, 0, 0, 0.26);
+  --sh-md: 0 14px 28px -12px rgba(0, 0, 0, 0.5);
+  --sh-lg: 0 28px 54px -24px rgba(0, 0, 0, 0.62);
+  --sh-xl: 0 44px 78px -30px rgba(0, 0, 0, 0.72);
+  --sh-inset: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
 /* ── Vietnamese: single-font system using Fraunces everywhere ──────────── */
 html[lang="vi"] {
   --font-display: "Fraunces", Georgia, serif;
@@ -111,20 +188,20 @@ html[lang="vi"] button {
 }
 
 /* ── Tailwind theme mapping ────────────────────────────────────────────── */
-@theme {
+@theme inline {
   /* Core semantic tokens → Tailwind utilities */
-  --color-primary:    #725945;    /* clay-800 — darker */
-  --color-surface:    #fffaf3;
-  --color-background: #efe4d5;
-  --color-text:       #2e2218;
-  --color-muted:      #6e6050;   /* was #a99884 — much darker */
-  --color-border:     #c1aa95;   /* was #ece3d1 — more visible */
-  --color-panel:      #ead7bd;
-  --color-sand:       #eedbc1;
-  --color-sage:       #868a69;   /* sage-600 — darker */
-  --color-success:    #485a26;
-  --color-danger:     #802013;
-  --color-warning:    #8d560d;
+  --color-primary:    var(--accent);
+  --color-surface:    var(--bg-2);
+  --color-background: var(--bg-1);
+  --color-text:       var(--fg-1);
+  --color-muted:      var(--fg-3);
+  --color-border:     var(--border-1);
+  --color-panel:      var(--bg-3);
+  --color-sand:       var(--accent-soft);
+  --color-sage:       var(--accent-2);
+  --color-success:    var(--xn-success);
+  --color-danger:     var(--xn-danger);
+  --color-warning:    var(--xn-warning);
 
   /* Font families available as Tailwind utilities */
   --font-display: "Fraunces", Georgia, serif;
@@ -145,8 +222,8 @@ html {
 }
 
 body {
-  background-color: var(--xn-paper);
-  color: var(--xn-ink-900);
+  background-color: var(--bg-1);
+  color: var(--fg-1);
   font-family: var(--font-sans);
   font-size: 1rem;
   line-height: 1.5;
@@ -156,7 +233,7 @@ body {
 
 ::selection {
   background: var(--xn-clay-300);
-  color: var(--xn-ink-900);
+  color: var(--fg-1);
 }
 
 /* ── Scrollbar ────────────────────────────────────────────────────────── */
@@ -261,6 +338,28 @@ body {
 }
 .xn-nav-item:hover { background: var(--bg-3); color: var(--fg-1); }
 .xn-nav-item.active { background: var(--xn-clay-200); color: var(--xn-clay-900); }
+
+.xn-theme-toggle {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border-1);
+  border-radius: 999px;
+  background: var(--bg-2);
+  color: var(--fg-2);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+.xn-theme-toggle:hover {
+  background: var(--bg-3);
+  color: var(--fg-1);
+}
 
 /* Top bar */
 .xn-topbar {
@@ -654,3 +753,6 @@ body {
 }
 .xn-input.error { border-color: var(--xn-danger); }
 .xn-input.error:focus { box-shadow: 0 0 0 3px color-mix(in oklch, var(--xn-danger) 20%, transparent); }
+
+
+

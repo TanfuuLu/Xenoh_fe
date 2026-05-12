@@ -15,6 +15,7 @@ import { useAuthStore } from '@/features/auth'
 import { useLogout } from '@/features/auth'
 import { useT } from '@/shared/i18n'
 import { LanguageSwitcher } from '@/shared/components/LanguageSwitcher'
+import { ThemeToggle } from '@/shared/components/ThemeToggle'
 import { UserAvatar } from '@/shared/components/UserAvatar'
 import { NotificationBell } from '@/features/notifications/components/NotificationBell'
 import { useNotificationHub } from '@/features/notifications/hooks/useNotificationHub'
@@ -194,6 +195,7 @@ export function AppLayout() {
           {/* Right: lang switcher + notification bell + user menu */}
           <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <LanguageSwitcher variant="text" />
+            <ThemeToggle />
             <NotificationBell />
             <div className="relative">
               <button

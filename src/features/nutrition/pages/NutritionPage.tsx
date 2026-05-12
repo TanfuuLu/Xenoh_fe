@@ -4,6 +4,8 @@ import { Link, useParams } from 'react-router'
 import { format, subDays } from 'date-fns'
 import { Activity, ChevronLeft, Flame, LineChart as LineChartIcon, Target, Utensils } from 'lucide-react'
 import {
+  Bar,
+  BarChart,
   CartesianGrid,
   Line,
   LineChart,
@@ -25,7 +27,13 @@ import {
   useUpdateNutritionDailyLog,
   useUpdateNutritionProfile,
 } from '../api/useNutrition'
-import type { ActivityLevel, NutritionGoal, UpdateNutritionDailyLogRequest, UpdateNutritionProfileRequest } from '../types'
+import type {
+  ActivityLevel,
+  NutritionGoal,
+  NutritionSummaryResponse,
+  UpdateNutritionDailyLogRequest,
+  UpdateNutritionProfileRequest,
+} from '../types'
 
 export function NutritionPage() {
   const t = useT()
@@ -173,6 +181,10 @@ export function NutritionPage() {
           value={calc.bodyweightKg ? `${calc.bodyweightKg} ${tn.kg}` : tn.missing}
         />
       </div>
+
+      {hasCalculation && (
+        <NutritionValueDiagrams summary={summary} logForm={logForm} tn={tn} />
+      )}
 
       <div className="flex flex-col gap-6">
         <Card>
@@ -349,10 +361,20 @@ function NutritionHistoryPanel({
   const chartData = data.map((item) => ({
     date: format(new Date(item.date), 'dd/MM'),
     calories: item.calories,
+    proteinG: item.proteinG,
+    carbsG: item.carbsG,
+    fatG: item.fatG,
     target: calorieTarget ?? undefined,
   }))
   const average = data.length
     ? Math.round(data.reduce((sum, item) => sum + item.calories, 0) / data.length)
+    : null
+  const macroAverage = data.length
+    ? {
+        proteinG: Math.round(data.reduce((sum, item) => sum + item.proteinG, 0) / data.length),
+        carbsG: Math.round(data.reduce((sum, item) => sum + item.carbsG, 0) / data.length),
+        fatG: Math.round(data.reduce((sum, item) => sum + item.fatG, 0) / data.length),
+      }
     : null
 
   return (
@@ -371,25 +393,212 @@ function NutritionHistoryPanel({
       ) : chartData.length === 0 ? (
         <p className="text-sm text-muted">{tn.advancedEmpty}</p>
       ) : (
-        <div className="h-64">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border-1)" />
-              <XAxis dataKey="date" tick={{ fill: 'var(--fg-3)', fontSize: 12 }} />
-              <YAxis tick={{ fill: 'var(--fg-3)', fontSize: 12 }} width={48} />
-              <Tooltip
-                contentStyle={{ background: 'var(--bg-2)', border: '1px solid var(--border-1)', borderRadius: 8 }}
-                formatter={(value) => [`${value} ${tn.kcal}`, '']}
-              />
-              <Line type="monotone" dataKey="calories" stroke="var(--xn-clay-800)" strokeWidth={2} dot={false} />
-              {calorieTarget && (
-                <Line type="monotone" dataKey="target" stroke="var(--xn-warning)" strokeWidth={2} strokeDasharray="4 4" dot={false} />
-              )}
-            </LineChart>
-          </ResponsiveContainer>
+        <div className="space-y-6">
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-1)" />
+                <XAxis dataKey="date" tick={{ fill: 'var(--fg-3)', fontSize: 12 }} />
+                <YAxis tick={{ fill: 'var(--fg-3)', fontSize: 12 }} width={48} />
+                <Tooltip
+                  contentStyle={{ background: 'var(--bg-2)', border: '1px solid var(--border-1)', borderRadius: 8 }}
+                  formatter={(value, name) => [
+                    `${value} ${name === 'calories' || name === 'target' ? tn.kcal : 'g'}`,
+                    name === 'proteinG'
+                      ? tn.proteinShort
+                      : name === 'carbsG'
+                        ? tn.carbsShort
+                        : name === 'fatG'
+                          ? tn.fatShort
+                          : name === 'target'
+                            ? tn.targetLabel
+                            : tn.caloriesShort,
+                  ]}
+                />
+                <Line type="monotone" dataKey="calories" stroke="var(--xn-clay-800)" strokeWidth={2} dot={false} />
+                {calorieTarget && (
+                  <Line type="monotone" dataKey="target" stroke="var(--xn-warning)" strokeWidth={2} strokeDasharray="4 4" dot={false} />
+                )}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-[1fr_220px]">
+            <div className="h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-1)" vertical={false} />
+                  <XAxis dataKey="date" tick={{ fill: 'var(--fg-3)', fontSize: 12 }} />
+                  <YAxis tick={{ fill: 'var(--fg-3)', fontSize: 12 }} width={36} />
+                  <Tooltip
+                    contentStyle={{ background: 'var(--bg-2)', border: '1px solid var(--border-1)', borderRadius: 8 }}
+                    formatter={(value, name) => [
+                      `${value} g`,
+                      name === 'proteinG' ? tn.proteinShort : name === 'carbsG' ? tn.carbsShort : tn.fatShort,
+                    ]}
+                  />
+                  <Bar dataKey="proteinG" fill="var(--color-primary)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="carbsG" fill="var(--xn-success)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="fatG" fill="var(--xn-warning)" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            {macroAverage && (
+              <div className="grid gap-2 self-start">
+                <AverageMacroPill label={tn.proteinShort} value={macroAverage.proteinG} color="var(--color-primary)" />
+                <AverageMacroPill label={tn.carbsShort} value={macroAverage.carbsG} color="var(--xn-success)" />
+                <AverageMacroPill label={tn.fatShort} value={macroAverage.fatG} color="var(--xn-warning)" />
+              </div>
+            )}
+          </div>
         </div>
       )}
     </Card>
+  )
+}
+
+function NutritionValueDiagrams({
+  summary,
+  logForm,
+  tn,
+}: {
+  summary: NutritionSummaryResponse
+  logForm: LogForm
+  tn: Record<string, string>
+}) {
+  const calc = summary.calculation
+  const macroRows = [
+    {
+      label: tn.caloriesShort,
+      target: calc.calorieTarget,
+      actual: readNumber(logForm.calories),
+      unit: tn.kcal,
+      color: 'var(--xn-clay-800)',
+    },
+    {
+      label: tn.proteinShort,
+      target: calc.proteinG,
+      actual: readNumber(logForm.proteinG),
+      unit: 'g',
+      color: 'var(--color-primary)',
+    },
+    {
+      label: tn.carbsShort,
+      target: calc.carbsG,
+      actual: readNumber(logForm.carbsG),
+      unit: 'g',
+      color: 'var(--xn-success)',
+    },
+    {
+      label: tn.fatShort,
+      target: calc.fatG,
+      actual: readNumber(logForm.fatG),
+      unit: 'g',
+      color: 'var(--xn-warning)',
+    },
+  ]
+  const targetMax = Math.max(calc.bmr ?? 0, calc.tdee ?? 0, calc.calorieTarget ?? 0, 1)
+  const energyRows = [
+    { label: tn.bmrLabel, value: calc.bmr },
+    { label: tn.tdeeLabel, value: calc.tdee },
+    { label: tn.targetLabel, value: calc.calorieTarget },
+  ]
+
+  return (
+    <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+      <Card>
+        <div className="mb-4 flex items-center gap-2">
+          <Target size={17} className="text-primary" />
+          <h2 className="text-lg font-semibold text-text">{tn.macroTargetsTitle}</h2>
+        </div>
+        <div className="space-y-4">
+          {macroRows.map((row) => {
+            const target = row.target ?? 0
+            const percent = target > 0 ? Math.min(140, (row.actual / target) * 100) : 0
+            return (
+              <div key={row.label}>
+                <div className="mb-1 flex items-center justify-between gap-2 text-sm">
+                  <span className="font-medium text-text">{row.label}</span>
+                  <span className="text-muted">
+                    {Math.round(row.actual)} / {row.target ?? tn.missing} {row.unit}
+                  </span>
+                </div>
+                <div className="h-3 overflow-hidden rounded-full" style={{ background: 'var(--bg-3)' }}>
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${Math.max(row.actual > 0 ? 4 : 0, Math.min(100, percent))}%`,
+                      background: row.color,
+                    }}
+                  />
+                </div>
+                <p className="mt-1 text-xs text-muted">{Math.round(percent)}%</p>
+              </div>
+            )
+          })}
+        </div>
+      </Card>
+
+      <Card>
+        <div className="mb-4 flex items-center gap-2">
+          <Flame size={17} className="text-primary" />
+          <h2 className="text-lg font-semibold text-text">{tn.targetLabel}</h2>
+        </div>
+        <div className="space-y-4">
+          {energyRows.map((row) => (
+            <div key={row.label}>
+              <div className="mb-1 flex items-center justify-between gap-2 text-sm">
+                <span className="font-medium text-text">{row.label}</span>
+                <span className="text-muted">{formatKcal(row.value, tn.kcal, tn.missing)}</span>
+              </div>
+              <div className="h-3 overflow-hidden rounded-full" style={{ background: 'var(--bg-3)' }}>
+                <div
+                  className="h-full rounded-full"
+                  style={{
+                    width: `${row.value ? Math.max(8, (row.value / targetMax) * 100) : 0}%`,
+                    background: row.label === tn.targetLabel ? 'var(--color-primary)' : 'var(--xn-clay-700)',
+                  }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-5 grid grid-cols-2 gap-2 text-xs">
+          <div className="rounded-lg px-3 py-2" style={{ background: 'var(--bg-3)' }}>
+            <p className="text-muted">{tn.goalLabel}</p>
+            <p className="font-semibold text-text">{summary.profile.goal}</p>
+          </div>
+          <div className="rounded-lg px-3 py-2" style={{ background: 'var(--bg-3)' }}>
+            <p className="text-muted">{tn.bodyweightLabel}</p>
+            <p className="font-semibold text-text">
+              {calc.bodyweightKg ? `${calc.bodyweightKg} ${tn.kg}` : tn.missing}
+            </p>
+          </div>
+        </div>
+      </Card>
+    </div>
+  )
+}
+
+function AverageMacroPill({
+  label,
+  value,
+  color,
+}: {
+  label: string
+  value: number
+  color: string
+}) {
+  return (
+    <div className="rounded-xl px-3 py-2" style={{ background: 'var(--bg-3)', border: '1px solid var(--border-1)' }}>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <span className="h-2.5 w-2.5 rounded-full" style={{ background: color }} />
+          <span className="text-sm font-medium text-text">{label}</span>
+        </div>
+        <span className="text-sm font-semibold text-text">{value}g</span>
+      </div>
+    </div>
   )
 }
 
