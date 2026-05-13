@@ -24,7 +24,7 @@ import { Spinner } from '@/shared/components/Spinner'
 import { useConfirm } from '@/shared/components/ConfirmModal'
 import { MuscleGroup, type MuscleGroup as MuscleGroupValue } from '@/shared/types/api'
 import { slideUp, staggerContainer } from '@/shared/utils/motion'
-import { useT } from '@/shared/i18n'
+import { useLangStore, useT } from '@/shared/i18n'
 import { useCoachPlanOverview, useCreatePlanForUser } from '@/features/plans'
 import type { CreatePlanForUserRequest } from '@/features/plans'
 import { useCoachDashboard } from '@/features/coach-client'
@@ -59,6 +59,8 @@ const clientPlanSchema = z.object({
 type ClientPlanForm = z.output<typeof clientPlanSchema>
 
 export function ClientProfilePage() {
+  const lang = useLangStore((s) => s.lang)
+  const vx = clientProfileText(lang)
   const { clientId = '' } = useParams()
   const { data: profile, isLoading } = useClientProfile(clientId)
   const { data: bodyweightHistory = [] } = useClientBodyweightHistory(clientId)
@@ -104,7 +106,7 @@ export function ClientProfilePage() {
     const startDate = format(new Date(), 'yyyy-MM-dd')
     const endDate = format(new Date(Date.now() + 28 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd')
     planForm.reset({
-      name: `${profile?.firstName ?? 'Client'} Training Plan`,
+      name: `${profile?.firstName ?? vx.clientFallback} ${vx.defaultPlanSuffix}`,
       startDate,
       endDate,
     })
@@ -172,7 +174,7 @@ export function ClientProfilePage() {
 
   async function onDeleteExercise(template: ExerciseTemplateResponse) {
     const ok = await confirm(`Delete custom exercise "${template.name}"?`, {
-      confirmLabel: 'Delete',
+      confirmLabel: vx.delete,
       danger: true,
     })
     if (!ok) return
@@ -232,7 +234,7 @@ export function ClientProfilePage() {
         </div>
         <Link to={`/coach/clients/${clientId}/ai-insight`} className="self-start">
           <Button type="button" size="sm" variant="secondary">
-            <Sparkles size={15} /> AI Insight
+            <Sparkles size={15} /> {vx.aiInsight}
           </Button>
         </Link>
       </div>
@@ -252,7 +254,7 @@ export function ClientProfilePage() {
         />
         <StatCard
           icon={<Scale size={18} style={{ color: 'var(--color-primary)' }} />}
-          label="Weight"
+          label={vx.weight}
           value={profile.latestBodyweight ? `${profile.latestBodyweight} ${tcp.kg}` : tcp.noData}
         />
         <StatCard
@@ -311,18 +313,18 @@ export function ClientProfilePage() {
         <div className="mb-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-muted">
             <ClipboardList size={14} />
-            <h2 className="text-sm font-semibold uppercase tracking-wide">Training Plan</h2>
+            <h2 className="text-sm font-semibold uppercase tracking-wide">{vx.trainingPlan}</h2>
           </div>
           <Button size="sm" onClick={openPlanModal}>
-            <Plus size={14} /> Create plan
+            <Plus size={14} /> {vx.createPlan}
           </Button>
         </div>
         <div className="mb-4 rounded-xl border border-border p-4" style={{ background: 'var(--bg-2)' }}>
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-sm font-semibold text-text">Client plan progress</p>
+              <p className="text-sm font-semibold text-text">{vx.clientPlanProgress}</p>
               <p className="mt-0.5 text-xs text-muted">
-                {activePlan ? activePlan.name : 'No active plan in date range'}
+                {activePlan ? activePlan.name : vx.noActivePlanInRange}
               </p>
             </div>
             <p className="text-2xl font-bold text-text">
@@ -344,9 +346,9 @@ export function ClientProfilePage() {
           <Spinner size="sm" />
         ) : clientPlans.length === 0 ? (
           <div className="rounded-xl border border-border p-4" style={{ background: 'var(--bg-2)' }}>
-            <p className="text-sm text-muted">No plan assigned yet.</p>
+            <p className="text-sm text-muted">{vx.noPlanAssigned}</p>
             <Button size="sm" className="mt-3" onClick={openPlanModal}>
-              <Plus size={14} /> Create first plan
+              <Plus size={14} /> {vx.createFirstPlan}
             </Button>
           </div>
         ) : (
@@ -369,13 +371,13 @@ export function ClientProfilePage() {
                       <p className="text-xs text-muted">
                         {format(new Date(activePlan.startDate), 'dd/MM/yyyy')} – {format(new Date(activePlan.endDate), 'dd/MM/yyyy')}
                       </p>
-                      <p className="text-xs text-muted">{activePlan.totalWeeks} weeks</p>
+                      <p className="text-xs text-muted">{activePlan.totalWeeks} {vx.weeks}</p>
                     </div>
                     <span
                       className="shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold"
                       style={{ background: 'color-mix(in srgb, var(--color-primary) 15%, transparent)', color: 'var(--color-primary)' }}
                     >
-                      Active
+                      {vx.active}
                     </span>
                   </div>
                 </motion.div>
@@ -392,7 +394,7 @@ export function ClientProfilePage() {
                   <p className="mt-0.5 text-xs text-muted">
                     {format(new Date(plan.startDate), 'dd/MM/yyyy')} – {format(new Date(plan.endDate), 'dd/MM/yyyy')}
                   </p>
-                  <p className="mt-0.5 text-xs text-muted">{plan.totalWeeks} weeks</p>
+                  <p className="mt-0.5 text-xs text-muted">{plan.totalWeeks} {vx.weeks}</p>
                 </motion.div>
               </Link>
             ))}
@@ -403,25 +405,25 @@ export function ClientProfilePage() {
       <Modal
         open={planModalOpen}
         onClose={closePlanModal}
-        title="Create plan for client"
+        title={vx.createPlanForClient}
         className="max-w-lg"
       >
         <form onSubmit={planForm.handleSubmit(onSubmitPlan)} className="space-y-4">
           <Input
-            label="Plan name"
+            label={vx.planName}
             placeholder="Hypertrophy Block"
             error={planForm.formState.errors.name?.message}
             {...planForm.register('name')}
           />
           <div className="grid gap-3 sm:grid-cols-2">
             <Input
-              label="Start date"
+              label={vx.startDate}
               type="date"
               error={planForm.formState.errors.startDate?.message}
               {...planForm.register('startDate')}
             />
             <Input
-              label="End date"
+              label={vx.endDate}
               type="date"
               error={planForm.formState.errors.endDate?.message}
               {...planForm.register('endDate')}
@@ -434,10 +436,10 @@ export function ClientProfilePage() {
           )}
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <Button type="button" variant="secondary" className="w-full sm:w-auto" onClick={closePlanModal}>
-              Cancel
+              {vx.cancel}
             </Button>
             <Button type="submit" className="w-full sm:w-auto" loading={creatingClientPlan}>
-              Create plan
+              {vx.createPlan}
             </Button>
           </div>
         </form>
@@ -448,20 +450,20 @@ export function ClientProfilePage() {
         <div className="mb-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-muted">
             <Dumbbell size={14} />
-            <h2 className="text-sm font-semibold uppercase tracking-wide">Custom exercises for client</h2>
+            <h2 className="text-sm font-semibold uppercase tracking-wide">{vx.customExercisesForClient}</h2>
           </div>
           <Button size="sm" onClick={openExerciseModal}>
-            <Plus size={14} /> Add exercise
+            <Plus size={14} /> {vx.addExercise}
           </Button>
         </div>
         <p className="text-sm text-muted">
-          Create a custom exercise that will appear in this client's exercise library.
+          {vx.customExerciseHint}
         </p>
         <div className="mt-4">
           {clientExercisesLoading ? (
             <Spinner size="sm" />
           ) : clientCustomExercises.length === 0 ? (
-            <p className="text-sm text-muted">No custom exercises created for this client yet.</p>
+            <p className="text-sm text-muted">{vx.noCustomExercises}</p>
           ) : (
             <motion.div
               initial="hidden"
@@ -480,7 +482,7 @@ export function ClientProfilePage() {
                     <div className="min-w-0">
                       <p className="break-words font-semibold text-text">{template.name}</p>
                       <p className="mt-1 text-xs text-muted">
-                        {formatMuscleGroup(template.primaryMuscleGroup)} • {template.exerciseKind}
+                        {formatMuscleGroup(template.primaryMuscleGroup, lang)} • {translateExerciseKind(template.exerciseKind, lang)}
                       </p>
                     </div>
                     <div className="flex shrink-0 items-center gap-1">
@@ -489,7 +491,7 @@ export function ClientProfilePage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => openEditExerciseModal(template)}
-                        title="Edit custom exercise"
+                        title={vx.editCustomExercise}
                       >
                         <Pencil size={14} />
                       </Button>
@@ -499,7 +501,7 @@ export function ClientProfilePage() {
                         size="sm"
                         loading={deletingCustom}
                         onClick={() => onDeleteExercise(template)}
-                        title="Delete custom exercise"
+                        title={vx.deleteCustomExercise}
                       >
                         <Trash2 size={14} />
                       </Button>
@@ -516,7 +518,7 @@ export function ClientProfilePage() {
                           className="rounded-full border px-2 py-0.5 text-xs text-muted"
                           style={{ borderColor: 'var(--border-1)' }}
                         >
-                          {formatMuscleGroup(group)}
+                          {formatMuscleGroup(group, lang)}
                         </span>
                       ))}
                     </div>
@@ -533,12 +535,12 @@ export function ClientProfilePage() {
           <div className="flex items-start gap-3">
             <Utensils size={18} className="mt-0.5 text-primary" />
             <div>
-              <h2 className="font-semibold text-text">Nutrition</h2>
-              <p className="mt-1 text-sm text-muted">Edit this client's TDEE, bulk/cut targets, and daily intake logs.</p>
+              <h2 className="font-semibold text-text">{vx.nutrition}</h2>
+              <p className="mt-1 text-sm text-muted">{vx.nutritionHint}</p>
             </div>
           </div>
           <Link to={`/coach/clients/${clientId}/nutrition`}>
-            <Button size="sm">Open nutrition</Button>
+            <Button size="sm">{vx.openNutrition}</Button>
           </Link>
         </div>
       </Card>
@@ -546,18 +548,18 @@ export function ClientProfilePage() {
       <Modal
         open={exerciseModalOpen}
         onClose={closeExerciseModal}
-        title={editingTemplate ? 'Edit custom exercise for client' : 'Create custom exercise for client'}
+        title={editingTemplate ? vx.editCustomExerciseForClient : vx.createCustomExerciseForClient}
         className="max-w-lg"
       >
         <form onSubmit={exerciseForm.handleSubmit(onSubmitExercise)} className="space-y-4">
           <Input
-            label="Exercise name"
+            label={vx.exerciseName}
             placeholder="Incline dumbbell press"
             error={exerciseForm.formState.errors.name?.message}
             {...exerciseForm.register('name')}
           />
           <Input
-            label="Description"
+            label={vx.description}
             placeholder="Optional notes for this movement"
             error={exerciseForm.formState.errors.description?.message}
             {...exerciseForm.register('description')}
@@ -568,8 +570,8 @@ export function ClientProfilePage() {
               control={exerciseForm.control}
               render={({ field }) => (
                 <Select
-                  label="Primary muscle"
-                  options={Object.values(MuscleGroup).map((g) => ({ value: g, label: formatMuscleGroup(g) }))}
+                  label={vx.primaryMuscle}
+                  options={Object.values(MuscleGroup).map((g) => ({ value: g, label: formatMuscleGroup(g, lang) }))}
                   value={field.value}
                   onChange={(next) => field.onChange(next as MuscleGroupValue)}
                 />
@@ -580,9 +582,9 @@ export function ClientProfilePage() {
               control={exerciseForm.control}
               render={({ field }) => (
                 <Select
-                  label="Exercise type"
+                  label={vx.exerciseType}
                   options={[
-                    { value: 'Strength', label: 'Strength' },
+                    { value: 'Strength', label: vx.strength },
                     { value: 'Cardio', label: 'Cardio' },
                   ]}
                   value={field.value}
@@ -599,6 +601,8 @@ export function ClientProfilePage() {
                 value={field.value ?? []}
                 primaryMuscleGroup={exerciseForm.watch('primaryMuscleGroup')}
                 onChange={field.onChange}
+                lang={lang}
+                label={vx.secondaryMuscles}
               />
             )}
           />
@@ -609,10 +613,10 @@ export function ClientProfilePage() {
           )}
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <Button type="button" variant="secondary" className="w-full sm:w-auto" onClick={closeExerciseModal}>
-              Cancel
+              {vx.cancel}
             </Button>
             <Button type="submit" className="w-full sm:w-auto" loading={creatingForClient || updatingCustom}>
-              {editingTemplate ? 'Save exercise' : 'Create exercise'}
+              {editingTemplate ? vx.saveExercise : vx.createExercise}
             </Button>
           </div>
         </form>
@@ -621,8 +625,8 @@ export function ClientProfilePage() {
       <Card>
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold text-text">Bodyweight analysis</h2>
-            <p className="text-sm text-muted">Last 90 days</p>
+            <h2 className="text-lg font-semibold text-text">{vx.bodyweightAnalysis}</h2>
+            <p className="text-sm text-muted">{vx.last90Days}</p>
           </div>
           {weightAnalytics.latest != null && (
             <p className="text-2xl font-bold text-text">{weightAnalytics.latest} {tcp.kg}</p>
@@ -632,13 +636,13 @@ export function ClientProfilePage() {
         {weightAnalytics.chartData.length > 0 ? (
           <div className="space-y-4">
             <div className="grid gap-3 sm:grid-cols-3">
-              <AnalysisStat label="Entries" value={weightAnalytics.entryCount.toString()} />
+              <AnalysisStat label={vx.entries} value={weightAnalytics.entryCount.toString()} />
               <AnalysisStat
-                label="Total change"
+                label={vx.totalChange}
                 value={formatWeightDelta(weightAnalytics.totalChange, tcp.kg)}
               />
               <AnalysisStat
-                label="Avg change"
+                label={vx.avgChange}
                 value={formatWeightDelta(weightAnalytics.averageChange, tcp.kg)}
               />
             </div>
@@ -657,7 +661,7 @@ export function ClientProfilePage() {
                     contentStyle={{ background: 'var(--bg-2)', border: '1px solid var(--border-1)', borderRadius: 8 }}
                     labelStyle={{ color: 'var(--fg-1)' }}
                     itemStyle={{ color: 'var(--xn-clay-800)' }}
-                    formatter={(value) => [`${value} ${tcp.kg}`, 'Weight']}
+                    formatter={(value) => [`${value} ${tcp.kg}`, vx.weight]}
                   />
                   <Line
                     type="monotone"
@@ -672,7 +676,7 @@ export function ClientProfilePage() {
             </div>
           </div>
         ) : (
-          <p className="text-sm text-muted">No bodyweight logs yet.</p>
+          <p className="text-sm text-muted">{vx.noBodyweightLogs}</p>
         )}
       </Card>
     </div>
@@ -755,18 +759,143 @@ function AnalysisStat({ label, value }: { label: string; value: string }) {
   )
 }
 
-function formatMuscleGroup(group: MuscleGroupValue) {
+function clientProfileText(lang: 'en' | 'vi') {
+  return lang === 'vi'
+    ? {
+      aiInsight: 'AI phân tích',
+      weight: 'Cân nặng',
+      trainingPlan: 'Plan tập luyện',
+      createPlan: 'Tạo plan',
+      clientPlanProgress: 'Tiến độ plan của client',
+      noActivePlanInRange: 'Không có plan hoạt động trong khoảng ngày',
+      noPlanAssigned: 'Chưa gán plan.',
+      createFirstPlan: 'Tạo plan đầu tiên',
+      weeks: 'tuần',
+      active: 'Đang hoạt động',
+      createPlanForClient: 'Tạo plan cho client',
+      planName: 'Tên plan',
+      startDate: 'Ngày bắt đầu',
+      endDate: 'Ngày kết thúc',
+      cancel: 'Hủy',
+      customExercisesForClient: 'Bài custom cho client',
+      addExercise: 'Thêm bài tập',
+      customExerciseHint: 'Tạo bài tập custom sẽ xuất hiện trong thư viện bài tập của client này.',
+      noCustomExercises: 'Chưa tạo bài custom nào cho client này.',
+      editCustomExercise: 'Sửa bài custom',
+      deleteCustomExercise: 'Xóa bài custom',
+      nutrition: 'Dinh dưỡng',
+      nutritionHint: 'Chỉnh TDEE, mục tiêu bulk/cut và log ăn uống hằng ngày của client này.',
+      openNutrition: 'Mở dinh dưỡng',
+      editCustomExerciseForClient: 'Sửa bài custom cho client',
+      createCustomExerciseForClient: 'Tạo bài custom cho client',
+      exerciseName: 'Tên bài tập',
+      description: 'Mô tả',
+      primaryMuscle: 'Nhóm cơ chính',
+      exerciseType: 'Loại bài',
+      strength: 'Sức mạnh',
+      secondaryMuscles: 'Nhóm cơ phụ',
+      saveExercise: 'Lưu bài tập',
+      createExercise: 'Tạo bài tập',
+      bodyweightAnalysis: 'Phân tích cân nặng',
+      last90Days: '90 ngày gần nhất',
+      entries: 'Số lần ghi',
+      totalChange: 'Tổng thay đổi',
+      avgChange: 'Thay đổi TB',
+      noBodyweightLogs: 'Chưa có log cân nặng.',
+      clientFallback: 'Client',
+      defaultPlanSuffix: 'Plan tập luyện',
+      delete: 'Xóa',
+    }
+    : {
+      aiInsight: 'AI Insight',
+      weight: 'Weight',
+      trainingPlan: 'Training Plan',
+      createPlan: 'Create plan',
+      clientPlanProgress: 'Client plan progress',
+      noActivePlanInRange: 'No active plan in date range',
+      noPlanAssigned: 'No plan assigned yet.',
+      createFirstPlan: 'Create first plan',
+      weeks: 'weeks',
+      active: 'Active',
+      createPlanForClient: 'Create plan for client',
+      planName: 'Plan name',
+      startDate: 'Start date',
+      endDate: 'End date',
+      cancel: 'Cancel',
+      customExercisesForClient: 'Custom exercises for client',
+      addExercise: 'Add exercise',
+      customExerciseHint: "Create a custom exercise that will appear in this client's exercise library.",
+      noCustomExercises: 'No custom exercises created for this client yet.',
+      editCustomExercise: 'Edit custom exercise',
+      deleteCustomExercise: 'Delete custom exercise',
+      nutrition: 'Nutrition',
+      nutritionHint: "Edit this client's TDEE, bulk/cut targets, and daily intake logs.",
+      openNutrition: 'Open nutrition',
+      editCustomExerciseForClient: 'Edit custom exercise for client',
+      createCustomExerciseForClient: 'Create custom exercise for client',
+      exerciseName: 'Exercise name',
+      description: 'Description',
+      primaryMuscle: 'Primary muscle',
+      exerciseType: 'Exercise type',
+      strength: 'Strength',
+      secondaryMuscles: 'Secondary muscles',
+      saveExercise: 'Save exercise',
+      createExercise: 'Create exercise',
+      bodyweightAnalysis: 'Bodyweight analysis',
+      last90Days: 'Last 90 days',
+      entries: 'Entries',
+      totalChange: 'Total change',
+      avgChange: 'Avg change',
+      noBodyweightLogs: 'No bodyweight logs yet.',
+      clientFallback: 'Client',
+      defaultPlanSuffix: 'Training Plan',
+      delete: 'Delete',
+    }
+}
+
+function formatMuscleGroup(group: MuscleGroupValue, lang: 'en' | 'vi') {
+  if (lang === 'vi') {
+    const map: Partial<Record<MuscleGroupValue, string>> = {
+      Chest: 'Ngực',
+      Back: 'Lưng',
+      Shoulders: 'Vai',
+      Biceps: 'Tay trước',
+      Triceps: 'Tay sau',
+      Forearms: 'Cẳng tay',
+      Abs: 'Bụng',
+      Glutes: 'Mông',
+      Quads: 'Đùi trước',
+      Hamstrings: 'Đùi sau',
+      Calves: 'Bắp chân',
+      FullBody: 'Toàn thân',
+      Cardio: 'Cardio',
+      Traps: 'Cầu vai',
+      Neck: 'Cổ',
+      Adductors: 'Đùi trong',
+      Abductors: 'Đùi ngoài',
+    }
+    return map[group] ?? group.replace(/([a-z])([A-Z])/g, '$1 $2')
+  }
   return group.replace(/([a-z])([A-Z])/g, '$1 $2')
+}
+
+function translateExerciseKind(kind: string, lang: 'en' | 'vi') {
+  if (lang !== 'vi') return kind
+  return kind === 'Strength' ? 'Sức mạnh' : kind
 }
 
 function SecondaryMusclePicker({
   value,
   primaryMuscleGroup,
   onChange,
+  lang,
+  label,
 }: {
   value: MuscleGroupValue[]
   primaryMuscleGroup: MuscleGroupValue
   onChange: (value: MuscleGroupValue[]) => void
+  lang: 'en' | 'vi'
+  label: string
 }) {
   const selected = new Set(value.filter((g) => g !== primaryMuscleGroup))
 
@@ -779,7 +908,7 @@ function SecondaryMusclePicker({
 
   return (
     <div className="space-y-2">
-      <p className="text-sm font-medium" style={{ color: 'var(--fg-1)' }}>Secondary muscles</p>
+      <p className="text-sm font-medium" style={{ color: 'var(--fg-1)' }}>{label}</p>
       <div className="flex max-h-36 flex-wrap gap-1.5 overflow-y-auto rounded-xl border p-2" style={{ borderColor: 'var(--border-1)', background: 'var(--bg-1)' }}>
         {Object.values(MuscleGroup)
           .filter((g) => g !== primaryMuscleGroup)
@@ -797,7 +926,7 @@ function SecondaryMusclePicker({
                   color: isSelected ? 'var(--xn-clay-900)' : 'var(--fg-3)',
                 }}
               >
-                {formatMuscleGroup(group)}
+                {formatMuscleGroup(group, lang)}
               </button>
             )
           })}

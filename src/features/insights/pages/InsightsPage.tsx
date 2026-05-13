@@ -4,6 +4,7 @@ import { format } from 'date-fns'
 import type { ReactElement, ReactNode } from 'react'
 import {
   Activity,
+  AlertTriangle,
   Award,
   BarChart3,
   ChevronLeft,
@@ -36,6 +37,7 @@ import type {
   AnalysisContent,
   AnalysisEffortGapPoint,
   AnalysisMetrics,
+  AnalysisPlanReview,
   AnalysisRecommendation,
   AnalysisSection,
 } from '../types'
@@ -358,6 +360,13 @@ function AiNarrativePanel({ content, labels }: { content: AnalysisContent; label
         ))}
       </div>
       <RecommendationBlock eyebrow={labels.recommendationLabel} rec={content.recommendation} />
+      {content.planReview && (
+        <PlanReviewBlock
+          eyebrow={labels.planReviewLabel}
+          suggestionsLabel={labels.suggestionsLabel}
+          review={content.planReview}
+        />
+      )}
     </Card>
   )
 }
@@ -393,6 +402,59 @@ function RecommendationBlock({ eyebrow, rec }: { eyebrow: string; rec: AnalysisR
           ))}
         </ul>
       )}
+    </div>
+  )
+}
+
+function PlanReviewBlock({
+  eyebrow,
+  suggestionsLabel,
+  review,
+}: {
+  eyebrow: string
+  suggestionsLabel: string
+  review: AnalysisPlanReview
+}) {
+  const hasMistakes = review.mistakes.length > 0
+  const hasSuggestions = review.suggestions.length > 0
+
+  if (!hasMistakes && !hasSuggestions) return null
+
+  return (
+    <div className="rounded-lg border p-4" style={{ background: 'var(--bg-2)', borderColor: 'var(--border-1)' }}>
+      <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase text-muted">
+        <AlertTriangle size={16} style={{ color: 'var(--xn-warning)' }} />
+        {eyebrow}
+      </div>
+      <h3 className="text-base font-semibold leading-snug text-text">{review.headline}</h3>
+      <div className="mt-3 grid gap-3 md:grid-cols-2">
+        {hasMistakes && (
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted">{eyebrow}</p>
+            <ul className="mt-2 space-y-2">
+              {review.mistakes.map((mistake) => (
+                <li key={mistake} className="flex items-start gap-2 text-sm text-text">
+                  <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: 'var(--xn-warning)' }} />
+                  <span className="leading-relaxed">{mistake}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {hasSuggestions && (
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted">{suggestionsLabel}</p>
+            <ul className="mt-2 space-y-2">
+              {review.suggestions.map((suggestion) => (
+                <li key={suggestion} className="flex items-start gap-2 text-sm text-text">
+                  <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: 'var(--xn-success)' }} />
+                  <span className="leading-relaxed">{suggestion}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

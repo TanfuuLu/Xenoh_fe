@@ -24,7 +24,7 @@ import { Select } from '@/shared/components/Select'
 import { Spinner } from '@/shared/components/Spinner'
 import { UserAvatar } from '@/shared/components/UserAvatar'
 import { useConfirm } from '@/shared/components/ConfirmModal'
-import { useT } from '@/shared/i18n'
+import { useLangStore, useT } from '@/shared/i18n'
 import type { ReportReason } from '@/shared/types/api'
 import { useAuthStore } from '@/features/auth'
 import { BlockUserModal } from '@/features/blocks/components/BlockUserModal'
@@ -85,6 +85,7 @@ export function CoachProfileContent({
   const { mutate: acceptRenewal, isPending: acceptingRenewal } = useAcceptRenewal()
   const { mutate: rejectRenewal, isPending: rejectingRenewal } = useRejectRenewal()
   const { confirm, ConfirmDialog } = useConfirm()
+  const lang = useLangStore((s) => s.lang)
   const t = useT()
   const tco = t.coaches
   const tcp = t.coachProfile
@@ -101,7 +102,7 @@ export function CoachProfileContent({
 
   const activeRelationship = relationship ?? null
   const marketplace = coach.marketplaceProfile
-  const contractPrices = getContractPrices(marketplace)
+  const contractPrices = getContractPrices(marketplace, lang)
   const hasContractPrices = contractPrices.length > 0
   const myRating = coach.myRating
   const canConnect = !activeRelationship && !myCoach && !isCoachRole
@@ -190,7 +191,7 @@ export function CoachProfileContent({
                   />
                   <div className="min-w-0">
                     <h2 className="break-words text-xl font-bold text-text">{coach.fullName}</h2>
-                    <p className="text-sm text-muted">{marketplace?.headline ?? 'Coach'}</p>
+                    <p className="text-sm text-muted">{localizeCoachText(marketplace?.headline ?? 'Coach', lang)}</p>
                     <p className="mt-1 flex items-center gap-1 text-sm text-muted">
                       <Star size={15} fill="currentColor" />
                       {coach.averageRating?.toFixed(1) ?? '-'} ({coach.ratingCount})
@@ -219,10 +220,10 @@ export function CoachProfileContent({
 
               <div className="grid gap-2 text-sm text-muted sm:grid-cols-2">
                 {marketplace?.experienceYears !== null && marketplace?.experienceYears !== undefined && (
-                  <InfoLine icon={<BriefcaseBusiness size={15} />} label={`${marketplace.experienceYears} years experience`} />
+                  <InfoLine icon={<BriefcaseBusiness size={15} />} label={`${marketplace.experienceYears} ${lang === 'vi' ? 'năm kinh nghiệm' : 'years experience'}`} />
                 )}
-                {marketplace?.availability && <InfoLine icon={<Clock size={15} />} label={marketplace.availability} />}
-                {marketplace?.responseTime && <InfoLine icon={<Mail size={15} />} label={marketplace.responseTime} />}
+                {marketplace?.availability && <InfoLine icon={<Clock size={15} />} label={localizeCoachText(marketplace.availability, lang)} />}
+                {marketplace?.responseTime && <InfoLine icon={<Mail size={15} />} label={localizeCoachText(marketplace.responseTime, lang)} />}
               </div>
 
               {contractPrices.length > 0 && (
@@ -504,12 +505,33 @@ function InfoLine({ icon, label }: { icon: ReactNode; label: string }) {
   )
 }
 
-function getContractPrices(marketplace: CoachMarketplaceProfile | null | undefined) {
+function getContractPrices(marketplace: CoachMarketplaceProfile | null | undefined, lang: 'en' | 'vi') {
   const currency = marketplace?.currency ?? 'VND'
   return [
-    { type: 'Monthly', label: 'Price per month', amount: marketplace?.monthlyPriceAmount ?? null, currency },
-    { type: 'Session', label: 'Price per session', amount: marketplace?.sessionPriceAmount ?? null, currency },
+    { type: 'Monthly', label: lang === 'vi' ? 'Giá mỗi tháng' : 'Price per month', amount: marketplace?.monthlyPriceAmount ?? null, currency },
+    { type: 'Session', label: lang === 'vi' ? 'Giá mỗi buổi' : 'Price per session', amount: marketplace?.sessionPriceAmount ?? null, currency },
   ].filter((price) => price.amount !== null)
+}
+
+function localizeCoachText(value: string, lang: 'en' | 'vi') {
+  if (lang !== 'vi') return value
+  const map: Record<string, string> = {
+    Coach: 'Coach',
+    English: 'Tiếng Anh',
+    Vietnamese: 'Tiếng Việt',
+    'Within 1 hour': 'Trong 1 giờ',
+    'Within 4 hours': 'Trong 4 giờ',
+    'Within 24 hours': 'Trong 24 giờ',
+    'Within 48 hours': 'Trong 48 giờ',
+    'Online check-ins': 'Check-in online',
+    'In-person': 'Trực tiếp',
+    'Hybrid (online + in-person)': 'Kết hợp online và trực tiếp',
+    'Strength coach for intermediate lifters': 'Coach sức mạnh cho người tập trung cấp',
+    'Accepting 3 new online clients this month.': 'Nhận thêm 3 client online trong tháng này.',
+    'Usually replies within 24 hours.': 'Thường phản hồi trong vòng 24 giờ.',
+    'Direct, practical, and data-informed without overcomplicating training.': 'Trực tiếp, thực tế và dựa trên dữ liệu, không làm phức tạp việc tập luyện.',
+  }
+  return map[value] ?? value
 }
 
 

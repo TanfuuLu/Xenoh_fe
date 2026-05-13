@@ -1,20 +1,27 @@
 import axios from 'axios'
 import type { AxiosInstance, InternalAxiosRequestConfig, AxiosError } from 'axios'
+import type { UserRole } from '@/shared/types/api'
 import { ENDPOINTS } from './endpoints'
 
+interface AuthRefreshResponse {
+  userId: string
+  accessToken: string
+  email: string
+  fullName: string
+  avatarUrl: string | null
+  roles: UserRole[]
+}
+
 let _getToken: (() => string | null) | null = null
-let _getRefreshToken: (() => string | null) | null = null
-let _setAuth: ((token: string, refreshToken: string) => void) | null = null
+let _setAuth: ((response: AuthRefreshResponse) => void) | null = null
 let _clearAuth: (() => void) | null = null
 
 export function initAxiosInterceptors(
   getToken: () => string | null,
-  getRefreshToken: () => string | null,
-  setAuth: (token: string, refreshToken: string) => void,
+  setAuth: (response: AuthRefreshResponse) => void,
   clearAuth: () => void,
 ) {
   _getToken = getToken
-  _getRefreshToken = getRefreshToken
   _setAuth = setAuth
   _clearAuth = clearAuth
 }
@@ -22,6 +29,7 @@ export function initAxiosInterceptors(
 export const api: AxiosInstance = axios.create({
   baseURL: import.meta.env['VITE_API_URL'] as string,
   headers: { 'Content-Type': 'application/json' },
+  withCredentials: true,
 })
 
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
@@ -66,19 +74,14 @@ api.interceptors.response.use(
       originalRequest._retry = true
       isRefreshing = true
 
-      const refreshToken = _getRefreshToken?.()
-      if (!refreshToken) {
-        _clearAuth?.()
-        return Promise.reject(error)
-      }
-
       try {
-        const res = await axios.post<{ accessToken: string; refreshToken: string }>(
+        const res = await axios.post<AuthRefreshResponse>(
           `${import.meta.env['VITE_API_URL'] as string}${ENDPOINTS.auth.refreshToken}`,
-          { refreshToken },
+          undefined,
+          { withCredentials: true },
         )
-        const { accessToken, refreshToken: newRefresh } = res.data
-        _setAuth?.(accessToken, newRefresh)
+        const { accessToken } = res.data
+        _setAuth?.(res.data)
         processQueue(null, accessToken)
         if (originalRequest.headers) {
           originalRequest.headers['Authorization'] = `Bearer ${accessToken}`

@@ -56,7 +56,14 @@ export function RegisterPage() {
 
   function onSubmit(data: FormData) {
     register_(
-      { firstName: data.firstName, lastName: data.lastName, email: data.email, password: data.password, role: 'Individual' },
+      {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        password: data.password,
+        role: 'Individual',
+        ...(data.gender && { gender: data.gender }),
+      },
       {
         onSuccess: async () => {
           try {

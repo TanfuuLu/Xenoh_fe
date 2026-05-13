@@ -25,7 +25,7 @@ export function useLogin() {
       api.post<AuthResponse>(ENDPOINTS.auth.login, data).then((r) => r.data),
     onSuccess: (data) => {
       qc.clear()
-      setAuth(data.accessToken, data.refreshToken, {
+      setAuth(data.accessToken, {
         id: data.userId,
         email: data.email,
         fullName: data.fullName,
@@ -45,7 +45,7 @@ export function useRegister() {
       api.post<AuthResponse>(ENDPOINTS.auth.register, data).then((r) => r.data),
     onSuccess: (data) => {
       qc.clear()
-      setAuth(data.accessToken, data.refreshToken, {
+      setAuth(data.accessToken, {
         id: data.userId,
         email: data.email,
         fullName: data.fullName,
@@ -62,7 +62,7 @@ export function startExternalLogin(provider: ExternalLoginProvider) {
 
 function storeAuthResponse(
   data: AuthResponse,
-  setAuth: (token: string, refreshToken: string, user: {
+  setAuth: (token: string, user: {
     id: string
     email: string
     fullName: string
@@ -70,7 +70,7 @@ function storeAuthResponse(
     roles: AuthResponse['roles']
   }) => void,
 ) {
-  setAuth(data.accessToken, data.refreshToken, {
+  setAuth(data.accessToken, {
     id: data.userId,
     email: data.email,
     fullName: data.fullName,
@@ -160,10 +160,9 @@ export function useResetPassword() {
 }
 
 export async function refreshAuth(): Promise<void> {
-  const { refreshToken, setAuth } = useAuthStore.getState()
-  if (!refreshToken) return
-  const r = await api.post<AuthResponse>(ENDPOINTS.auth.refreshToken, { refreshToken })
-  setAuth(r.data.accessToken, r.data.refreshToken, {
+  const { setAuth } = useAuthStore.getState()
+  const r = await api.post<AuthResponse>(ENDPOINTS.auth.refreshToken)
+  setAuth(r.data.accessToken, {
     id: r.data.userId,
     email: r.data.email,
     fullName: r.data.fullName,

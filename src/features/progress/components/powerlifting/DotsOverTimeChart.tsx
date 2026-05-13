@@ -7,6 +7,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import { useT } from '@/shared/i18n'
 import type { DotsOverTimePoint } from '../../types'
 
 const TICK_STYLE = { fill: 'var(--fg-3)', fontSize: 11 }
@@ -23,8 +24,9 @@ interface Props {
 }
 
 export function DotsOverTimeChart({ points }: Props) {
+  const tp = useT().progress
   return (
-    <div className="h-56">
+    <div className="min-h-56 flex-1">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={points}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--border-1)" vertical={false} />
@@ -36,7 +38,7 @@ export function DotsOverTimeChart({ points }: Props) {
             itemStyle={{ color: 'var(--color-primary)' }}
             formatter={(value, name) => {
               if (name === 'dots') return [Number(value).toFixed(2), 'DOTS']
-              if (name === 'bodyweightKg') return [`${Number(value).toFixed(1)} kg`, 'Bodyweight']
+              if (name === 'bodyweightKg') return [`${Number(value).toFixed(1)} ${tp.kgUnit}`, tp.bodyweight]
               return [value, name]
             }}
           />
@@ -47,7 +49,7 @@ export function DotsOverTimeChart({ points }: Props) {
             strokeWidth={2}
             dot={{ r: 3 }}
             activeDot={{ r: 5 }}
-            name="dots"
+            name="DOTS"
           />
         </LineChart>
       </ResponsiveContainer>

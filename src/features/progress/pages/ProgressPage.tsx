@@ -12,14 +12,17 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { AlertTriangle, BarChart3, CheckCircle2, Dumbbell, Gauge, Info, Target, TrendingUp, Weight, Users, Zap } from 'lucide-react'
+import { AlertTriangle, BarChart3, CheckCircle2, Dumbbell, Gauge, Info, Sparkles, Target, TrendingUp, Weight, Users, Zap } from 'lucide-react'
+import { Button } from '@/shared/components/Button'
 import { Card } from '@/shared/components/Card'
+import { Badge } from '@/shared/components/Badge'
 import { Select } from '@/shared/components/Select'
 import { Spinner } from '@/shared/components/Spinner'
 import { cn } from '@/shared/utils/cn'
 import { slideUp } from '@/shared/utils/motion'
 import { useT } from '@/shared/i18n'
 import { useAuthStore } from '@/features/auth'
+import { AiInsightsPanel } from '@/features/insights'
 import { usePlans, useCoachPlanOverview } from '@/features/plans'
 import { useMyClients } from '@/features/coach-client'
 import { RequireTier } from '@/features/billing/components/RequireTier'
@@ -37,6 +40,7 @@ import type {
 } from '../types'
 
 type ProgressTab = 'overview' | 'powerlifting'
+type ProgressInsightMode = 'overview' | 'powerlifting'
 
 const CHART_TOOLTIP_STYLE = {
   background: 'var(--bg-2)',
@@ -250,12 +254,17 @@ function ProgressShell({
   emptyNode?: React.ReactNode
 }) {
   const [tab, setTab] = useState<ProgressTab>('overview')
+  const [insightMode, setInsightMode] = useState<ProgressInsightMode | null>(null)
   const hasPowerlifting = !!powerlifting
 
   // Reset to overview if user switches to a context without powerlifting data.
   useEffect(() => {
     if (!hasPowerlifting && tab === 'powerlifting') setTab('overview')
   }, [hasPowerlifting, tab])
+
+  useEffect(() => {
+    if (!hasPowerlifting && insightMode === 'powerlifting') setInsightMode(null)
+  }, [hasPowerlifting, insightMode])
 
   return (
     <div className="space-y-6">
@@ -271,8 +280,44 @@ function ProgressShell({
             <p className="text-sm text-muted">{subtitle}</p>
           </div>
         </div>
-        {planSelector}
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          {planSelector}
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant={insightMode === 'overview' ? 'primary' : 'secondary'}
+              onClick={() => setInsightMode((mode) => mode === 'overview' ? null : 'overview')}
+            >
+              <Sparkles size={15} />
+              {tp.overviewInsight}
+            </Button>
+            {hasPowerlifting && (
+              <Button
+                type="button"
+                size="sm"
+                variant={insightMode === 'powerlifting' ? 'primary' : 'secondary'}
+                onClick={() => setInsightMode((mode) => mode === 'powerlifting' ? null : 'powerlifting')}
+              >
+                <Dumbbell size={15} />
+                {tp.powerliftingInsight}
+              </Button>
+            )}
+          </div>
+        </div>
       </div>
+
+      {insightMode && (
+        <motion.div {...(shouldReduce ? {} : slideUp)}>
+          {insightMode === 'powerlifting' && powerlifting ? (
+            <PowerliftingAiFocusPanel section={powerlifting} tp={tp} />
+          ) : (
+            <AiInsightsPanel
+              sections={['trainingAdherence', 'bodyMetrics', 'volumeStrength', 'muscleBalance']}
+            />
+          )}
+        </motion.div>
+      )}
 
       {emptyNode}
 
@@ -291,7 +336,7 @@ function ProgressShell({
             color: 'var(--color-danger)',
           }}
         >
-          Could not load analytics.
+          {tp.loadError}
         </div>
       )}
 
@@ -319,9 +364,10 @@ function ProgressTabs({
   current: ProgressTab
   onChange: (tab: ProgressTab) => void
 }) {
+  const tp = useT().progress
   const items: Array<{ id: ProgressTab; label: string; icon: React.ReactNode }> = [
-    { id: 'overview', label: 'Overview', icon: <BarChart3 size={14} /> },
-    { id: 'powerlifting', label: 'Powerlifting', icon: <Dumbbell size={14} /> },
+    { id: 'overview', label: tp.overviewTab, icon: <BarChart3 size={14} /> },
+    { id: 'powerlifting', label: tp.powerliftingTab, icon: <Dumbbell size={14} /> },
   ]
   return (
     <div
@@ -368,9 +414,9 @@ function OverviewSection({
             variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.07 } } }}
             className="grid grid-cols-2 gap-3 lg:grid-cols-4"
           >
-            <ScoreCard score={analytics.trainingScore} shouldReduce={shouldReduce} />
+            <ScoreCard score={analytics.trainingScore} shouldReduce={shouldReduce} tp={tp} />
             <StatCard icon={<Dumbbell size={18} />} label={tp.totalWorkouts} value={String(analytics.totalWorkoutsCompleted)} shouldReduce={shouldReduce} />
-            <StatCard icon={<Weight size={18} />}   label={tp.totalVolume}   value={`${(analytics.totalVolume / 1000).toFixed(1)}t`} shouldReduce={shouldReduce} />
+            <StatCard icon={<Weight size={18} />}   label={tp.totalVolume}   value={`${(analytics.totalVolume / 1000).toFixed(1)}${tp.tonneUnit}`} shouldReduce={shouldReduce} />
             <StatCard icon={<Target size={18} />}   label={tp.consistency}   value={`${analytics.consistencyPercent}%`} shouldReduce={shouldReduce} />
           </motion.div>
 
@@ -379,7 +425,7 @@ function OverviewSection({
               <Card>
                 <div className="mb-4 flex items-center gap-2">
                   <Zap size={17} style={{ color: 'var(--color-primary)' }} />
-                  <h2 className="text-base font-semibold text-text">Training recommendations</h2>
+                  <h2 className="text-base font-semibold text-text">{tp.trainingRecommendations}</h2>
                 </div>
                 <div className="grid gap-3 lg:grid-cols-3">
                   {analytics.insights.slice(0, 3).map((insight) => (
@@ -408,13 +454,14 @@ function OverviewSection({
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={analytics.weeklyCompliance} barCategoryGap="30%">
                       <CartesianGrid strokeDasharray="3 3" stroke="var(--border-1)" vertical={false} />
-                      <XAxis dataKey="weekName" tick={TICK_STYLE} interval="preserveStartEnd" tickLine={false} axisLine={false} />
+                      <XAxis dataKey="weekName" tick={TICK_STYLE} interval="preserveStartEnd" tickLine={false} axisLine={false} tickFormatter={(value) => translateWeekName(String(value), tp)} />
                       <YAxis tick={TICK_STYLE} tickLine={false} axisLine={false} allowDecimals={false} width={24} />
                       <Tooltip
                         contentStyle={CHART_TOOLTIP_STYLE}
                         labelStyle={{ color: 'var(--fg-1)' }}
                         itemStyle={{ color: 'var(--fg-2)' }}
-                        formatter={(value, name) => [value, name === 'completedDays' ? 'Completed' : 'Total']}
+                        labelFormatter={(label) => translateWeekName(String(label), tp)}
+                        formatter={(value, name) => [value, name === 'completedDays' ? tp.completed : tp.total]}
                       />
                       <Bar dataKey="totalDays" fill="var(--bg-3)" radius={[4, 4, 0, 0]} name="totalDays" />
                       <Bar dataKey="completedDays" fill="var(--color-primary)" radius={[4, 4, 0, 0]} name="completedDays" />
@@ -436,15 +483,16 @@ function OverviewSection({
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={analytics.weeklyVolume}>
                       <CartesianGrid strokeDasharray="3 3" stroke="var(--border-1)" vertical={false} />
-                      <XAxis dataKey="weekName" tick={TICK_STYLE} interval="preserveStartEnd" tickLine={false} axisLine={false} />
+                      <XAxis dataKey="weekName" tick={TICK_STYLE} interval="preserveStartEnd" tickLine={false} axisLine={false} tickFormatter={(value) => translateWeekName(String(value), tp)} />
                       <YAxis tick={TICK_STYLE} tickLine={false} axisLine={false} width={44} tickFormatter={(v: number) => `${(v / 1000).toFixed(1)}t`} />
                       <Tooltip
                         contentStyle={CHART_TOOLTIP_STYLE}
                         labelStyle={{ color: 'var(--fg-1)' }}
                         itemStyle={{ color: 'var(--color-primary)' }}
-                        formatter={(value) => [`${Number(value ?? 0).toLocaleString()} kg`, 'Volume']}
+                        labelFormatter={(label) => translateWeekName(String(label), tp)}
+                        formatter={(value) => [formatKg(Number(value ?? 0), tp), tp.volume]}
                       />
-                      <Line type="monotone" dataKey="totalVolume" stroke="var(--color-primary)" strokeWidth={2} dot={{ fill: 'var(--color-primary)', r: 3 }} activeDot={{ r: 5 }} name="Volume" />
+                      <Line type="monotone" dataKey="totalVolume" stroke="var(--color-primary)" strokeWidth={2} dot={{ fill: 'var(--color-primary)', r: 3 }} activeDot={{ r: 5 }} name={tp.volume} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -470,6 +518,7 @@ function OverviewSection({
                         tickLine={false}
                         axisLine={false}
                         interval={0}
+                        tickFormatter={(value) => translateMuscleGroup(String(value), tp)}
                       />
                       <YAxis
                         type="number"
@@ -484,7 +533,8 @@ function OverviewSection({
                         contentStyle={CHART_TOOLTIP_STYLE}
                         labelStyle={{ color: 'var(--fg-1)' }}
                         itemStyle={{ color: 'var(--color-primary)' }}
-                        formatter={(value) => [`${Number(value ?? 0).toLocaleString()} kg`, tp.weightedVolume]}
+                        labelFormatter={(label) => translateMuscleGroup(String(label), tp)}
+                        formatter={(value) => [formatKg(Number(value ?? 0), tp), tp.weightedVolume]}
                       />
                       <Bar dataKey="totalVolume" radius={[4, 4, 0, 0]} name="totalVolume">
                         {analytics.muscleGroupVolume.map((_, i) => (
@@ -522,14 +572,14 @@ function MuscleGroupVolumeList({
           style={{ background: 'var(--bg-3)', border: '1px solid var(--border-1)' }}
         >
           <div className="flex items-center justify-between gap-3">
-            <span className="text-sm font-medium text-text">{item.muscleGroup}</span>
+            <span className="text-sm font-medium text-text">{translateMuscleGroup(item.muscleGroup, tp)}</span>
             <span className="text-xs text-muted">{item.percentOfTotal.toFixed(1)}%</span>
           </div>
           <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted">
-            <span>{formatKg(item.totalVolume)}</span>
+            <span>{formatKg(item.totalVolume, tp)}</span>
             <span>{item.completedSets} {tp.sets}</span>
-            <span>{tp.primary}: {formatKg(item.primaryVolume)}</span>
-            <span>{tp.secondary}: {formatKg(item.secondaryVolume)}</span>
+            <span>{tp.primary}: {formatKg(item.primaryVolume, tp)}</span>
+            <span>{tp.secondary}: {formatKg(item.secondaryVolume, tp)}</span>
           </div>
         </div>
       ))}
@@ -573,12 +623,12 @@ function MuscleHeatmapPanel({
             <div />
             {weeks.map(([weekNumber, weekName]) => (
               <div key={weekNumber} className="truncate text-center text-[11px] font-medium text-muted">
-                {weekName}
+                {translateWeekName(weekName, tp)}
               </div>
             ))}
             {rows.map((row) => (
               <div key={row.muscleGroup} className="contents">
-                <div className="truncate pr-2 text-xs font-medium text-text">{row.muscleGroup}</div>
+                <div className="truncate pr-2 text-xs font-medium text-text">{translateMuscleGroup(row.muscleGroup, tp)}</div>
                 {weeks.map(([weekNumber]) => {
                   const volume = row.weeks.find((week) => week.weekNumber === weekNumber)?.volume ?? 0
                   return (
@@ -589,9 +639,9 @@ function MuscleHeatmapPanel({
                         background: heatmapColor(volume, maxVolume),
                         border: '1px solid var(--border-1)',
                       }}
-                      title={`${row.muscleGroup}: ${formatKg(volume)}`}
+                      title={`${translateMuscleGroup(row.muscleGroup, tp)}: ${formatKg(volume, tp)}`}
                     >
-                      {volume > 0 ? formatCompactKg(volume) : '-'}
+                      {volume > 0 ? formatCompactKg(volume, tp) : '-'}
                     </div>
                   )
                 })}
@@ -643,7 +693,7 @@ function BodyBalanceDiagram({
                 <div key={item.label}>
                   <div className="mb-1 flex items-center justify-between gap-2 text-xs">
                     <span className="font-medium text-text">{item.label}</span>
-                    <span className="text-muted">{formatKg(item.value)}</span>
+                    <span className="text-muted">{formatKg(item.value, tp)}</span>
                   </div>
                   <div className="h-3 overflow-hidden rounded-full" style={{ background: 'var(--bg-3)' }}>
                     <div
@@ -664,13 +714,43 @@ function BodyBalanceDiagram({
   )
 }
 
-function formatKg(value: number) {
-  return `${Math.round(value).toLocaleString()} kg`
+function formatKg(value: number, tp: Record<string, string>) {
+  return `${Math.round(value).toLocaleString()} ${tp.kgUnit}`
 }
 
-function formatCompactKg(value: number) {
-  if (value >= 1000) return `${(value / 1000).toFixed(1)}t`
-  return `${Math.round(value)}kg`
+function formatCompactKg(value: number, tp: Record<string, string>) {
+  if (value >= 1000) return `${(value / 1000).toFixed(1)}${tp.tonneUnit}`
+  return `${Math.round(value)}${tp.kgUnit}`
+}
+
+function translateMuscleGroup(name: string, tp: Record<string, string>) {
+  const key = name.trim().toLowerCase().replace(/[\s_-]+/g, '')
+  const map: Record<string, string> = {
+    chest: tp.muscleChest,
+    back: tp.muscleBack,
+    shoulders: tp.muscleShoulders,
+    shoulder: tp.muscleShoulders,
+    biceps: tp.muscleBiceps,
+    triceps: tp.muscleTriceps,
+    quads: tp.muscleQuads,
+    quadriceps: tp.muscleQuads,
+    hamstrings: tp.muscleHamstrings,
+    glutes: tp.muscleGlutes,
+    calves: tp.muscleCalves,
+    core: tp.muscleCore,
+    abs: tp.muscleAbs,
+    abdominals: tp.muscleAbs,
+    forearms: tp.muscleForearms,
+    traps: tp.muscleTraps,
+    trapezius: tp.muscleTraps,
+    lats: tp.muscleLats,
+  }
+  return map[key] ?? name
+}
+
+function translateWeekName(name: string, tp: Record<string, string>) {
+  const match = /^week\s*(\d+)$/i.exec(name.trim())
+  return match ? tp.weekLabel.replace('{n}', match[1]) : name
 }
 
 function heatmapColor(value: number, max: number) {
@@ -728,7 +808,7 @@ function StatCard({
   )
 }
 
-function ScoreCard({ score, shouldReduce }: { score: number; shouldReduce: boolean }) {
+function ScoreCard({ score, shouldReduce, tp }: { score: number; shouldReduce: boolean; tp: Record<string, string> }) {
   const color = score >= 80 ? 'var(--color-success)' : score >= 60 ? 'var(--color-warning)' : 'var(--color-danger)'
   return (
     <motion.div
@@ -740,16 +820,161 @@ function ScoreCard({ score, shouldReduce }: { score: number; shouldReduce: boole
     >
       <div className="mb-2 flex items-center gap-2" style={{ color }}>
         <Gauge size={18} />
-        <span className="text-xs font-medium text-muted">Training score</span>
+        <span className="text-xs font-medium text-muted">{tp.trainingScore}</span>
       </div>
       <p className="text-2xl font-bold text-text">{score}/100</p>
     </motion.div>
   )
 }
 
+interface PowerliftingAiSummary {
+  title: string
+  detail: string
+  priorityLift: string
+  actions: string[]
+  cards: Array<{ title: string; detail: string; metric: string }>
+}
+
+function PowerliftingAiFocusPanel({ section, tp }: { section: PowerliftingSection; tp: Record<string, string> }) {
+  const summary = buildPowerliftingAiSummary(section, tp)
+
+  return (
+    <Card className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Sparkles size={18} className="text-primary" />
+          <h2 className="text-base font-semibold text-text">{tp.powerliftingAiTitle}</h2>
+          <Badge>{tp.powerliftingTab}</Badge>
+        </div>
+      </div>
+
+      <div
+        className="rounded-xl p-4"
+        style={{ background: 'var(--accent-soft)', border: '1px solid var(--accent)' }}
+      >
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--accent)' }}>
+          <Target size={15} />
+          {tp.powerliftingAiLabel}
+        </div>
+        <p className="mt-2 font-semibold text-text">{summary.title}</p>
+        <p className="mt-1 text-sm leading-relaxed text-muted">{summary.detail}</p>
+        <ul className="mt-3 grid gap-2 md:grid-cols-3">
+          {summary.actions.map((action) => (
+            <li key={action} className="flex items-start gap-2 text-sm text-text">
+              <CheckCircle2 size={15} className="mt-0.5 shrink-0" style={{ color: 'var(--accent)' }} />
+              <span className="leading-relaxed">{action}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-3">
+        {summary.cards.map((card) => (
+          <div key={card.title} className="rounded-xl border p-4" style={{ background: 'var(--bg-2)', borderColor: 'var(--border-1)' }}>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted">{card.title}</p>
+            <p className="mt-2 font-semibold text-text">{card.metric}</p>
+            <p className="mt-1 text-sm leading-relaxed text-muted">{card.detail}</p>
+          </div>
+        ))}
+      </div>
+    </Card>
+  )
+}
+
+function buildPowerliftingAiSummary(section: PowerliftingSection, tp: Record<string, string>): PowerliftingAiSummary {
+  const lifts = [section.squat, section.bench, section.deadlift]
+  const plateauLift = lifts.find((lift) => lift.isPlateau)
+  const squat = section.squat.currentE1Rm
+  const bench = section.bench.currentE1Rm
+  const deadlift = section.deadlift.currentE1Rm
+  const benchRatio = squat && bench ? bench / squat : null
+  const deadliftRatio = squat && deadlift ? deadlift / squat : null
+  const allPrs = lifts
+    .flatMap((lift) => lift.prTimeline.map((pr) => ({ ...pr, lift: lift.lift })))
+    .sort((a, b) => (a.date < b.date ? 1 : -1))
+  const latestDots = section.dots.length > 0 ? section.dots[section.dots.length - 1] : undefined
+
+  let title = tp.powerliftingAiKeepBuilding
+  let detail = tp.powerliftingAiKeepBuildingDetail
+  let priorityLift = tp.squat
+
+  if (!latestDots) {
+    title = tp.powerliftingAiNeedBodyweight
+    detail = tp.powerliftingAiNeedBodyweightDetail
+  } else if (plateauLift) {
+    priorityLift = translateLiftName(plateauLift.lift, tp)
+    title = tp.powerliftingAiPlateau.replace('{lift}', priorityLift)
+    detail = tp.powerliftingAiPlateauDetail.replace(/\{lift\}/g, priorityLift)
+  } else if (benchRatio != null && benchRatio < 0.6) {
+    priorityLift = tp.bench
+    title = tp.powerliftingAiBenchLag
+    detail = tp.powerliftingAiBenchLagDetail
+  } else if (deadliftRatio != null && deadliftRatio < 1.05) {
+    priorityLift = tp.deadlift
+    title = tp.powerliftingAiDeadliftLag
+    detail = tp.powerliftingAiDeadliftLagDetail
+  }
+
+  const latestPr = allPrs[0]
+  const actions = [
+    tp.powerliftingAiActionWeakLift.replace('{lift}', priorityLift),
+    tp.powerliftingAiActionTechnique,
+    latestDots ? tp.powerliftingAiActionPr : tp.powerliftingAiActionBodyweight,
+  ]
+
+  return {
+    title,
+    detail,
+    priorityLift,
+    actions,
+    cards: [
+      {
+        title: tp.powerliftingBalanceTitle,
+        metric: strongestLiftLabel(section, tp),
+        detail: tp.powerliftingBalanceDetail
+          .replace('{squat}', formatLiftValue(section.squat.currentE1Rm, tp))
+          .replace('{bench}', formatLiftValue(section.bench.currentE1Rm, tp))
+          .replace('{deadlift}', formatLiftValue(section.deadlift.currentE1Rm, tp)),
+      },
+      {
+        title: tp.powerliftingPrTitle,
+        metric: `${allPrs.length}`,
+        detail: latestPr
+          ? tp.powerliftingPrDetail
+              .replace('{count}', String(allPrs.length))
+              .replace('{latest}', `${translateLiftName(latestPr.lift, tp)} ${latestPr.e1Rm.toFixed(1)} ${tp.kgUnit}`)
+          : tp.powerliftingNoPrDetail,
+      },
+      {
+        title: tp.powerliftingDotsTitle,
+        metric: latestDots ? latestDots.dots.toFixed(1) : '—',
+        detail: latestDots
+          ? tp.powerliftingDotsDetail
+              .replace('{dots}', latestDots.dots.toFixed(1))
+              .replace('{bodyweight}', latestDots.bodyweightKg.toFixed(1))
+          : tp.powerliftingNoDotsDetail,
+      },
+    ],
+  }
+}
+
+function strongestLiftLabel(section: PowerliftingSection, tp: Record<string, string>) {
+  const lifts = [section.squat, section.bench, section.deadlift]
+    .filter((lift) => lift.currentE1Rm != null)
+    .sort((a, b) => (b.currentE1Rm ?? 0) - (a.currentE1Rm ?? 0))
+  const top = lifts[0]
+  return top ? `${translateLiftName(top.lift, tp)} ${formatLiftValue(top.currentE1Rm, tp)}` : '—'
+}
+
+function formatLiftValue(value: number | null, tp: Record<string, string>) {
+  return value == null ? '—' : `${value.toFixed(1)} ${tp.kgUnit}`
+}
+
 function InsightCard({ insight }: { insight: TrainingInsightResponse }) {
+  const tp = useT().progress
   const styles = insightStyle(insight.severity)
   const Icon = styles.icon
+  const localized = localizeInsight(insight, tp)
   return (
     <div
       className="rounded-xl border p-4"
@@ -758,16 +983,126 @@ function InsightCard({ insight }: { insight: TrainingInsightResponse }) {
       <div className="mb-3 flex items-start gap-2">
         <Icon size={18} style={{ color: styles.color, marginTop: 2, flexShrink: 0 }} />
         <div className="min-w-0">
-          <p className="font-semibold text-text">{insight.title}</p>
-          <p className="mt-1 text-sm text-muted">{insight.message}</p>
+          <p className="font-semibold text-text">{localized.title}</p>
+          <p className="mt-1 text-sm text-muted">{localized.message}</p>
         </div>
       </div>
       <div className="rounded-lg px-3 py-2 text-xs" style={{ background: 'var(--bg-2)', color: 'var(--fg-2)' }}>
-        <span className="text-muted">{insight.metricLabel}: </span>
-        <span className="font-semibold">{insight.metricValue}</span>
+        <span className="text-muted">{localized.metricLabel}: </span>
+        <span className="font-semibold">{localized.metricValue}</span>
       </div>
     </div>
   )
+}
+
+function localizeInsight(insight: TrainingInsightResponse, tp: Record<string, string>) {
+  const dynamicMuscle = translateMuscleGroup(insight.metricLabel, tp)
+  const dynamicLift = translateLiftName(extractLiftName(insight.title), tp)
+  const missingGroups = extractMissingGroups(insight.message).map((name) => translateMuscleGroup(name, tp)).join(', ')
+
+  const titles: Record<string, string> = {
+    'No training days planned': tp.insightNoTrainingDaysTitle,
+    'Consistency needs attention': tp.insightConsistencyAttentionTitle,
+    'Consistency is uneven': tp.insightConsistencyUnevenTitle,
+    'Strong consistency': tp.insightStrongConsistencyTitle,
+    'More volume history needed': tp.insightMoreVolumeTitle,
+    'Volume dropped sharply': tp.insightVolumeDroppedTitle,
+    'Volume is trending down': tp.insightVolumeDownTitle,
+    'Large overload jump': tp.insightLargeOverloadTitle,
+    'Progressive overload is moving': tp.insightOverloadMovingTitle,
+    'Volume is stable': tp.insightVolumeStableTitle,
+    'Fatigue risk is elevated': tp.insightFatigueElevatedTitle,
+    'Some sets missed target': tp.insightSetsMissedTitle,
+    'Training is heavily concentrated': tp.insightConcentratedTitle,
+    'Muscle focus is unbalanced': tp.insightFocusUnbalancedTitle,
+    'Major muscle gaps detected': tp.insightMajorGapsTitle,
+    'Muscle distribution looks balanced': tp.insightBalancedTitle,
+    'Repeat or simplify the week': tp.insightRepeatWeekTitle,
+    'Prioritize recovery': tp.insightPrioritizeRecoveryTitle,
+    'Progress gradually': tp.insightProgressGraduallyTitle,
+    'Hold the plan steady': tp.insightHoldSteadyTitle,
+    'Bench is lagging your squat': tp.insightBenchLagTitle,
+    'Deadlift is below your squat': tp.insightDeadliftLowTitle,
+    'Long stretch of high-RPE work': tp.insightHighRpeStretchTitle,
+  }
+
+  const messages: Record<string, string> = {
+    'No training days planned': tp.insightNoTrainingDaysMsg,
+    'Consistency needs attention': tp.insightConsistencyAttentionMsg,
+    'Consistency is uneven': tp.insightConsistencyUnevenMsg,
+    'Strong consistency': tp.insightStrongConsistencyMsg,
+    'More volume history needed': tp.insightMoreVolumeMsg,
+    'Volume dropped sharply': tp.insightVolumeDroppedMsg,
+    'Volume is trending down': tp.insightVolumeDownMsg,
+    'Large overload jump': tp.insightLargeOverloadMsg,
+    'Progressive overload is moving': tp.insightOverloadMovingMsg,
+    'Volume is stable': tp.insightVolumeStableMsg,
+    'Fatigue risk is elevated': tp.insightFatigueElevatedMsg,
+    'Some sets missed target': tp.insightSetsMissedMsg,
+    'Training is heavily concentrated': tp.insightConcentratedMsg.replace('{muscle}', dynamicMuscle),
+    'Muscle focus is unbalanced': tp.insightFocusUnbalancedMsg.replace('{muscle}', dynamicMuscle),
+    'Major muscle gaps detected': tp.insightMajorGapsMsg.replace('{muscles}', missingGroups || insight.message),
+    'Muscle distribution looks balanced': tp.insightBalancedMsg,
+    'Repeat or simplify the week': tp.insightRepeatWeekMsg,
+    'Prioritize recovery': tp.insightPrioritizeRecoveryMsg,
+    'Progress gradually': tp.insightProgressGraduallyMsg,
+    'Hold the plan steady': tp.insightHoldSteadyMsg,
+    'Bench is lagging your squat': tp.insightBenchLagMsg,
+    'Deadlift is below your squat': tp.insightDeadliftLowMsg,
+    'Long stretch of high-RPE work': tp.insightHighRpeStretchMsg,
+  }
+
+  const isPlateau = /^(Squat|Bench|Deadlift) is plateauing$/.test(insight.title)
+  const title = isPlateau
+    ? tp.insightPlateauTitle.replace('{lift}', dynamicLift)
+    : titles[insight.title] ?? insight.title
+  const message = isPlateau
+    ? tp.insightPlateauMsg.replace('{lift}', dynamicLift)
+    : messages[insight.title] ?? insight.message
+
+  return {
+    title,
+    message,
+    metricLabel: translateMetricLabel(insight.metricLabel, tp),
+    metricValue: insight.metricValue.replace(/\bkg\b/g, tp.kgUnit),
+  }
+}
+
+function translateMetricLabel(label: string, tp: Record<string, string>) {
+  const labels: Record<string, string> = {
+    'Planned days': tp.metricPlannedDays,
+    Completion: tp.completed,
+    'Weeks logged': tp.metricWeeksLogged,
+    'Volume change': tp.metricVolumeChange,
+    'Avg RPE': tp.metricAvgRpe,
+    'Warning days': tp.metricWarningDays,
+    'Missing groups': tp.metricMissingGroups,
+    'Top group': tp.metricTopGroup,
+    'Training score': tp.trainingScore,
+    'High-RPE sets': tp.metricHighRpeSets,
+    'Current e1RM': tp.metricCurrentE1rm,
+    'Bench / Squat': tp.metricBenchSquat,
+    'Deadlift / Squat': tp.metricDeadliftSquat,
+    'High-RPE weeks': tp.metricHighRpeWeeks,
+  }
+  return labels[label] ?? translateMuscleGroup(label, tp)
+}
+
+function extractLiftName(title: string) {
+  const match = /^(Squat|Bench|Deadlift)\b/.exec(title)
+  return match?.[1] ?? title
+}
+
+function translateLiftName(lift: string, tp: Record<string, string>) {
+  if (lift === 'Squat') return tp.squat
+  if (lift === 'Bench') return tp.bench
+  if (lift === 'Deadlift') return tp.deadlift
+  return lift
+}
+
+function extractMissingGroups(message: string) {
+  const match = /for (.+)\./i.exec(message)
+  return match ? match[1].split(',').map((part) => part.trim()).filter(Boolean) : []
 }
 
 function insightStyle(severity: TrainingInsightSeverity) {

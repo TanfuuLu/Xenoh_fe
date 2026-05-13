@@ -50,21 +50,39 @@
   color: inherit;
   text-decoration: none;
   cursor: pointer;
+  transform: translate3d(0, 0, 0);
   transition:
     border-color var(--dur-fast) var(--ease-out),
     box-shadow var(--dur-fast) var(--ease-out),
     transform var(--dur-fast) var(--ease-out),
     background-color var(--dur-fast) var(--ease-out);
+  will-change: transform;
 }
 .mk-card-link:hover {
   text-decoration: none;
   transform: translateY(-2px);
-  border-color: var(--xn-clay-400);
+  border-color: var(--surface-border);
+  box-shadow: var(--sh-md);
+}
+.mk-card-link:active {
   box-shadow: var(--sh-sm);
+  transform: scale(0.99);
 }
 .mk-card-link:focus-visible {
   outline: 3px solid color-mix(in oklch, var(--xn-clay-700) 34%, transparent);
   outline-offset: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mk-card-link {
+    transition: none;
+  }
+
+  .mk-card-link,
+  .mk-card-link:hover,
+  .mk-card-link:active {
+    transform: none;
+  }
 }
 
 /* Sections */
@@ -115,13 +133,13 @@
 .mk-hero .actions { display: flex; gap: 12px; flex-wrap: wrap; }
 .mk-hero .visual {
   background: var(--xn-paper); border-radius: 20px; box-shadow: var(--sh-xl);
-  border: 1px solid var(--xn-clay-300); overflow: hidden;
+  border: 2px solid var(--surface-border); overflow: hidden;
 }
 
 /* App preview chrome */
-.mk-app-preview { border-radius: 14px; overflow: hidden; background: var(--xn-paper); border: 1px solid var(--border-1); }
+.mk-app-preview { border-radius: 14px; overflow: hidden; background: var(--xn-paper); border: 2px solid var(--surface-border-soft); box-shadow: var(--sh-sm); }
 .mk-app-preview .bar {
-  background: var(--bg-2); padding: 10px 14px; border-bottom: 1px solid var(--border-1);
+  background: var(--bg-2); padding: 10px 14px; border-bottom: 2px solid var(--surface-border-soft);
   display: flex; gap: 6px; align-items: center;
   font-family: var(--font-sans); font-size: 12px; color: var(--fg-3);
 }
@@ -162,7 +180,8 @@
 /* How it works — steps */
 .mk-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
 .mk-step {
-  background: var(--xn-paper); border: 1px solid var(--border-1); border-radius: 20px;
+  background: var(--xn-paper); border: 2px solid var(--surface-border-soft); border-radius: 20px;
+  box-shadow: var(--sh-sm);
   padding: 28px; display: flex; flex-direction: column; gap: 12px;
 }
 .mk-step .n {
@@ -204,7 +223,7 @@
 }
 .mk-feature .visual {
   background: var(--xn-paper); border-radius: 20px; box-shadow: var(--sh-lg);
-  border: 1px solid var(--border-1); overflow: hidden;
+  border: 2px solid var(--surface-border-soft); overflow: hidden;
 }
 
 /* Paper-alt section background */
@@ -222,7 +241,8 @@
 /* Feature grid 6-up */
 .mk-grid6 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
 .mk-grid6 .cell {
-  background: var(--xn-paper); border: 1px solid var(--border-1); border-radius: 16px;
+  background: var(--xn-paper); border: 2px solid var(--surface-border-soft); border-radius: 16px;
+  box-shadow: var(--sh-sm);
   padding: 24px; display: flex; flex-direction: column; gap: 10px;
 }
 .mk-grid6 .ico {
@@ -235,7 +255,8 @@
 
 /* Testimonial */
 .mk-quote {
-  background: var(--xn-sage-200); border-radius: 24px; padding: 72px 64px;
+  background: var(--xn-sage-200); border: 2px solid var(--surface-border-soft); border-radius: 24px; padding: 72px 64px;
+  box-shadow: var(--sh-sm);
   text-align: center;
 }
 .mk-quote blockquote {
@@ -249,7 +270,8 @@
 /* Pricing */
 .mk-pricing { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 .mk-price {
-  background: var(--xn-paper); border: 1px solid var(--border-1); border-radius: 20px;
+  background: var(--xn-paper); border: 2px solid var(--surface-border-soft); border-radius: 20px;
+  box-shadow: var(--sh-sm);
   padding: 32px; display: flex; flex-direction: column; gap: 20px;
 }
 .mk-price.featured { background: var(--xn-ink-900); color: var(--fg-on-clay); border-color: var(--xn-ink-900); }
@@ -274,7 +296,7 @@
 
 /* FAQ */
 .mk-faq { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 3px; }
-.mk-faq .q { background: var(--xn-paper); border: 1px solid var(--border-1); border-radius: 14px; padding: 22px 24px; }
+.mk-faq .q { background: var(--xn-paper); border: 2px solid var(--surface-border-soft); border-radius: 14px; box-shadow: var(--sh-sm); padding: 22px 24px; }
 .mk-faq .q h4 { font-family: var(--font-display); font-weight: 700; font-size: 19px; letter-spacing: -0.01em; margin: 0 0 10px; color: var(--fg-1); }
 .mk-faq .q p { font-family: var(--font-sans); font-size: 14.5px; line-height: 1.65; color: var(--fg-2); margin: 0; }
 

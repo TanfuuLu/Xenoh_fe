@@ -12,10 +12,11 @@ interface AuthUser {
 
 interface AuthState {
   accessToken: string | null
-  refreshToken: string | null
   user: AuthUser | null
-  setAuth: (token: string, refreshToken: string, user: AuthUser) => void
+  authChecked: boolean
+  setAuth: (token: string, user: AuthUser) => void
   setUser: (user: Partial<AuthUser>) => void
+  setAuthChecked: (checked: boolean) => void
   clear: () => void
   isAuthenticated: () => boolean
   hasRole: (role: UserRole) => boolean
@@ -25,21 +26,23 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       accessToken: null,
-      refreshToken: null,
       user: null,
-      setAuth: (accessToken, refreshToken, user) => set({ accessToken, refreshToken, user }),
+      authChecked: false,
+      setAuth: (accessToken, user) => set({ accessToken, user, authChecked: true }),
       setUser: (user) => set((state) => ({ user: state.user ? { ...state.user, ...user } : null })),
-      clear: () => set({ accessToken: null, refreshToken: null, user: null }),
+      setAuthChecked: (authChecked) => set({ authChecked }),
+      clear: () => set({ accessToken: null, user: null, authChecked: true }),
       isAuthenticated: () => !!get().accessToken,
       hasRole: (role) => get().user?.roles.includes(role) ?? false,
     }),
     {
       name: 'xenoh-auth',
-      version: 1,
-      migrate: () => ({ accessToken: null, refreshToken: null, user: null }),
+      version: 2,
+      migrate: (persistedState) => {
+        const state = persistedState as Partial<AuthState> | undefined
+        return { accessToken: null, user: state?.user ?? null, authChecked: false }
+      },
       partialize: (state) => ({
-        accessToken: state.accessToken,
-        refreshToken: state.refreshToken,
         user: state.user,
       }),
     },

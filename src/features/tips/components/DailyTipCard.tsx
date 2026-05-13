@@ -1,26 +1,30 @@
 import { useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { useT } from '@/shared/i18n'
+import { useLangStore, useT } from '@/shared/i18n'
 import { useAuthStore } from '@/features/auth'
 import { slideUp } from '@/shared/utils/motion'
+import { FEATURE_TIP_ENTRIES } from '../data/tipEntries'
 import { TIPS } from '../data/tips'
 import type { Tip } from '../types'
 import { TipTrigger } from './TipTrigger'
 
 export function DailyTipCard() {
   const t = useT()
+  const lang = useLangStore((s) => s.lang)
   const isCoach = useAuthStore((s) => s.user?.roles?.includes('Coach') ?? false)
   const audience = isCoach ? 'coach' : 'individual'
 
   const tip = useMemo(() => pickDailyTip(audience), [audience])
   if (!tip) return null
 
-  const entry = (t.tips.entries as Record<string, { title: string; body: string }>)[tip.id]
+  const entry =
+    FEATURE_TIP_ENTRIES[lang][tip.id] ??
+    (t.tips.entries as Record<string, { title: string; body: string }>)[tip.id]
   if (!entry) return null
 
   return (
     <motion.div {...slideUp} className="w-fit">
-      <TipTrigger label={t.tips.dailyLabel} title={entry.title} body={entry.body} icon={tip.icon} />
+      <TipTrigger label={entry.label ?? t.tips.dailyLabel} title={entry.title} body={entry.body} icon={tip.icon} />
     </motion.div>
   )
 }

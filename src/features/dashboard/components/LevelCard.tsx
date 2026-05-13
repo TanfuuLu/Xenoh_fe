@@ -1,12 +1,15 @@
 import { motion, useReducedMotion } from 'framer-motion'
 import { slideUp } from '@/shared/utils/motion'
+import { cn } from '@/shared/utils/cn'
 import type { UserProfileResponse } from '@/features/profile/types'
 
 interface Props {
   profile: UserProfileResponse
+  variant?: 'default' | 'square'
+  className?: string
 }
 
-export function LevelCard({ profile }: Props) {
+export function LevelCard({ profile, variant = 'default', className }: Props) {
   const shouldReduce = useReducedMotion()
 
   const level          = profile.level        ?? 1
@@ -17,28 +20,38 @@ export function LevelCard({ profile }: Props) {
   const xpAtLevelStart = (level * (level - 1)) / 2 * 1000
   const xpIntoLevel    = totalXp - xpAtLevelStart
   const pct            = Math.min(100, Math.round((xpIntoLevel / xpToNextLevel) * 100))
+  const isSquare       = variant === 'square'
 
   return (
     <motion.div
       {...(shouldReduce ? {} : slideUp)}
-      className="rounded-xl border border-border bg-surface p-4 space-y-3"
+      className={cn(
+        'rounded-xl border border-border bg-surface p-4',
+        isSquare
+          ? 'flex aspect-square min-h-64 flex-col justify-between'
+          : 'space-y-3',
+        className,
+      )}
     >
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
+      <div className={cn('flex gap-3', isSquare ? 'flex-col items-start' : 'items-center justify-between')}>
+        <div className={cn('flex gap-3', isSquare ? 'flex-col items-start' : 'items-center')}>
           <div
-            className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl"
+            className={cn(
+              'flex flex-shrink-0 items-center justify-center rounded-xl',
+              isSquare ? 'h-20 w-20' : 'h-12 w-12',
+            )}
             style={{ background: 'var(--xn-clay-100)' }}
           >
-            <span className="text-xl font-extrabold text-primary">{level}</span>
+            <span className={cn('font-extrabold text-primary', isSquare ? 'text-4xl' : 'text-xl')}>{level}</span>
           </div>
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-muted">Level</p>
-            <p className="text-base font-bold text-text">{title}</p>
+            <p className={cn('font-bold text-text', isSquare ? 'text-2xl' : 'text-base')}>{title}</p>
           </div>
         </div>
-        <div className="text-right">
+        <div className={cn(isSquare ? 'text-left' : 'text-right')}>
           <p className="text-xs text-muted">XP</p>
-          <p className="text-sm font-semibold text-text">
+          <p className={cn('font-semibold text-text', isSquare ? 'text-base' : 'text-sm')}>
             {xpIntoLevel.toLocaleString()} / {xpToNextLevel.toLocaleString()}
           </p>
         </div>

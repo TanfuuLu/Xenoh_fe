@@ -17,7 +17,7 @@ const tones: Record<NonNullable<Props['variant']>, string> = {
 
 export function Badge({ variant = 'default', children, className }: Props) {
   return (
-    <span className={cn('xn-chip', tones[variant], className)}>
+    <span className={cn('xn-chip whitespace-nowrap', tones[variant], className)}>
       {children}
     </span>
   )

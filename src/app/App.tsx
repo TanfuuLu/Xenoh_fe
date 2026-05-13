@@ -4,12 +4,13 @@ import { QueryProvider } from './QueryProvider'
 import { router } from './Router'
 import { useEffect } from 'react'
 import { useAuthStore } from '@/features/auth'
+import { refreshAuth } from '@/features/auth/api/useAuth'
 import { useLangStore } from '@/shared/i18n'
 import { initAxiosInterceptors } from '@/shared/api/axios'
 import { useThemeStore } from '@/shared/theme'
 
 export function App() {
-  const { setAuth, clear } = useAuthStore()
+  const { setAuth, clear, setAuthChecked } = useAuthStore()
   const lang = useLangStore((s) => s.lang)
   const theme = useThemeStore((s) => s.theme)
 
@@ -24,14 +25,34 @@ export function App() {
   useEffect(() => {
     initAxiosInterceptors(
       () => useAuthStore.getState().accessToken,
-      () => useAuthStore.getState().refreshToken,
-      (token, refresh) => {
-        const user = useAuthStore.getState().user
-        if (user) setAuth(token, refresh, user)
+      (response) => {
+        setAuth(response.accessToken, {
+          id: response.userId,
+          email: response.email,
+          fullName: response.fullName,
+          avatarUrl: response.avatarUrl,
+          roles: response.roles,
+        })
       },
       clear,
     )
   }, [setAuth, clear])
+
+  useEffect(() => {
+    let cancelled = false
+
+    refreshAuth()
+      .catch(() => {
+        if (!cancelled) clear()
+      })
+      .finally(() => {
+        if (!cancelled) setAuthChecked(true)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [clear, setAuthChecked])
 
   return (
     <QueryProvider>

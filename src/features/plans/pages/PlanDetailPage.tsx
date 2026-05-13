@@ -95,6 +95,15 @@ export function PlanDetailPage() {
     acc[day.weeklyWorkoutId].push(day)
     return acc
   }, {})
+  const today = new Date()
+  const currentCalendarWeek = weeks?.find((week) => isDateInWeekRange(today, week.startDate, week.endDate))
+  const displayedWeeks = currentCalendarWeek
+    ? [...(weeks ?? [])].sort((a, b) => {
+        if (a.id === currentCalendarWeek.id) return -1
+        if (b.id === currentCalendarWeek.id) return 1
+        return a.weekNumber - b.weekNumber
+      })
+    : weeks ?? []
 
   return (
     <div className="space-y-6">
@@ -167,7 +176,29 @@ export function PlanDetailPage() {
       )}
 
       <div className="space-y-2">
-        <div className="flex justify-end gap-2">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          {currentCalendarWeek ? (
+            <button
+              type="button"
+              onClick={() => navigate(`/plans/${planId}/weeks/${currentCalendarWeek.id}`, { state: { canEdit, canComplete } })}
+              className="flex min-w-0 items-center gap-3 rounded-xl border px-3 py-2 text-left transition hover:shadow-sm"
+              style={{ borderColor: 'var(--xn-sage-400)', background: 'var(--xn-sage-200)' }}
+            >
+              <CheckCircle2 size={17} className="shrink-0" style={{ color: 'var(--xn-success)' }} />
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--xn-sage-700)' }}>
+                  {tpd.currentWeek}
+                </p>
+                <p className="truncate text-sm font-semibold text-text">
+                  {tpd.weekLabel} {currentCalendarWeek.weekNumber}: {currentCalendarWeek.name}
+                </p>
+              </div>
+              <ChevronRight size={16} className="shrink-0 text-muted" />
+            </button>
+          ) : (
+            <div />
+          )}
+          <div className="flex justify-end gap-2">
           <button
             type="button"
             title="Scroll weeks left"
@@ -186,6 +217,7 @@ export function PlanDetailPage() {
           >
             <ChevronRight size={17} />
           </button>
+          </div>
         </div>
 
         <motion.div
@@ -197,11 +229,12 @@ export function PlanDetailPage() {
           style={{ scrollbarGutter: 'stable' }}
         >
         <AnimatePresence>
-          {weeks?.map((week) => {
+          {displayedWeeks.map((week) => {
             const pct      = week.totalDays > 0 ? Math.round((week.completedDays / week.totalDays) * 100) : 0
             const weekDone = week.totalDays > 0 && week.completedDays === week.totalDays
             const warningDaysInWeek = warningDaysByWeek[week.id]?.length ?? 0
             const hasWarning = week.hasWarning || warningDaysInWeek > 0
+            const isCurrentWeek = currentCalendarWeek?.id === week.id
             return (
               <motion.div
                 key={week.id}
@@ -210,7 +243,9 @@ export function PlanDetailPage() {
                 onClick={() => navigate(`/plans/${planId}/weeks/${week.id}`, { state: { canEdit, canComplete } })}
                 className="min-w-[252px] snap-start rounded-xl border p-4 space-y-3 cursor-pointer transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md min-[390px]:min-w-[280px] sm:min-w-[320px] lg:min-w-[340px]"
                 style={
-                  hasWarning
+                  isCurrentWeek
+                    ? { borderColor: 'var(--xn-sage-500)', background: hasWarning ? 'var(--xn-warning-bg)' : 'var(--xn-sage-100)' }
+                    : hasWarning
                     ? { borderColor: 'var(--xn-warning)', background: 'var(--xn-warning-bg)' }
                     : weekDone
                     ? { borderColor: 'var(--xn-sage-400)', background: 'var(--xn-sage-200)' }
@@ -228,6 +263,7 @@ export function PlanDetailPage() {
                     </p>
                   </div>
                   <div className="flex items-center gap-1.5">
+                    {isCurrentWeek && <Badge variant="success">{tpd.currentWeek}</Badge>}
                     {hasWarning && <AlertTriangle size={18} style={{ color: 'var(--xn-warning)' }} />}
                     {weekDone && <CheckCircle2 size={18} style={{ color: 'var(--xn-success)' }} />}
                     {canEdit && (
@@ -297,4 +333,13 @@ export function PlanDetailPage() {
       </Modal>
     </div>
   )
+}
+
+function isDateInWeekRange(date: Date, startDate: string, endDate: string) {
+  const target = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime()
+  const start = new Date(startDate)
+  const end = new Date(endDate)
+  const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime()
+  const endDay = new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime()
+  return target >= startDay && target <= endDay
 }

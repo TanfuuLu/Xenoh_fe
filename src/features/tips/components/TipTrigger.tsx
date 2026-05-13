@@ -13,7 +13,7 @@ export function TipTrigger({ label, title, body, icon }: Props) {
   const tooltip = label ? `${label}: ${title}. ${body}` : `${title}. ${body}`
 
   return (
-    <span className="group relative inline-flex w-fit">
+    <span className="group relative z-[60] inline-flex w-fit hover:z-[9999] focus-within:z-[9999]">
       <button
         type="button"
         aria-label={tooltip}
@@ -29,7 +29,7 @@ export function TipTrigger({ label, title, body, icon }: Props) {
       </button>
       <span
         role="tooltip"
-        className="pointer-events-none absolute left-0 top-full z-50 mt-2 hidden w-[min(18rem,calc(100vw-2rem))] rounded-lg border p-3 text-left shadow-xl group-hover:block group-focus-within:block sm:left-1/2 sm:-translate-x-1/2"
+        className="pointer-events-none absolute left-0 top-full z-[9999] mt-2 hidden max-h-[min(18rem,calc(100vh-2rem))] w-[min(18rem,calc(100vw-2rem))] overflow-y-auto rounded-lg border p-3 text-left shadow-xl group-hover:block group-focus-within:block sm:left-1/2 sm:-translate-x-1/2"
         style={{
           background: 'var(--bg-2)',
           borderColor: 'var(--border-1)',

@@ -8,6 +8,12 @@ export interface AnalysisRecommendation {
   actions: string[]
 }
 
+export interface AnalysisPlanReview {
+  headline: string
+  mistakes: string[]
+  suggestions: string[]
+}
+
 export interface AnalysisContent {
   trainingAdherence: AnalysisSection
   bodyMetrics: AnalysisSection
@@ -15,6 +21,7 @@ export interface AnalysisContent {
   muscleBalance: AnalysisSection
   effortGap: AnalysisSection
   recommendation: AnalysisRecommendation
+  planReview?: AnalysisPlanReview | null
 }
 
 export interface AnalysisWeekComparison {

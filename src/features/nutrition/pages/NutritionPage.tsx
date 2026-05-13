@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type React from 'react'
 import { Link, useParams } from 'react-router'
 import { format, subDays } from 'date-fns'
-import { Activity, ChevronLeft, Flame, LineChart as LineChartIcon, Target, Utensils } from 'lucide-react'
+import { Activity, ChevronLeft, Flame, LineChart as LineChartIcon, Scale, Sparkles, Target, TrendingUp, Utensils } from 'lucide-react'
 import {
   Bar,
   BarChart,
@@ -74,6 +74,7 @@ export function NutritionPage() {
     fatG: '',
     notes: '',
   })
+  const [showNutritionInsight, setShowNutritionInsight] = useState(false)
 
   useEffect(() => {
     if (!summary) return
@@ -152,6 +153,14 @@ export function NutritionPage() {
           <h1 className="text-2xl font-bold text-text">{isClientView ? tn.clientTitle : tn.title}</h1>
           <p className="mt-1 text-sm text-muted">{tn.subtitle}</p>
         </div>
+        <Button
+          variant={showNutritionInsight ? 'primary' : 'secondary'}
+          size="sm"
+          onClick={() => setShowNutritionInsight((value) => !value)}
+          className="shrink-0 whitespace-nowrap"
+        >
+          <Sparkles size={16} /> {tn.nutritionInsight}
+        </Button>
       </div>
 
       {!hasCalculation && (
@@ -186,7 +195,18 @@ export function NutritionPage() {
         <NutritionValueDiagrams summary={summary} logForm={logForm} tn={tn} />
       )}
 
-      <div className="flex flex-col gap-6">
+      {showNutritionInsight && (
+        <RequireTier feature={tn.nutritionInsight}>
+          <NutritionInsightPanel
+            clientId={clientId}
+            enabled={summary.canUseAdvancedAnalysis}
+            summary={summary}
+            logForm={logForm}
+          />
+        </RequireTier>
+      )}
+
+      <div className="grid items-start gap-6 xl:grid-cols-2">
         <Card>
           <div className="mb-5 flex items-center gap-2">
             <Target size={17} className="text-primary" />
@@ -198,7 +218,7 @@ export function NutritionPage() {
             <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'var(--fg-3)' }}>
               {tn.basicsSection}
             </p>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2">
               <Select
                 label={tn.goalLabel}
                 value={profileForm.goal}
@@ -212,6 +232,7 @@ export function NutritionPage() {
                 onChange={(value) => setProfileForm((f) => ({ ...f, activityLevel: value as ActivityLevel }))}
               />
               <Input
+                className="md:col-span-2"
                 label={tn.targetWeightLabel}
                 type="number"
                 min="20"
@@ -233,7 +254,7 @@ export function NutritionPage() {
               </p>
               <p className="text-xs text-muted">{tn.fineTuningHint}</p>
             </div>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2">
               <Input
                 label={tn.customCaloriesLabel}
                 type="number"
@@ -256,6 +277,7 @@ export function NutritionPage() {
                 onChange={(e) => setProfileForm((f) => ({ ...f, proteinPerKg: e.target.value }))}
               />
               <Input
+                className="md:col-span-2"
                 label={tn.fatPerKgLabel}
                 type="number"
                 min="0.2"
@@ -274,66 +296,66 @@ export function NutritionPage() {
 
         <Card>
           <div className="mb-4 flex items-center gap-2">
-            <Target size={17} className="text-primary" />
-            <h2 className="text-lg font-semibold text-text">{tn.macroTargetsTitle}</h2>
+            <Utensils size={17} className="text-primary" />
+            <h2 className="text-lg font-semibold text-text">{tn.todayIntakeTitle}</h2>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <MacroCard label={tn.proteinShort} target={calc.proteinG} actual={readNumber(logForm.proteinG)} remaining={remaining?.proteinG} unit="g" missingLabel={tn.missing} loggedLabel={tn.logged} remainingLabel={tn.remaining} />
-            <MacroCard label={tn.carbsShort}   target={calc.carbsG}   actual={readNumber(logForm.carbsG)}   remaining={remaining?.carbsG}   unit="g" missingLabel={tn.missing} loggedLabel={tn.logged} remainingLabel={tn.remaining} />
-            <MacroCard label={tn.fatShort}     target={calc.fatG}     actual={readNumber(logForm.fatG)}     remaining={remaining?.fatG}     unit="g" missingLabel={tn.missing} loggedLabel={tn.logged} remainingLabel={tn.remaining} />
-            <MacroCard label={tn.caloriesShort} target={calc.calorieTarget} actual={readNumber(logForm.calories)} remaining={remaining?.calories} unit={tn.kcal} missingLabel={tn.missing} loggedLabel={tn.logged} remainingLabel={tn.remaining} />
+          <div className="grid gap-4 md:grid-cols-2">
+            <Input
+              label={tn.caloriesLabel}
+              type="number"
+              min="0"
+              value={logForm.calories}
+              onChange={(e) => setLogForm((f) => ({ ...f, calories: e.target.value }))}
+            />
+            <Input
+              label={tn.proteinLabel}
+              type="number"
+              min="0"
+              step="0.1"
+              value={logForm.proteinG}
+              onChange={(e) => setLogForm((f) => ({ ...f, proteinG: e.target.value }))}
+            />
+            <Input
+              label={tn.carbsLabel}
+              type="number"
+              min="0"
+              step="0.1"
+              value={logForm.carbsG}
+              onChange={(e) => setLogForm((f) => ({ ...f, carbsG: e.target.value }))}
+            />
+            <Input
+              label={tn.fatLabel}
+              type="number"
+              min="0"
+              step="0.1"
+              value={logForm.fatG}
+              onChange={(e) => setLogForm((f) => ({ ...f, fatG: e.target.value }))}
+            />
+            <label className="flex flex-col gap-1.5 text-sm font-medium text-text md:col-span-2">
+              {tn.notesLabel}
+              <textarea
+                className="xn-input min-h-32 resize-y"
+                value={logForm.notes}
+                onChange={(e) => setLogForm((f) => ({ ...f, notes: e.target.value }))}
+              />
+            </label>
+          </div>
+          <div className="mt-4 flex justify-end">
+            <Button onClick={saveLog} loading={updateLog.isPending}>{tn.saveToday}</Button>
           </div>
         </Card>
       </div>
 
       <Card>
         <div className="mb-4 flex items-center gap-2">
-          <Utensils size={17} className="text-primary" />
-          <h2 className="text-lg font-semibold text-text">{tn.todayIntakeTitle}</h2>
+          <Target size={17} className="text-primary" />
+          <h2 className="text-lg font-semibold text-text">{tn.macroTargetsTitle}</h2>
         </div>
-        <div className="grid gap-4 md:grid-cols-2">
-          <Input
-            label={tn.caloriesLabel}
-            type="number"
-            min="0"
-            value={logForm.calories}
-            onChange={(e) => setLogForm((f) => ({ ...f, calories: e.target.value }))}
-          />
-          <Input
-            label={tn.proteinLabel}
-            type="number"
-            min="0"
-            step="0.1"
-            value={logForm.proteinG}
-            onChange={(e) => setLogForm((f) => ({ ...f, proteinG: e.target.value }))}
-          />
-          <Input
-            label={tn.carbsLabel}
-            type="number"
-            min="0"
-            step="0.1"
-            value={logForm.carbsG}
-            onChange={(e) => setLogForm((f) => ({ ...f, carbsG: e.target.value }))}
-          />
-          <Input
-            label={tn.fatLabel}
-            type="number"
-            min="0"
-            step="0.1"
-            value={logForm.fatG}
-            onChange={(e) => setLogForm((f) => ({ ...f, fatG: e.target.value }))}
-          />
-          <label className="flex flex-col gap-1.5 text-sm font-medium text-text md:col-span-2">
-            {tn.notesLabel}
-            <textarea
-              className="xn-input min-h-20 resize-y"
-              value={logForm.notes}
-              onChange={(e) => setLogForm((f) => ({ ...f, notes: e.target.value }))}
-            />
-          </label>
-        </div>
-        <div className="mt-4 flex justify-end">
-          <Button onClick={saveLog} loading={updateLog.isPending}>{tn.saveToday}</Button>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <MacroCard label={tn.proteinShort} target={calc.proteinG} actual={readNumber(logForm.proteinG)} remaining={remaining?.proteinG} unit="g" missingLabel={tn.missing} loggedLabel={tn.logged} remainingLabel={tn.remaining} />
+          <MacroCard label={tn.carbsShort}   target={calc.carbsG}   actual={readNumber(logForm.carbsG)}   remaining={remaining?.carbsG}   unit="g" missingLabel={tn.missing} loggedLabel={tn.logged} remainingLabel={tn.remaining} />
+          <MacroCard label={tn.fatShort}     target={calc.fatG}     actual={readNumber(logForm.fatG)}     remaining={remaining?.fatG}     unit="g" missingLabel={tn.missing} loggedLabel={tn.logged} remainingLabel={tn.remaining} />
+          <MacroCard label={tn.caloriesShort} target={calc.calorieTarget} actual={readNumber(logForm.calories)} remaining={remaining?.calories} unit={tn.kcal} missingLabel={tn.missing} loggedLabel={tn.logged} remainingLabel={tn.remaining} />
         </div>
       </Card>
 
@@ -455,6 +477,190 @@ function NutritionHistoryPanel({
       )}
     </Card>
   )
+}
+
+function NutritionInsightPanel({
+  clientId,
+  enabled,
+  summary,
+  logForm,
+}: {
+  clientId?: string
+  enabled: boolean
+  summary: NutritionSummaryResponse
+  logForm: LogForm
+}) {
+  const t = useT()
+  const tn = t.nutrition
+  const to = format(new Date(), 'yyyy-MM-dd')
+  const from = format(subDays(new Date(), 13), 'yyyy-MM-dd')
+  const { data = [], isLoading } = useNutritionHistory(from, to, enabled, clientId)
+  const insight = buildNutritionInsight(summary, logForm, data, tn)
+
+  return (
+    <Card>
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <Sparkles size={17} className="text-primary" />
+          <div>
+            <h2 className="text-lg font-semibold text-text">{tn.nutritionInsightTitle}</h2>
+            <p className="text-sm text-muted">{tn.nutritionInsightSubtitle}</p>
+          </div>
+        </div>
+        <span className="rounded-full px-3 py-1 text-xs font-semibold" style={{ background: 'var(--bg-3)', color: 'var(--fg-2)' }}>
+          {tn.last14Days}
+        </span>
+      </div>
+
+      {isLoading ? (
+        <div className="flex h-32 items-center justify-center"><Spinner /></div>
+      ) : (
+        <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+            <InsightMetric icon={<Scale size={17} />} label={tn.weightGap} value={insight.weightGap} detail={insight.weightNote} />
+            <InsightMetric icon={<Flame size={17} />} label={tn.calorieConsistency} value={insight.calorieConsistency} detail={insight.calorieNote} />
+            <InsightMetric icon={<Utensils size={17} />} label={tn.macroBalance} value={insight.macroBalance} detail={insight.macroNote} />
+          </div>
+
+          <div className="rounded-xl border p-4" style={{ borderColor: 'var(--border-1)', background: 'var(--bg-2)' }}>
+            <div className="mb-3 flex items-center gap-2">
+              <TrendingUp size={17} className="text-primary" />
+              <h3 className="font-semibold text-text">{tn.nutritionNextMove}</h3>
+            </div>
+            <div className="space-y-3">
+              {insight.actions.map((action) => (
+                <div key={action.title} className="rounded-lg px-3 py-2" style={{ background: 'var(--bg-3)' }}>
+                  <p className="font-semibold text-text">{action.title}</p>
+                  <p className="mt-1 text-sm text-muted">{action.body}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </Card>
+  )
+}
+
+function InsightMetric({
+  icon,
+  label,
+  value,
+  detail,
+}: {
+  icon: React.ReactNode
+  label: string
+  value: string
+  detail: string
+}) {
+  return (
+    <div className="rounded-xl border p-4" style={{ borderColor: 'var(--border-1)', background: 'var(--bg-2)' }}>
+      <div className="flex items-center gap-2 text-muted">
+        {icon}
+        <span className="text-xs font-semibold uppercase tracking-wide">{label}</span>
+      </div>
+      <p className="mt-2 text-xl font-bold text-text">{value}</p>
+      <p className="mt-1 text-sm text-muted">{detail}</p>
+    </div>
+  )
+}
+
+function buildNutritionInsight(
+  summary: NutritionSummaryResponse,
+  logForm: LogForm,
+  history: { calories: number; proteinG: number; carbsG: number; fatG: number }[],
+  tn: Record<string, string>,
+) {
+  const calc = summary.calculation
+  const targetWeight = summary.profile.targetWeightKg
+  const bodyweight = calc.bodyweightKg
+  const calorieTarget = calc.calorieTarget
+  const proteinTarget = calc.proteinG
+  const carbsTarget = calc.carbsG
+  const fatTarget = calc.fatG
+  const source = history.length > 0
+    ? history
+    : [{
+        calories: readNumber(logForm.calories),
+        proteinG: readNumber(logForm.proteinG),
+        carbsG: readNumber(logForm.carbsG),
+        fatG: readNumber(logForm.fatG),
+      }]
+  const avg = {
+    calories: average(source.map((item) => item.calories)),
+    proteinG: average(source.map((item) => item.proteinG)),
+    carbsG: average(source.map((item) => item.carbsG)),
+    fatG: average(source.map((item) => item.fatG)),
+  }
+  const weightDiff = bodyweight != null && targetWeight != null ? targetWeight - bodyweight : null
+  const calorieDiff = calorieTarget != null ? Math.round(avg.calories - calorieTarget) : null
+  const macroScores = [
+    targetRatio(avg.proteinG, proteinTarget),
+    targetRatio(avg.carbsG, carbsTarget),
+    targetRatio(avg.fatG, fatTarget),
+  ].filter((value) => value != null) as number[]
+  const macroAverage = macroScores.length
+    ? Math.round(macroScores.reduce((sum, value) => sum + Math.min(100, value), 0) / macroScores.length)
+    : null
+
+  const actions = [
+    calorieDiff == null
+      ? { title: tn.insightSetCalories, body: tn.insightSetCaloriesBody }
+      : Math.abs(calorieDiff) <= 150
+        ? { title: tn.insightHoldCalories, body: tn.insightHoldCaloriesBody.replace('{n}', String(Math.abs(calorieDiff))) }
+        : calorieDiff > 0
+          ? { title: tn.insightReduceCalories, body: tn.insightReduceCaloriesBody.replace('{n}', String(calorieDiff)) }
+          : { title: tn.insightAddCalories, body: tn.insightAddCaloriesBody.replace('{n}', String(Math.abs(calorieDiff))) },
+    proteinTarget && avg.proteinG < proteinTarget * 0.9
+      ? { title: tn.insightProteinFirst, body: tn.insightProteinFirstBody.replace('{n}', String(Math.round(proteinTarget - avg.proteinG))) }
+      : { title: tn.insightMacroTiming, body: tn.insightMacroTimingBody },
+    weightDiff == null
+      ? { title: tn.insightTargetWeight, body: tn.insightTargetWeightBody }
+      : { title: tn.insightWeightDirection, body: formatWeightAction(weightDiff, tn) },
+  ]
+
+  return {
+    weightGap: weightDiff == null ? tn.missing : `${weightDiff > 0 ? '+' : ''}${weightDiff.toFixed(1)} ${tn.kg}`,
+    weightNote: weightDiff == null
+      ? tn.insightMissingWeight
+      : weightDiff > 0
+        ? tn.insightGainNeeded
+        : weightDiff < 0
+          ? tn.insightLossNeeded
+          : tn.insightAtTargetWeight,
+    calorieConsistency: calorieDiff == null ? tn.missing : `${calorieDiff > 0 ? '+' : ''}${calorieDiff} ${tn.kcal}`,
+    calorieNote: calorieDiff == null
+      ? tn.insightMissingCalories
+      : Math.abs(calorieDiff) <= 150
+        ? tn.insightCaloriesOnTarget
+        : calorieDiff > 0
+          ? tn.insightCaloriesHigh
+          : tn.insightCaloriesLow,
+    macroBalance: macroAverage == null ? tn.missing : `${macroAverage}%`,
+    macroNote: macroAverage == null
+      ? tn.insightMissingMacros
+      : macroAverage >= 90
+        ? tn.insightMacrosOnTrack
+        : tn.insightMacrosNeedWork,
+    actions,
+  }
+}
+
+function average(values: number[]) {
+  const logged = values.filter((value) => value > 0)
+  return logged.length ? logged.reduce((sum, value) => sum + value, 0) / logged.length : 0
+}
+
+function targetRatio(actual: number, target: number | null) {
+  if (!target || target <= 0) return null
+  return Math.round((actual / target) * 100)
+}
+
+function formatWeightAction(weightDiff: number, tn: Record<string, string>) {
+  const amount = Math.abs(weightDiff).toFixed(1)
+  if (Math.abs(weightDiff) < 0.5) return tn.insightWeightAtTargetBody
+  if (weightDiff > 0) return tn.insightWeightGainBody.replace('{n}', amount)
+  return tn.insightWeightLossBody.replace('{n}', amount)
 }
 
 function NutritionValueDiagrams({

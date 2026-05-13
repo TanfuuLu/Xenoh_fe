@@ -17,7 +17,7 @@ import { Spinner } from '@/shared/components/Spinner'
 import { Modal } from '@/shared/components/Modal'
 import { useConfirm } from '@/shared/components/ConfirmModal'
 import { staggerContainer, slideUp } from '@/shared/utils/motion'
-import { useT } from '@/shared/i18n'
+import { useLangStore, useT } from '@/shared/i18n'
 import { usePublicUserProfile } from '@/features/profile'
 import { InlineTip } from '@/features/tips'
 import type { CoachRelationshipResponse, ClientResponse, CoachClientDashboardResponse } from '../types'
@@ -189,6 +189,8 @@ function reasonBadgeVariant(reason: string): 'success' | 'danger' | 'warning' | 
 }
 
 function ClientCard({ client, stats, currentUserId, onView, onDisconnect, onCancelDisconnect, onAcceptDisconnect, onRejectDisconnect, onProposeRenewal, onAcceptRenewal, onRejectRenewal, disconnecting, renewalPending }: ClientCardProps) {
+  const lang = useLangStore((s) => s.lang)
+  const tx = clientsPageText(lang)
   const isPendingTermination = client.status === 'PendingTermination'
   const iInitiated = isPendingTermination && client.terminationRequestedBy === currentUserId
   const clientInitiated = isPendingTermination && client.terminationRequestedBy !== currentUserId
@@ -230,7 +232,7 @@ function ClientCard({ client, stats, currentUserId, onView, onDisconnect, onCanc
             <p className="font-semibold text-text truncate">{client.fullName}</p>
             <p className="text-xs text-muted truncate">{client.email}</p>
             <p className="text-xs mt-0.5" style={{ color: 'var(--fg-3)' }}>
-              Since {format(new Date(client.connectedAt), 'dd/MM/yyyy')}
+              {tx.since} {format(new Date(client.connectedAt), 'dd/MM/yyyy')}
             </p>
           </div>
         </div>
@@ -239,25 +241,25 @@ function ClientCard({ client, stats, currentUserId, onView, onDisconnect, onCanc
           {attentionLevel !== 'None' && !isPendingTermination && (
             <Badge variant={attentionVariant}>
               <AlertTriangle size={11} className="mr-0.5" />
-              {attentionLevel}
+              {translateAttentionLevel(attentionLevel, lang)}
             </Badge>
           )}
           {isPendingTermination && (
             <Badge variant="warning">
               <UserMinus size={11} className="mr-0.5" />
-              {iInitiated ? 'Awaiting response' : 'Wants to disconnect'}
+              {iInitiated ? tx.awaitingResponse : tx.wantsToDisconnect}
             </Badge>
           )}
           {isExpired && (
             <Badge variant="warning">
               <Clock size={11} className="mr-0.5" />
-              Expired
+              {tx.expired}
             </Badge>
           )}
           {isPendingRenewal && (
             <Badge variant="warning">
               <RefreshCw size={11} className="mr-0.5" />
-              {iInitiatedRenewal ? 'Renewal pending' : 'Renewal proposed'}
+              {iInitiatedRenewal ? tx.renewalPending : tx.renewalProposed}
             </Badge>
           )}
           <Button variant="ghost" size="sm" onClick={onView}>
@@ -302,7 +304,7 @@ function ClientCard({ client, stats, currentUserId, onView, onDisconnect, onCanc
       </div>
 
       <div className="px-4 pb-2 text-xs text-muted">
-        Hợp đồng: {formatContractDate(client.startDate)} → {formatContractDate(client.endDate)}
+        {tx.contract}: {formatContractDate(client.startDate)} → {formatContractDate(client.endDate)}
         {client.selectedCoachingType && (
           <span className="ml-2 inline-flex items-center gap-1 text-text">
             <Tags size={11} />
@@ -315,7 +317,7 @@ function ClientCard({ client, stats, currentUserId, onView, onDisconnect, onCanc
           </span>
         )}
         {isPendingRenewal && client.proposedEndDate && (
-          <span className="ml-1 text-warning">(đề xuất {formatContractDate(client.proposedEndDate)})</span>
+          <span className="ml-1 text-warning">({tx.proposed} {formatContractDate(client.proposedEndDate)})</span>
         )}
       </div>
 
@@ -324,7 +326,7 @@ function ClientCard({ client, stats, currentUserId, onView, onDisconnect, onCanc
         <div className="flex items-center justify-between text-xs">
           <span className="flex items-center gap-1 text-muted">
             <TrendingUp size={11} />
-            {stats?.activePlanName ?? 'Plan progress'}
+            {stats?.activePlanName ?? tx.planProgress}
           </span>
           <span className="font-semibold text-text">
             {progress !== null ? `${progress}%` : '—'}
@@ -351,7 +353,7 @@ function ClientCard({ client, stats, currentUserId, onView, onDisconnect, onCanc
           <div className="flex flex-wrap gap-1.5 pt-1">
             {stats.attentionReasons.map((reason) => (
               <Badge key={reason} variant={reasonBadgeVariant(reason)}>
-                {reason}
+                {translateAttentionReason(reason, lang)}
               </Badge>
             ))}
           </div>
@@ -367,7 +369,7 @@ function ClientCard({ client, stats, currentUserId, onView, onDisconnect, onCanc
         <div className="px-3 py-2.5">
           <div className="flex items-center justify-center gap-1 text-xs text-muted mb-0.5">
             <CalendarDays size={11} />
-            Last workout
+            {tx.lastWorkout}
           </div>
           {stats?.lastWorkoutDate ? (
             <>
@@ -379,7 +381,7 @@ function ClientCard({ client, stats, currentUserId, onView, onDisconnect, onCanc
               </p>
             </>
           ) : (
-            <p className="text-xs text-muted mt-1">No data</p>
+            <p className="text-xs text-muted mt-1">{tx.noData}</p>
           )}
         </div>
 
@@ -387,7 +389,7 @@ function ClientCard({ client, stats, currentUserId, onView, onDisconnect, onCanc
         <div className="px-3 py-2.5">
           <div className="flex items-center justify-center gap-1 text-xs text-muted mb-0.5">
             <Scale size={11} />
-            Weight
+            {tx.weight}
           </div>
           <p className="text-xs font-semibold text-text mt-1">
             {stats?.latestBodyweightKg ? `${stats.latestBodyweightKg} kg` : '—'}
@@ -398,7 +400,7 @@ function ClientCard({ client, stats, currentUserId, onView, onDisconnect, onCanc
         <div className="px-3 py-2.5">
           <div className="flex items-center justify-center gap-1 text-xs text-muted mb-0.5">
             <Dumbbell size={11} />
-            Big 3 PR
+            {tx.bigThreePr}
           </div>
           <div className="text-xs space-y-0.5">
             <p><span className="text-muted">S</span> <span className="font-semibold text-text">{big3?.squat ?? '—'}{big3?.squat ? ' kg' : ''}</span></p>
@@ -414,6 +416,8 @@ function ClientCard({ client, stats, currentUserId, onView, onDisconnect, onCanc
 // ─── Main page ─────────────────────────────────────────────────────────────
 
 export function ClientsPage() {
+  const lang = useLangStore((s) => s.lang)
+  const tx = clientsPageText(lang)
   const [previewReq, setPreviewReq] = useState<CoachRelationshipResponse | null>(null)
   const shouldReduce = useReducedMotion()
   const navigate = useNavigate()
@@ -501,11 +505,11 @@ export function ClientsPage() {
             <InlineTip placement="clients" audience="coach" />
           </div>
           <p className="mt-1 text-sm text-muted">
-            {activeClients.length} active client{activeClients.length !== 1 ? 's' : ''}
+            {tx.activeClientsCount.replace('{n}', String(activeClients.length))}
             {inactiveCount > 0 && (
               <span className="ml-2 inline-flex items-center gap-1" style={{ color: 'var(--color-warning)' }}>
                 <AlertTriangle size={12} />
-                {inactiveCount} inactive
+                {tx.inactiveCount.replace('{n}', String(inactiveCount))}
               </span>
             )}
           </p>
@@ -513,10 +517,10 @@ export function ClientsPage() {
       </div>
 
       <div className="grid gap-3 min-[390px]:grid-cols-2 lg:grid-cols-4">
-        <StatCard icon={<Users size={15} />} label="Active clients" value={String(activeClients.length)} />
-        <StatCard icon={<AlertTriangle size={15} />} label="Need attention" value={String(needsAttentionCount)} />
-        <StatCard icon={<ClipboardList size={15} />} label="No active plan" value={String(noActivePlanCount)} />
-        <StatCard icon={<CalendarDays size={15} />} label="Inactive" value={String(inactiveCount)} />
+        <StatCard icon={<Users size={15} />} label={tx.statActiveClients} value={String(activeClients.length)} />
+        <StatCard icon={<AlertTriangle size={15} />} label={tx.statNeedAttention} value={String(needsAttentionCount)} />
+        <StatCard icon={<ClipboardList size={15} />} label={tx.statNoActivePlan} value={String(noActivePlanCount)} />
+        <StatCard icon={<CalendarDays size={15} />} label={tx.statInactive} value={String(inactiveCount)} />
       </div>
 
       {/* Pending requests */}
@@ -660,6 +664,72 @@ export function ClientsPage() {
     </div>
     </>
   )
+}
+
+function clientsPageText(lang: 'en' | 'vi') {
+  return lang === 'vi'
+    ? {
+      activeClientsCount: '{n} client đang hoạt động',
+      inactiveCount: '{n} không hoạt động',
+      statActiveClients: 'Client đang hoạt động',
+      statNeedAttention: 'Cần chú ý',
+      statNoActivePlan: 'Chưa có plan',
+      statInactive: 'Không hoạt động',
+      since: 'Từ',
+      awaitingResponse: 'Đang chờ phản hồi',
+      wantsToDisconnect: 'Muốn ngắt kết nối',
+      expired: 'Hết hạn',
+      renewalPending: 'Đang chờ gia hạn',
+      renewalProposed: 'Đã đề xuất gia hạn',
+      contract: 'Hợp đồng',
+      proposed: 'đề xuất',
+      planProgress: 'Tiến độ plan',
+      lastWorkout: 'Buổi tập gần nhất',
+      noData: 'Chưa có dữ liệu',
+      weight: 'Cân nặng',
+      bigThreePr: 'PR Big 3',
+    }
+    : {
+      activeClientsCount: '{n} active client(s)',
+      inactiveCount: '{n} inactive',
+      statActiveClients: 'Active clients',
+      statNeedAttention: 'Need attention',
+      statNoActivePlan: 'No active plan',
+      statInactive: 'Inactive',
+      since: 'Since',
+      awaitingResponse: 'Awaiting response',
+      wantsToDisconnect: 'Wants to disconnect',
+      expired: 'Expired',
+      renewalPending: 'Renewal pending',
+      renewalProposed: 'Renewal proposed',
+      contract: 'Contract',
+      proposed: 'proposed',
+      planProgress: 'Plan progress',
+      lastWorkout: 'Last workout',
+      noData: 'No data',
+      weight: 'Weight',
+      bigThreePr: 'Big 3 PR',
+    }
+}
+
+function translateAttentionLevel(level: string, lang: 'en' | 'vi') {
+  if (lang !== 'vi') return level
+  if (level === 'High') return 'Cao'
+  if (level === 'Medium') return 'Trung bình'
+  if (level === 'Low') return 'Thấp'
+  return level
+}
+
+function translateAttentionReason(reason: string, lang: 'en' | 'vi') {
+  if (lang !== 'vi') return reason
+  const map: Record<string, string> = {
+    'No active plan': 'Chưa có plan',
+    'No workout history': 'Chưa có lịch sử tập',
+    Inactive: 'Không hoạt động',
+    'Missed days': 'Bỏ lỡ ngày tập',
+    'Behind plan': 'Trễ tiến độ',
+  }
+  return map[reason] ?? reason
 }
 
 

@@ -346,29 +346,52 @@ function NutritionPanel({ nutrition }: { nutrition: PersonalDashboardNutrition }
 
 function NextActionsPanel({ actions }: { actions: PersonalDashboardAction[] }) {
   const td = useT().dashboard
+  const lang = useLangStore((s) => s.lang)
+  const shouldReduce = useReducedMotion()
   return (
     <Card className="space-y-4">
       <PanelHeader icon={<Target size={18} />} label={td.nextActions} title={td.whatToDoNext} />
-      <div className="space-y-2">
+      <motion.div
+        className="space-y-2"
+        initial={shouldReduce ? false : 'hidden'}
+        animate="visible"
+        variants={shouldReduce ? undefined : staggerContainer}
+      >
         {actions.map((action) => (
-          <Link
-            key={`${action.type}-${action.route}`}
-            to={action.route}
-            className="group flex items-center gap-3 rounded-xl border border-border bg-panel p-3 transition-colors hover:border-primary/40"
-          >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-surface text-primary">
-              <ActionIcon type={action.type} />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="font-semibold text-text group-hover:text-primary">{action.label}</p>
-              <p className="text-sm text-muted">{action.description}</p>
-            </div>
-            <ArrowRight size={16} className="shrink-0 text-muted" />
-          </Link>
+          <motion.div key={`${action.type}-${action.route}`} variants={shouldReduce ? undefined : slideUp}>
+            <Link
+              to={action.route}
+              className="xn-choice-card group flex items-center gap-3 rounded-xl border border-border bg-panel p-3"
+            >
+              <div className="xn-choice-card-icon flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-surface text-primary">
+                <ActionIcon type={action.type} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold text-text group-hover:text-primary">{localizeAction(action.label, lang)}</p>
+                <p className="text-sm text-muted">{localizeAction(action.description, lang)}</p>
+              </div>
+              <ArrowRight size={16} className="xn-choice-card-arrow shrink-0 text-muted" />
+            </Link>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
     </Card>
   )
+}
+
+function localizeAction(text: string, lang: 'en' | 'vi') {
+  if (lang !== 'vi') return text
+  const map: Record<string, string> = {
+    'Create your first plan': 'Tạo plan đầu tiên',
+    'Set up training so the hub can guide your day.': 'Thiết lập tập luyện để hub hướng dẫn ngày của bạn.',
+    'Complete nutrition setup': 'Hoàn tất thiết lập dinh dưỡng',
+    'Add missing profile data to unlock calorie and macro targets.': 'Bổ sung hồ sơ để mở khóa mục tiêu calo và macro.',
+    'Log bodyweight': 'Ghi cân nặng',
+    'Bodyweight improves BMI, DOTS, and nutrition calculations.': 'Cân nặng giúp cải thiện BMI, DOTS và tính toán dinh dưỡng.',
+    'Review insights': 'Xem phân tích',
+    'See training recommendations and trends.': 'Xem khuyến nghị tập luyện và xu hướng.',
+  }
+  return map[text] ?? text
 }
 
 function ProInsightsPanel({

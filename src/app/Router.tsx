@@ -53,6 +53,8 @@ function Suspended({ children }: { children: ReactNode }) {
 
 function ProtectedRoute() {
   const accessToken = useAuthStore((s) => s.accessToken)
+  const authChecked = useAuthStore((s) => s.authChecked)
+  if (!authChecked) return <SuspenseFallback />
   if (!accessToken) return <Navigate to="/login" replace />
   return <Outlet />
 }

@@ -33,6 +33,6 @@ export const TIER_LABELS: Record<PlanTier, string> = {
 }
 
 export const TIER_PRICES: Record<Exclude<PlanTier, 'Free'>, Record<1 | 3 | 12, number>> = {
-  ProIndividual: { 1: 10_000, 3: 10_000, 12: 10_000 },
-  ProCoach:      { 1: 20_000, 3: 20_000, 12: 20_000 },
+  ProIndividual: { 1: 10_000, 3: 30_000, 12: 120_000 },
+  ProCoach:      { 1: 20_000, 3: 60_000, 12: 240_000 },
 }

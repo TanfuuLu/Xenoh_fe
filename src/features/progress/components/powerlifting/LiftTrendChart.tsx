@@ -60,12 +60,12 @@ export function LiftTrendChart({ squat, bench, deadlift }: Props) {
             contentStyle={TOOLTIP_STYLE}
             labelStyle={{ color: 'var(--fg-1)' }}
             itemStyle={{ color: 'var(--fg-2)' }}
-            formatter={(v) => [`${Number(v ?? 0).toFixed(1)} kg`, '']}
+            formatter={(v, name) => [`${Number(v ?? 0).toFixed(1)} ${tp.kgUnit}`, translateLift(String(name), tp)]}
           />
           <Legend wrapperStyle={{ fontSize: 11, color: 'var(--fg-3)' }} />
-          <Line type="monotone" dataKey="Squat" stroke="var(--color-primary)" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} connectNulls />
-          <Line type="monotone" dataKey="Bench" stroke="var(--color-warning)" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} connectNulls />
-          <Line type="monotone" dataKey="Deadlift" stroke="var(--color-success)" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} connectNulls />
+          <Line type="monotone" dataKey="Squat" name={tp.squat} stroke="var(--color-primary)" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} connectNulls />
+          <Line type="monotone" dataKey="Bench" name={tp.bench} stroke="var(--color-warning)" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} connectNulls />
+          <Line type="monotone" dataKey="Deadlift" name={tp.deadlift} stroke="var(--color-success)" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} connectNulls />
         </LineChart>
       </ResponsiveContainer>
     </div>
@@ -92,4 +92,11 @@ function combine(
   for (const p of deadlift) ensure(p.weekStart).Deadlift = p.e1Rm
 
   return Array.from(map.values()).sort((a, b) => a.weekStart.localeCompare(b.weekStart))
+}
+
+function translateLift(lift: string, tp: Record<string, string>) {
+  if (lift === 'Squat') return tp.squat
+  if (lift === 'Bench') return tp.bench
+  if (lift === 'Deadlift') return tp.deadlift
+  return lift
 }

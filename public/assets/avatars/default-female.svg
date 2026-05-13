@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Default female avatar">
+  <defs>
+    <linearGradient id="bg" x1="32" y1="20" x2="224" y2="236" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ead0b2"/>
+      <stop offset="1" stop-color="#8f6c55"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="64" fill="url(#bg)"/>
+  <path d="M68 132c-12-59 16-96 60-96s72 37 60 96c-9 43-29 72-60 72s-51-29-60-72Z" fill="#3b2a21"/>
+  <circle cx="128" cy="104" r="46" fill="#fff8ed"/>
+  <path d="M47 224c12-43 43-68 81-68s69 25 81 68" fill="#fff8ed"/>
+  <path d="M82 91c18-3 39-16 51-34 10 18 26 30 43 34-4-31-24-52-48-52-26 0-44 20-46 52Z" fill="#3b2a21"/>
+  <path d="M87 118c9 20 24 31 41 31s32-11 41-31" fill="none" stroke="#6f503d" stroke-width="9" stroke-linecap="round"/>
+</svg>

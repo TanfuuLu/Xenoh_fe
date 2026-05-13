@@ -1,16 +1,18 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useParams, useNavigate } from 'react-router'
 import { motion, useReducedMotion } from 'framer-motion'
 import {
   ArrowLeft,
   CalendarDays,
   CheckCircle2,
+  AlertTriangle,
   Percent,
   Dumbbell,
   Layers3,
   ChevronRight,
   Timer,
   Activity,
+  Sparkles,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { useQueries } from '@tanstack/react-query'
@@ -23,10 +25,12 @@ import { Spinner } from '@/shared/components/Spinner'
 import { staggerContainer, slideUp } from '@/shared/utils/motion'
 import { MuscleGroup as MuscleGroupValues } from '@/shared/types/api'
 import { NotFoundPage } from '@/shared/components/NotFoundPage'
-import { usePlan } from '../index'
+import { RequireTier } from '@/features/billing/components/RequireTier'
+import { usePlan, usePlanBalanceCheck } from '../index'
 import { useWeeklyWorkouts } from '@/features/workouts'
 import type { DailyWorkoutResponse, ExerciseResponse } from '@/features/workouts'
 import type { MuscleGroup } from '@/shared/types/api'
+import type { PlanBalanceReviewResponse } from '../types'
 
 const ALL_MUSCLE_GROUPS = Object.values(MuscleGroupValues)
 
@@ -68,6 +72,104 @@ function MetricCard({ icon, label, value, sub }: MetricCardProps) {
   )
 }
 
+function PlanBalanceInsights({
+  review,
+  loading,
+  errorMessage,
+  onRetry,
+}: {
+  review?: PlanBalanceReviewResponse
+  loading: boolean
+  errorMessage: string | null
+  onRetry: () => void
+}) {
+  if (loading) {
+    return (
+      <Card className="flex flex-col items-center justify-center gap-3 py-10 text-center">
+        <Spinner size="lg" />
+        <p className="text-sm text-muted">AI is checking plan mistakes and improvement suggestions...</p>
+      </Card>
+    )
+  }
+
+  if (errorMessage) {
+    return (
+      <Card className="space-y-3 py-8 text-center">
+        <p className="font-semibold text-text">Could not review this plan</p>
+        <p className="text-sm text-muted">{errorMessage}</p>
+        <Button type="button" size="sm" onClick={onRetry}>
+          <Sparkles size={14} />
+          Try again
+        </Button>
+      </Card>
+    )
+  }
+
+  if (!review) return null
+
+  return (
+    <Card className="space-y-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <Sparkles size={18} style={{ color: 'var(--accent)' }} />
+        <h2 className="text-base font-semibold text-text">{review.headline}</h2>
+        <Badge variant={review.severity === 'High' ? 'danger' : review.severity === 'Medium' ? 'warning' : 'success'}>
+          {review.severity}
+        </Badge>
+      </div>
+      <p className="text-sm leading-relaxed text-muted">{review.summary}</p>
+      <div className="grid gap-3 md:grid-cols-2">
+        <PlanAdviceList
+          icon={<AlertTriangle size={16} />}
+          title="Mistakes to fix"
+          items={review.warnings}
+          tone="warning"
+        />
+        <PlanAdviceList
+          icon={<CheckCircle2 size={16} />}
+          title="Suggestions"
+          items={review.suggestions}
+          tone="success"
+        />
+      </div>
+    </Card>
+  )
+}
+
+function PlanAdviceList({
+  icon,
+  title,
+  items,
+  tone,
+}: {
+  icon: ReactNode
+  title: string
+  items: string[]
+  tone: 'warning' | 'success'
+}) {
+  const color = tone === 'warning' ? 'var(--xn-warning)' : 'var(--xn-success)'
+
+  return (
+    <div className="rounded-xl border p-4" style={{ background: 'var(--bg-2)', borderColor: 'var(--border-1)' }}>
+      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted">
+        <span style={{ color }}>{icon}</span>
+        {title}
+      </div>
+      {items.length > 0 ? (
+        <ul className="mt-3 space-y-2">
+          {items.map((item) => (
+            <li key={item} className="flex items-start gap-2 text-sm text-text">
+              <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: color }} />
+              <span className="leading-relaxed">{item}</span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-3 text-sm text-muted">No clear issue found from the current plan data.</p>
+      )}
+    </div>
+  )
+}
+
 interface MuscleGroupStat {
   muscleGroup: MuscleGroup
   count: number
@@ -79,9 +181,24 @@ export function PlanOverviewPage() {
   const { planId = '' } = useParams()
   const navigate = useNavigate()
   const shouldReduce = useReducedMotion()
+  const [showAiInsights, setShowAiInsights] = useState(false)
 
   const { data: plan, isLoading: planLoading, isError: planError } = usePlan(planId)
   const { data: weeks = [], isLoading: weeksLoading } = useWeeklyWorkouts(planId)
+  const {
+    mutate: runBalanceCheck,
+    data: balanceReview,
+    isPending: checkingBalance,
+    error: balanceError,
+  } = usePlanBalanceCheck(planId)
+
+  function toggleAiInsights() {
+    setShowAiInsights((open) => {
+      const nextOpen = !open
+      if (nextOpen && !balanceReview && !checkingBalance) runBalanceCheck()
+      return nextOpen
+    })
+  }
 
   const dayQueries = useQueries({
     queries: weeks.map((week) => ({
@@ -177,16 +294,40 @@ export function PlanOverviewPage() {
           </div>
         </div>
 
-        <Button
-          variant="secondary"
-          size="sm"
-          className="flex-shrink-0"
-          onClick={() => navigate(`/plans/${planId}`)}
-        >
-          <span className="hidden sm:inline">View Workouts</span>
-          <ChevronRight size={15} />
-        </Button>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <Button
+            variant={showAiInsights ? 'primary' : 'secondary'}
+            size="sm"
+            className="flex-shrink-0"
+            onClick={toggleAiInsights}
+          >
+            <Sparkles size={15} />
+            <span className="hidden sm:inline">AI Insights</span>
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            className="flex-shrink-0"
+            onClick={() => navigate(`/plans/${planId}`)}
+          >
+            <span className="hidden sm:inline">View Workouts</span>
+            <ChevronRight size={15} />
+          </Button>
+        </div>
       </motion.div>
+
+      {showAiInsights && (
+        <motion.div variants={slideUp}>
+          <RequireTier feature="AI Insights">
+            <PlanBalanceInsights
+              review={balanceReview}
+              loading={checkingBalance}
+              errorMessage={((balanceError as { response?: { data?: { message?: string } } } | null)?.response?.data?.message) ?? null}
+              onRetry={() => runBalanceCheck()}
+            />
+          </RequireTier>
+        </motion.div>
+      )}
 
       {/* Metrics */}
       <motion.div variants={slideUp} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

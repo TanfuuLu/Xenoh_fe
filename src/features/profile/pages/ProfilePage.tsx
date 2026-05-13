@@ -19,7 +19,7 @@ import { Spinner } from '@/shared/components/Spinner'
 import { UserAvatar } from '@/shared/components/UserAvatar'
 import { cn } from '@/shared/utils/cn'
 import { slideUp } from '@/shared/utils/motion'
-import { useT } from '@/shared/i18n'
+import { useLangStore, useT } from '@/shared/i18n'
 import { LevelCard } from '@/features/dashboard/components/LevelCard'
 import { InlineTip } from '@/features/tips'
 import {
@@ -116,6 +116,8 @@ function toDateInputValue(value: string | null | undefined) {
 }
 
 export function ProfilePage() {
+  const lang = useLangStore((s) => s.lang)
+  const mx = marketplaceText(lang)
   const [editMode, setEditMode] = useState(false)
   const [marketplace, setMarketplace] = useState<CoachMarketplaceProfile>(emptyCoachMarketplace)
   const [marketplaceEditing, setMarketplaceEditing] = useState(false)
@@ -299,10 +301,11 @@ export function ProfilePage() {
         <InlineTip placement="profile" />
       </div>
 
-      {profile && <LevelCard profile={profile} />}
+      <div className="grid items-start gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+        {profile && <LevelCard profile={profile} variant="square" className="w-full" />}
 
-      {/* Profile info */}
-      <Card>
+        {/* Profile info */}
+        <Card>
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-3">
             <div className="relative shrink-0">
@@ -424,33 +427,34 @@ export function ProfilePage() {
             <Stat label={tp.streakStat} value={`${profile?.currentStreak ?? 0} ${tc.days}`} />
           </div>
         )}
-      </Card>
+        </Card>
+      </div>
 
       {isCoach && (
         <Card>
           <div className="mb-5 flex items-start justify-between gap-3">
             <div>
-              <h2 className="text-lg font-semibold text-text">Coach marketplace</h2>
+              <h2 className="text-lg font-semibold text-text">{mx.title}</h2>
               <p className="mt-1 text-sm text-muted">
-                Manage the public information clients see before choosing you as their coach.
+                {mx.description}
               </p>
             </div>
             {!marketplaceEditing && (
               <Button type="button" size="sm" variant="ghost" onClick={() => setMarketplaceEditing(true)}>
                 <Pencil size={14} />
-                Edit
+                {mx.edit}
               </Button>
             )}
           </div>
 
           {marketplace.headline && (
-            <p className="mb-4 truncate text-sm font-medium text-text">{marketplace.headline}</p>
+            <p className="mb-4 truncate text-sm font-medium text-text">{localizeMarketplaceValue(marketplace.headline, lang)}</p>
           )}
 
           {marketplaceEditing ? (
             <div className="space-y-4">
               <Input
-                label="Headline"
+                label={mx.headline}
                 maxLength={120}
                 value={marketplace.headline ?? ''}
                 onChange={(event) => setMarketplaceField('headline', event.target.value)}
@@ -459,7 +463,7 @@ export function ProfilePage() {
 
               <div className="grid gap-3 md:grid-cols-3">
                 <Input
-                  label="Experience years"
+                  label={mx.experienceYears}
                   type="number"
                   min="0"
                   max="60"
@@ -467,16 +471,16 @@ export function ProfilePage() {
                   onChange={(event) => setMarketplaceField('experienceYears', event.target.value === '' ? null : Number(event.target.value))}
                 />
                 <Select
-                  label="Availability"
-                  placeholder="Select availability"
-                  options={AVAILABILITY_OPTIONS}
+                  label={mx.availability}
+                  placeholder={mx.selectAvailability}
+                  options={localizeMarketplaceOptions(AVAILABILITY_OPTIONS, lang)}
                   value={marketplace.availability ?? ''}
                   onChange={(value) => setMarketplaceField('availability', value)}
                 />
                 <Select
-                  label="Response time"
-                  placeholder="Select response time"
-                  options={RESPONSE_TIME_OPTIONS}
+                  label={mx.responseTime}
+                  placeholder={mx.selectResponseTime}
+                  options={localizeMarketplaceOptions(RESPONSE_TIME_OPTIONS, lang)}
                   value={marketplace.responseTime ?? ''}
                   onChange={(value) => setMarketplaceField('responseTime', value)}
                 />
@@ -484,7 +488,7 @@ export function ProfilePage() {
 
               <div className="grid gap-3 md:grid-cols-[1fr_1fr_120px]">
                 <Input
-                  label="Price per month"
+                  label={mx.pricePerMonth}
                   type="number"
                   min="0"
                   step="1000"
@@ -492,7 +496,7 @@ export function ProfilePage() {
                   onChange={(event) => setMarketplaceField('monthlyPriceAmount', event.target.value === '' ? null : Number(event.target.value))}
                 />
                 <Input
-                  label="Price per session"
+                  label={mx.pricePerSession}
                   type="number"
                   min="0"
                   step="1000"
@@ -500,7 +504,7 @@ export function ProfilePage() {
                   onChange={(event) => setMarketplaceField('sessionPriceAmount', event.target.value === '' ? null : Number(event.target.value))}
                 />
                 <Input
-                  label="Currency"
+                  label={mx.currency}
                   maxLength={8}
                   value={marketplace.currency ?? 'VND'}
                   onChange={(event) => setMarketplaceField('currency', event.target.value.toUpperCase())}
@@ -508,23 +512,23 @@ export function ProfilePage() {
               </div>
 
               <Select
-                label="Coaching style"
-                placeholder="Select coaching style"
-                options={COACHING_STYLE_OPTIONS}
+                label={mx.coachingStyle}
+                placeholder={mx.selectCoachingStyle}
+                options={localizeMarketplaceOptions(COACHING_STYLE_OPTIONS, lang)}
                 value={marketplace.coachingStyle ?? ''}
                 onChange={(value) => setMarketplaceField('coachingStyle', value)}
               />
 
               <div className="grid gap-3 md:grid-cols-2">
                 <ListTextArea
-                  label="Coaching methods"
+                  label={mx.coachingMethods}
                   values={marketplace.coachingMethods}
                   onChange={(values) => setMarketplaceField('coachingMethods', values)}
                 />
                 <Select
-                  label="Languages"
-                  placeholder="Select language"
-                  options={LANGUAGE_OPTIONS}
+                  label={mx.languages}
+                  placeholder={mx.selectLanguage}
+                  options={localizeMarketplaceOptions(LANGUAGE_OPTIONS, lang)}
                   value={marketplace.languages[0] ?? ''}
                   onChange={(value) => setMarketplaceField('languages', value ? [value] : [])}
                 />
@@ -544,15 +548,15 @@ export function ProfilePage() {
                     setMarketplaceError(null)
                   }}
                 >
-                  Cancel
+                  {mx.cancel}
                 </Button>
                 <Button loading={savingMarketplace} onClick={onSaveMarketplace}>
-                  Save profile
+                  {mx.saveProfile}
                 </Button>
               </div>
             </div>
           ) : (
-            <CoachMarketplaceView marketplace={marketplace} />
+            <CoachMarketplaceView marketplace={marketplace} lang={lang} />
           )}
         </Card>
       )}
@@ -680,17 +684,18 @@ function StarDisplay({ rating }: { rating: number }) {
   )
 }
 
-function CoachMarketplaceView({ marketplace }: { marketplace: CoachMarketplaceProfile }) {
+function CoachMarketplaceView({ marketplace, lang }: { marketplace: CoachMarketplaceProfile; lang: 'en' | 'vi' }) {
   const currency = marketplace.currency || 'VND'
+  const mx = marketplaceText(lang)
   const items: [string, string | number | null | undefined][] = [
-    ['Price per month', formatMoney(marketplace.monthlyPriceAmount, currency)],
-    ['Price per session', formatMoney(marketplace.sessionPriceAmount, currency)],
-    ['Experience', marketplace.experienceYears != null ? `${marketplace.experienceYears} yrs` : null],
-    ['Availability', marketplace.availability],
-    ['Response time', marketplace.responseTime],
-    ['Coaching style', marketplace.coachingStyle],
-    ['Languages', marketplace.languages.join(', ') || null],
-    ['Coaching methods', marketplace.coachingMethods.filter(Boolean).slice(0, 3).join(', ') || null],
+    [mx.pricePerMonth, formatMoney(marketplace.monthlyPriceAmount, currency)],
+    [mx.pricePerSession, formatMoney(marketplace.sessionPriceAmount, currency)],
+    [mx.experience, marketplace.experienceYears != null ? `${marketplace.experienceYears} ${mx.yearsShort}` : null],
+    [mx.availability, localizeMarketplaceValue(marketplace.availability, lang)],
+    [mx.responseTime, localizeMarketplaceValue(marketplace.responseTime, lang)],
+    [mx.coachingStyle, localizeMarketplaceValue(marketplace.coachingStyle, lang)],
+    [mx.languages, marketplace.languages.map((value) => localizeMarketplaceValue(value, lang)).join(', ') || null],
+    [mx.coachingMethods, marketplace.coachingMethods.filter(Boolean).slice(0, 3).map((value) => localizeMarketplaceValue(value, lang)).join(', ') || null],
   ]
 
   return (
@@ -712,6 +717,89 @@ function formatMoney(value: number | null | undefined, currency: string) {
   return `${new Intl.NumberFormat('vi-VN').format(value)} ${currency}`
 }
 
+function marketplaceText(lang: 'en' | 'vi') {
+  return lang === 'vi'
+    ? {
+      title: 'Marketplace huấn luyện viên',
+      description: 'Quản lý thông tin công khai client nhìn thấy trước khi chọn bạn làm coach.',
+      edit: 'Sửa',
+      headline: 'Tiêu đề',
+      experienceYears: 'Số năm kinh nghiệm',
+      experience: 'Kinh nghiệm',
+      yearsShort: 'năm',
+      availability: 'Lịch nhận client',
+      responseTime: 'Thời gian phản hồi',
+      pricePerMonth: 'Giá mỗi tháng',
+      pricePerSession: 'Giá mỗi buổi',
+      currency: 'Tiền tệ',
+      coachingStyle: 'Phong cách coaching',
+      coachingMethods: 'Phương thức coaching',
+      languages: 'Ngôn ngữ',
+      selectAvailability: 'Chọn lịch nhận client',
+      selectResponseTime: 'Chọn thời gian phản hồi',
+      selectCoachingStyle: 'Chọn phong cách coaching',
+      selectLanguage: 'Chọn ngôn ngữ',
+      cancel: 'Hủy',
+      saveProfile: 'Lưu hồ sơ',
+    }
+    : {
+      title: 'Coach marketplace',
+      description: 'Manage the public information clients see before choosing you as their coach.',
+      edit: 'Edit',
+      headline: 'Headline',
+      experienceYears: 'Experience years',
+      experience: 'Experience',
+      yearsShort: 'yrs',
+      availability: 'Availability',
+      responseTime: 'Response time',
+      pricePerMonth: 'Price per month',
+      pricePerSession: 'Price per session',
+      currency: 'Currency',
+      coachingStyle: 'Coaching style',
+      coachingMethods: 'Coaching methods',
+      languages: 'Languages',
+      selectAvailability: 'Select availability',
+      selectResponseTime: 'Select response time',
+      selectCoachingStyle: 'Select coaching style',
+      selectLanguage: 'Select language',
+      cancel: 'Cancel',
+      saveProfile: 'Save profile',
+    }
+}
+
+function localizeMarketplaceOptions(options: SelectOption[], lang: 'en' | 'vi') {
+  return options.map((option) => ({ ...option, label: localizeMarketplaceValue(option.label, lang) }))
+}
+
+function localizeMarketplaceValue(value: string | null | undefined, lang: 'en' | 'vi'): string {
+  if (!value) return ''
+  if (lang !== 'vi') return value
+  const map: Record<string, string> = {
+    'Online check-ins': 'Check-in online',
+    'In-person': 'Trực tiếp',
+    'Hybrid (online + in-person)': 'Kết hợp online và trực tiếp',
+    'Within 1 hour': 'Trong 1 giờ',
+    'Within 4 hours': 'Trong 4 giờ',
+    'Within 24 hours': 'Trong 24 giờ',
+    'Within 48 hours': 'Trong 48 giờ',
+    English: 'Tiếng Anh',
+    Vietnamese: 'Tiếng Việt',
+    'Strength-focused': 'Tập trung sức mạnh',
+    'Hypertrophy-focused': 'Tập trung tăng cơ',
+    'Endurance-focused': 'Tập trung sức bền',
+    'Functional / mobility': 'Vận động chức năng / linh hoạt',
+    'General fitness': 'Thể lực tổng quát',
+    'Accepting 3 new online clients this month.': 'Nhận thêm 3 client online trong tháng này.',
+    'Usually replies within 24 hours.': 'Thường phản hồi trong vòng 24 giờ.',
+    'Direct, practical, and data-informed without overcomplicating training.': 'Trực tiếp, thực tế và dựa trên dữ liệu, không làm phức tạp việc tập luyện.',
+    'Weekly check-ins': 'Check-in hằng tuần',
+    'Video feedback': 'Feedback qua video',
+    'Plan reviews': 'Review plan',
+    'Strength coach for intermediate lifters': 'Coach sức mạnh cho người tập trung cấp',
+  }
+  return map[value] ?? value
+}
+
 function ListTextArea({
   label,
   values,
@@ -723,7 +811,7 @@ function ListTextArea({
 }) {
   return (
     <Textarea
-      label={`${label} (one per line, max 8)`}
+      label={`${label} (${label === 'Phương thức coaching' ? 'mỗi dòng một mục, tối đa 8' : 'one per line, max 8'})`}
       rows={5}
       value={values.join('\n')}
       onChange={(event) => onChange(event.target.value.split('\n'))}

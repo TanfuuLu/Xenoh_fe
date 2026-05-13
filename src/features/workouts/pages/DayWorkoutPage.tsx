@@ -2,7 +2,7 @@ import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useSta
 import type { DragEvent, ReactNode } from 'react'
 import { useParams, Link, useLocation } from 'react-router'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
-import { ChevronLeft, Plus, Trash2, CheckCircle2, Circle, Trophy, Dumbbell, Search, X, Copy, AlertTriangle, TriangleAlert, Activity, GripVertical, BedDouble, XCircle, Play, Square, Timer, Flame, Check, Sparkles, RefreshCw } from 'lucide-react'
+import { ChevronLeft, Plus, Trash2, CheckCircle2, Circle, Trophy, Dumbbell, Search, X, Copy, AlertTriangle, TriangleAlert, Activity, GripVertical, BedDouble, XCircle, Play, Square, Timer, Flame, Check, Sparkles, RefreshCw, MessageSquareText } from 'lucide-react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -1437,7 +1437,19 @@ function ExerciseCard({
               {formatDuration(exercise.durationSeconds)} · {exercise.estimatedMet} MET · {exercise.primaryMuscleGroup}
             </p>
           )}
-          {exercise.notes && <p className="mt-1 text-xs italic text-muted">{exercise.notes}</p>}
+          {exercise.notes && (
+            <div
+              className="mt-2 flex max-w-2xl items-start gap-2 rounded-lg border px-2.5 py-2 text-sm font-medium leading-snug"
+              style={{
+                background: 'rgba(245,158,11,0.10)',
+                borderColor: 'rgba(245,158,11,0.28)',
+                color: 'var(--fg-1)',
+              }}
+            >
+              <MessageSquareText size={15} className="mt-0.5 shrink-0 text-warning" />
+              <p className="break-words">{exercise.notes}</p>
+            </div>
+          )}
           </div>
         </div>
         {canEdit && (
@@ -1696,7 +1708,7 @@ function SetRow({ set, canComplete, isCardio = false, onComplete }: SetRowProps)
           type="number" min={1} max={isCardio ? 600 : 1000}
           value={reps}
           onChange={(e) => setReps(e.target.value)}
-          className="w-12 rounded-md border border-border px-1.5 py-1 text-center text-sm text-text focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40 sm:w-14 sm:px-2"
+          className="h-9 w-[3.5rem] rounded-md border border-border px-1.5 text-center text-sm tabular-nums text-text focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
           style={{ background: 'var(--bg-2)' }}
         />
         <span className="text-xs text-muted">{isCardio ? 'min' : 'reps'}</span>
@@ -1712,7 +1724,7 @@ function SetRow({ set, canComplete, isCardio = false, onComplete }: SetRowProps)
               type="number" min={0} max={10000} step={0.5}
               value={weight}
               onChange={(e) => setWeight(e.target.value)}
-              className="w-14 rounded-md border border-border px-1.5 py-1 text-center text-sm text-text focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40 sm:w-16 sm:px-2"
+              className="h-9 w-[4.75rem] rounded-md border border-border px-1.5 text-center text-sm tabular-nums text-text focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
               style={{ background: 'var(--bg-2)' }}
             />
             <span className="text-xs text-muted">kg</span>
@@ -1725,7 +1737,7 @@ function SetRow({ set, canComplete, isCardio = false, onComplete }: SetRowProps)
               value={rpe}
               placeholder="—"
               onChange={(e) => setRpe(e.target.value)}
-              className="w-11 rounded-md border border-border px-1.5 py-1 text-center text-sm text-muted focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40 sm:w-12 sm:px-2"
+              className="h-9 w-[3.5rem] rounded-md border border-border px-1.5 text-center text-sm tabular-nums text-muted focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
               style={{ background: 'var(--bg-2)' }}
             />
             <span className="text-xs text-muted">{t.dayWorkout.rpeLabel}</span>

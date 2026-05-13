@@ -17,10 +17,20 @@ type Duration = 1 | 3 | 12
 
 const durations: Duration[] = [1, 3, 12]
 
+function getSavingsPercent(duration: Duration) {
+  if (duration === 1) return null
+
+  const monthlyTotal = duration * TIER_PRICES.ProIndividual[1]
+  const durationTotal = TIER_PRICES.ProIndividual[duration]
+  const savings = Math.round((1 - durationTotal / monthlyTotal) * 100)
+
+  return savings > 0 ? savings : null
+}
+
 const savingsPercent: Record<Duration, number | null> = {
   1: null,
-  3: Math.round((1 - TIER_PRICES.ProIndividual[3] / (3 * TIER_PRICES.ProIndividual[1])) * 100),
-  12: Math.round((1 - TIER_PRICES.ProIndividual[12] / (12 * TIER_PRICES.ProIndividual[1])) * 100),
+  3: getSavingsPercent(3),
+  12: getSavingsPercent(12),
 }
 
 function formatVnd(amount: number) {

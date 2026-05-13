@@ -28,6 +28,7 @@ function getInitials(name?: string | null, email?: string | null) {
 function resolveImageUrl(imageUrl?: string | null) {
   if (!imageUrl) return null
   if (/^(https?:)?\/\//.test(imageUrl) || imageUrl.startsWith('data:')) return imageUrl
+  if (imageUrl.startsWith('/assets/')) return imageUrl
 
   const baseUrl = (import.meta.env['VITE_API_URL'] as string | undefined)?.replace(/\/$/, '')
   if (!baseUrl) return imageUrl
