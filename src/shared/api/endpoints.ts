@@ -158,6 +158,13 @@ export const ENDPOINTS = {
     clientLog: (clientId: string, date: string) => `/api/nutrition/clients/${clientId}/logs/${date}`,
     clientHistory: (clientId: string, from: string, to: string) =>
       `/api/nutrition/clients/${clientId}/history?from=${from}&to=${to}`,
+    // Food
+    foodSearch: (q: string, lang = 'vi') => `/api/nutrition/foods/search?q=${encodeURIComponent(q)}&lang=${lang}`,
+    foodResolve: (name: string) => `/api/nutrition/foods/resolve?name=${encodeURIComponent(name)}`,
+    foodCreate: '/api/nutrition/foods',
+    dayFoods: (date: string) => `/api/nutrition/logs/${date}/foods`,
+    dayFoodCreate: (date: string) => `/api/nutrition/logs/${date}/foods`,
+    dayFoodDelete: (date: string, id: string) => `/api/nutrition/logs/${date}/foods/${id}`,
   },
 
   // Insights (AI-generated user analysis)

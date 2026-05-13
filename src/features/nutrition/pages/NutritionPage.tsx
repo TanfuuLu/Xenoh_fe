@@ -24,14 +24,13 @@ import { RequireTier } from '@/features/billing/components/RequireTier'
 import {
   useNutritionHistory,
   useNutritionSummary,
-  useUpdateNutritionDailyLog,
   useUpdateNutritionProfile,
 } from '../api/useNutrition'
+import { FoodLogPanel } from '../components/FoodLog/FoodLogPanel'
 import type {
   ActivityLevel,
   NutritionGoal,
   NutritionSummaryResponse,
-  UpdateNutritionDailyLogRequest,
   UpdateNutritionProfileRequest,
 } from '../types'
 
@@ -43,7 +42,6 @@ export function NutritionPage() {
   const today = format(new Date(), 'yyyy-MM-dd')
   const { data: summary, isLoading } = useNutritionSummary(clientId)
   const updateProfile = useUpdateNutritionProfile(clientId)
-  const updateLog = useUpdateNutritionDailyLog(today, clientId)
 
   const activityOptions: { value: ActivityLevel; label: string }[] = [
     { value: 'Sedentary', label: tn.activitySedentary },
@@ -115,17 +113,6 @@ export function NutritionPage() {
       fatPerKg: optionalNumber(profileForm.fatPerKg),
     }
     updateProfile.mutate(payload)
-  }
-
-  function saveLog() {
-    const payload: UpdateNutritionDailyLogRequest = {
-      calories: readNumber(logForm.calories),
-      proteinG: readNumber(logForm.proteinG),
-      carbsG: readNumber(logForm.carbsG),
-      fatG: readNumber(logForm.fatG),
-      notes: logForm.notes.trim() || null,
-    }
-    updateLog.mutate(payload)
   }
 
   if (isLoading) {
@@ -299,50 +286,28 @@ export function NutritionPage() {
             <Utensils size={17} className="text-primary" />
             <h2 className="text-lg font-semibold text-text">{tn.todayIntakeTitle}</h2>
           </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <Input
-              label={tn.caloriesLabel}
-              type="number"
-              min="0"
-              value={logForm.calories}
-              onChange={(e) => setLogForm((f) => ({ ...f, calories: e.target.value }))}
-            />
-            <Input
-              label={tn.proteinLabel}
-              type="number"
-              min="0"
-              step="0.1"
-              value={logForm.proteinG}
-              onChange={(e) => setLogForm((f) => ({ ...f, proteinG: e.target.value }))}
-            />
-            <Input
-              label={tn.carbsLabel}
-              type="number"
-              min="0"
-              step="0.1"
-              value={logForm.carbsG}
-              onChange={(e) => setLogForm((f) => ({ ...f, carbsG: e.target.value }))}
-            />
-            <Input
-              label={tn.fatLabel}
-              type="number"
-              min="0"
-              step="0.1"
-              value={logForm.fatG}
-              onChange={(e) => setLogForm((f) => ({ ...f, fatG: e.target.value }))}
-            />
-            <label className="flex flex-col gap-1.5 text-sm font-medium text-text md:col-span-2">
-              {tn.notesLabel}
-              <textarea
-                className="xn-input min-h-32 resize-y"
-                value={logForm.notes}
-                onChange={(e) => setLogForm((f) => ({ ...f, notes: e.target.value }))}
-              />
-            </label>
-          </div>
-          <div className="mt-4 flex justify-end">
-            <Button onClick={saveLog} loading={updateLog.isPending}>{tn.saveToday}</Button>
-          </div>
+          {isClientView ? (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-lg p-3" style={{ background: 'var(--surface-2, var(--surface))' }}>
+                <p className="text-xs" style={{ color: 'var(--fg-3)' }}>{tn.caloriesLabel}</p>
+                <p className="text-lg font-semibold" style={{ color: 'var(--fg-1)' }}>{readNumber(logForm.calories)} kcal</p>
+              </div>
+              <div className="rounded-lg p-3" style={{ background: 'var(--surface-2, var(--surface))' }}>
+                <p className="text-xs" style={{ color: 'var(--fg-3)' }}>{tn.proteinLabel}</p>
+                <p className="text-lg font-semibold" style={{ color: 'var(--fg-1)' }}>{readNumber(logForm.proteinG)}g</p>
+              </div>
+              <div className="rounded-lg p-3" style={{ background: 'var(--surface-2, var(--surface))' }}>
+                <p className="text-xs" style={{ color: 'var(--fg-3)' }}>{tn.carbsLabel}</p>
+                <p className="text-lg font-semibold" style={{ color: 'var(--fg-1)' }}>{readNumber(logForm.carbsG)}g</p>
+              </div>
+              <div className="rounded-lg p-3" style={{ background: 'var(--surface-2, var(--surface))' }}>
+                <p className="text-xs" style={{ color: 'var(--fg-3)' }}>{tn.fatLabel}</p>
+                <p className="text-lg font-semibold" style={{ color: 'var(--fg-1)' }}>{readNumber(logForm.fatG)}g</p>
+              </div>
+            </div>
+          ) : (
+            <FoodLogPanel />
+          )}
         </Card>
       </div>
 
