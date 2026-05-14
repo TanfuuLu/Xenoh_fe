@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Link, useNavigate } from 'react-router'
-import { Mail, Lock, User, Check } from 'lucide-react'
+import { Mail, Lock, User, Check, CheckCircle2, XCircle } from 'lucide-react'
 import { Input } from '@/shared/components/Input'
 import { LanguageSwitcher } from '@/shared/components/LanguageSwitcher'
 import { useT } from '@/shared/i18n'
@@ -24,7 +24,12 @@ const schema = z.object({
   firstName: z.string().min(1),
   lastName: z.string().min(1),
   email: z.string().email(),
-  password: z.string().min(6),
+  password: z.string()
+    .min(10, 'At least 10 characters')
+    .regex(/[A-Z]/, 'One uppercase letter')
+    .regex(/[a-z]/, 'One lowercase letter')
+    .regex(/[0-9]/, 'One digit')
+    .regex(/[^A-Za-z0-9]/, 'One special character'),
   gender: z.enum(['Male', 'Female']).optional(),
   dateOfBirth: z.string().optional(),
   height: optionalNumber,
@@ -47,9 +52,10 @@ export function RegisterPage() {
   const t = useT()
   const tr = t.register
 
-  const { register, handleSubmit, control, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, control, watch, formState: { errors, isSubmitted } } = useForm<FormData>({
     resolver: zodResolver(schema) as Resolver<FormData>,
   })
+  const passwordValue = watch('password') ?? ''
 
   const style = PANEL_STYLE
   const panel = tr.panel.Individual
@@ -158,14 +164,17 @@ export function RegisterPage() {
                 error={errors.email?.message}
                 {...register('email')}
               />
-              <Input
-                label={tr.passwordLabel}
-                type="password"
-                placeholder="••••••••"
-                leftIcon={<Lock size={15} />}
-                error={errors.password?.message}
-                {...register('password')}
-              />
+              <div>
+                <Input
+                  label={tr.passwordLabel}
+                  type="password"
+                  placeholder="••••••••"
+                  leftIcon={<Lock size={15} />}
+                  error={errors.password && isSubmitted ? ' ' : undefined}
+                  {...register('password')}
+                />
+                <PasswordRules value={passwordValue} submitted={isSubmitted} />
+              </div>
 
               {/* ── Body metrics (optional) ── */}
               <div style={{ borderTop: '1px solid var(--border-1)', paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -351,6 +360,52 @@ export function RegisterPage() {
           </span>
         </div>
       </div>
+    </div>
+  )
+}
+
+// ─── Password requirements checklist ─────────────────────────────────────────
+
+const PASSWORD_RULES = [
+  { label: 'At least 10 characters',      test: (v: string) => v.length >= 10 },
+  { label: 'One uppercase letter (A–Z)',   test: (v: string) => /[A-Z]/.test(v) },
+  { label: 'One lowercase letter (a–z)',   test: (v: string) => /[a-z]/.test(v) },
+  { label: 'One digit (0–9)',              test: (v: string) => /[0-9]/.test(v) },
+  { label: 'One special character (!@#…)', test: (v: string) => /[^A-Za-z0-9]/.test(v) },
+]
+
+function PasswordRules({ value, submitted }: { value: string; submitted: boolean }) {
+  if (!value && !submitted) return null
+  return (
+    <div style={{
+      marginTop: 8,
+      padding: '10px 12px',
+      borderRadius: 10,
+      background: 'var(--bg-3)',
+      border: '1px solid var(--border-1)',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 7,
+    }}>
+      {PASSWORD_RULES.map((rule) => {
+        const met = rule.test(value)
+        return (
+          <div key={rule.label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {met
+              ? <CheckCircle2 size={15} style={{ color: 'var(--color-success)', flexShrink: 0 }} />
+              : <XCircle size={15} style={{ color: submitted ? 'var(--color-danger)' : 'var(--color-muted)', flexShrink: 0 }} />
+            }
+            <span style={{
+              fontSize: 13,
+              fontWeight: met ? 500 : 400,
+              color: met ? 'var(--color-success)' : submitted ? 'var(--color-danger)' : 'var(--fg-3)',
+              transition: 'color 150ms',
+            }}>
+              {rule.label}
+            </span>
+          </div>
+        )
+      })}
     </div>
   )
 }

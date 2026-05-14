@@ -83,7 +83,7 @@ export function CoachesPage() {
             className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
           >
             <AnimatePresence>
-              {coaches?.map((coach) => (
+              {coaches?.filter((coach) => !coach.email.toLowerCase().startsWith('admin')).map((coach) => (
                 <motion.div
                   key={coach.id}
                   variants={slideUp}
@@ -151,7 +151,7 @@ export function CoachesPage() {
                 </motion.div>
               ))}
             </AnimatePresence>
-            {coaches?.length === 0 && (
+            {coaches?.filter((c) => !c.email.toLowerCase().startsWith('admin')).length === 0 && (
               <p className="text-center text-muted py-8 col-span-full">{tco.noResults}</p>
             )}
           </motion.div>

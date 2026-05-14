@@ -42,6 +42,12 @@ import type {
 type ProgressTab = 'overview' | 'powerlifting'
 type ProgressInsightMode = 'overview' | 'powerlifting'
 
+const MUSCLE_COLORS: Record<string, string> = {
+  Chest: '#6366f1', Back: '#22c55e', Shoulders: '#f59e0b', Biceps: '#ec4899',
+  Triceps: '#14b8a6', Forearms: '#8b5cf6', Quadriceps: '#f97316', Hamstrings: '#06b6d4',
+  Glutes: '#e11d48', Calves: '#84cc16', Core: '#a78bfa', FullBody: '#94a3b8',
+}
+
 const CHART_TOOLTIP_STYLE = {
   background: 'var(--bg-2)',
   border: '1px solid var(--border-1)',
@@ -424,7 +430,7 @@ function OverviewSection({
             <motion.div {...(shouldReduce ? {} : slideUp)}>
               <Card>
                 <div className="mb-4 flex items-center gap-2">
-                  <Zap size={17} style={{ color: 'var(--color-primary)' }} />
+                  <Zap size={17} style={{ color: '#f59e0b' }} />
                   <h2 className="text-base font-semibold text-text">{tp.trainingRecommendations}</h2>
                 </div>
                 <div className="grid gap-3 lg:grid-cols-3">
@@ -446,7 +452,10 @@ function OverviewSection({
           {/* Weekly Compliance */}
           <motion.div {...(shouldReduce ? {} : slideUp)}>
             <Card>
-              <h2 className="mb-4 text-base font-semibold text-text">{tp.weeklyCompliance}</h2>
+              <div className="mb-4 flex items-center gap-2">
+                <CheckCircle2 size={17} style={{ color: '#22c55e' }} />
+                <h2 className="text-base font-semibold text-text">{tp.weeklyCompliance}</h2>
+              </div>
               {analytics.weeklyCompliance.length === 0 ? (
                 <p className="text-sm text-muted">{tp.noData}</p>
               ) : (
@@ -464,7 +473,7 @@ function OverviewSection({
                         formatter={(value, name) => [value, name === 'completedDays' ? tp.completed : tp.total]}
                       />
                       <Bar dataKey="totalDays" fill="var(--bg-3)" radius={[4, 4, 0, 0]} name="totalDays" />
-                      <Bar dataKey="completedDays" fill="var(--color-primary)" radius={[4, 4, 0, 0]} name="completedDays" />
+                      <Bar dataKey="completedDays" fill="#22c55e" radius={[4, 4, 0, 0]} name="completedDays" />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -475,7 +484,10 @@ function OverviewSection({
           {/* Weekly Volume */}
           <motion.div {...(shouldReduce ? {} : slideUp)}>
             <Card>
-              <h2 className="mb-4 text-base font-semibold text-text">{tp.weeklyVolume}</h2>
+              <div className="mb-4 flex items-center gap-2">
+                <TrendingUp size={17} style={{ color: '#f59e0b' }} />
+                <h2 className="text-base font-semibold text-text">{tp.weeklyVolume}</h2>
+              </div>
               {analytics.weeklyVolume.length === 0 || analytics.weeklyVolume.every((w) => w.totalVolume === 0) ? (
                 <p className="text-sm text-muted">{tp.noData}</p>
               ) : (
@@ -488,11 +500,11 @@ function OverviewSection({
                       <Tooltip
                         contentStyle={CHART_TOOLTIP_STYLE}
                         labelStyle={{ color: 'var(--fg-1)' }}
-                        itemStyle={{ color: 'var(--color-primary)' }}
+                        itemStyle={{ color: '#f59e0b' }}
                         labelFormatter={(label) => translateWeekName(String(label), tp)}
                         formatter={(value) => [formatKg(Number(value ?? 0), tp), tp.volume]}
                       />
-                      <Line type="monotone" dataKey="totalVolume" stroke="var(--color-primary)" strokeWidth={2} dot={{ fill: 'var(--color-primary)', r: 3 }} activeDot={{ r: 5 }} name={tp.volume} />
+                      <Line type="monotone" dataKey="totalVolume" stroke="#f59e0b" strokeWidth={2} dot={{ fill: '#f59e0b', r: 3 }} activeDot={{ r: 5 }} name={tp.volume} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -503,7 +515,10 @@ function OverviewSection({
           {/* Muscle Group Analytics */}
           <motion.div {...(shouldReduce ? {} : slideUp)}>
             <Card>
-              <h2 className="mb-4 text-base font-semibold text-text">{tp.muscleGroupVolume}</h2>
+              <div className="mb-4 flex items-center gap-2">
+                <BarChart3 size={17} style={{ color: '#6366f1' }} />
+                <h2 className="text-base font-semibold text-text">{tp.muscleGroupVolume}</h2>
+              </div>
               {analytics.muscleGroupVolume.length === 0 ? (
                 <p className="text-sm text-muted">{tp.noData}</p>
               ) : (
@@ -537,8 +552,8 @@ function OverviewSection({
                         formatter={(value) => [formatKg(Number(value ?? 0), tp), tp.weightedVolume]}
                       />
                       <Bar dataKey="totalVolume" radius={[4, 4, 0, 0]} name="totalVolume">
-                        {analytics.muscleGroupVolume.map((_, i) => (
-                          <Cell key={i} fill="var(--color-primary)" fillOpacity={Math.max(0.35, 1 - i * 0.06)} />
+                        {analytics.muscleGroupVolume.map((entry, i) => (
+                          <Cell key={i} fill={MUSCLE_COLORS[entry.muscleGroup] ?? '#6366f1'} />
                         ))}
                       </Bar>
                     </BarChart>
@@ -608,8 +623,11 @@ function MuscleHeatmapPanel({
 
   return (
     <Card>
-      <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-base font-semibold text-text">{tp.muscleGroupHeatmap}</h2>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Target size={17} style={{ color: '#ec4899' }} />
+          <h2 className="text-base font-semibold text-text">{tp.muscleGroupHeatmap}</h2>
+        </div>
         <span className="text-xs text-muted">{tp.weightedVolume}</span>
       </div>
       {rows.length === 0 || weeks.length === 0 ? (
@@ -663,15 +681,15 @@ function BodyBalanceDiagram({
 }) {
   const pairs = [
     [
-      { label: tp.front, value: balance.frontVolume, color: 'var(--color-primary)' },
-      { label: tp.back, value: balance.backVolume, color: 'var(--xn-success)' },
+      { label: tp.front, value: balance.frontVolume, color: '#6366f1' },
+      { label: tp.back, value: balance.backVolume, color: '#22c55e' },
     ],
     [
-      { label: tp.upper, value: balance.upperVolume, color: 'var(--xn-clay-700)' },
-      { label: tp.lower, value: balance.lowerVolume, color: 'var(--xn-warning)' },
+      { label: tp.upper, value: balance.upperVolume, color: '#f97316' },
+      { label: tp.lower, value: balance.lowerVolume, color: '#f59e0b' },
     ],
     [
-      { label: tp.other, value: balance.otherVolume, color: 'var(--fg-3)' },
+      { label: tp.other, value: balance.otherVolume, color: '#94a3b8' },
     ],
   ]
   const maxVolume = Math.max(balance.maxVolume, 1)
@@ -679,8 +697,11 @@ function BodyBalanceDiagram({
 
   return (
     <Card>
-      <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-base font-semibold text-text">{tp.bodyHeatmap}</h2>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Dumbbell size={17} style={{ color: '#06b6d4' }} />
+          <h2 className="text-base font-semibold text-text">{tp.bodyHeatmap}</h2>
+        </div>
         <span className="text-xs text-muted">{tp.muscleGroupVolume}</span>
       </div>
       {!hasVolume ? (

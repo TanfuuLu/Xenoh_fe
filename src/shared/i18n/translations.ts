@@ -826,6 +826,10 @@ export const translations = {
       foodLogAdd: 'Add to log',
       foodLogError: 'Could not load food log.',
       foodLogAddCustom: 'Add a new food to the list',
+      historyCardsTitle: 'Daily food log',
+      historyCardsEmpty: 'No food items logged for this day.',
+      historyCardsLoading: 'Loading…',
+      historyCardsError: 'Could not load food items.',
     },
 
     // ── Subscription / billing ────────────────────────────────────────────────
@@ -1797,6 +1801,10 @@ export const translations = {
       foodLogAdd: 'Thêm vào nhật ký',
       foodLogError: 'Không tải được nhật ký ăn.',
       foodLogAddCustom: 'Thêm thức ăn mới vào danh sách',
+      historyCardsTitle: 'Nhật ký thức ăn từng ngày',
+      historyCardsEmpty: 'Chưa có món ăn nào trong ngày này.',
+      historyCardsLoading: 'Đang tải…',
+      historyCardsError: 'Không tải được món ăn.',
     },
 
     // ── Subscription / billing ────────────────────────────────────────────────

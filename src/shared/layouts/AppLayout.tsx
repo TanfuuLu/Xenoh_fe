@@ -48,37 +48,37 @@ export function AppLayout() {
   const coachNavLabel = myCoach ? t.coaches.coachTitle : tn.findCoach
 
   const individualNav = [
-    { to: '/dashboard',    icon: LayoutDashboard, label: tn.dashboard },
-    { to: '/plans',        icon: ClipboardList,   label: tn.myPlans },
-    { to: '/exercise-library', icon: BookOpen, label: exerciseLibraryLabel },
-    { to: '/exercise-tracking', icon: ChartNoAxesCombined, label: tn.exerciseTracking },
-    { to: '/progress',     icon: TrendingUp,      label: tn.progress },
-    { to: '/nutrition',    icon: Utensils,        label: 'Nutrition' },
-    { to: '/coach/clients', icon: UserCheck,      label: tn.clients },
-    { to: '/coaches',      icon: Users,           label: coachNavLabel },
-    { to: '/profile',      icon: User,            label: tn.profile },
-    { to: '/subscription', icon: CreditCard,      label: 'Subscription' },
+    { to: '/dashboard',       icon: LayoutDashboard,    label: tn.dashboard,        color: '#6366f1' },
+    { to: '/plans',           icon: ClipboardList,      label: tn.myPlans,          color: '#f97316' },
+    { to: '/exercise-library', icon: BookOpen,          label: exerciseLibraryLabel, color: '#06b6d4' },
+    { to: '/exercise-tracking', icon: ChartNoAxesCombined, label: tn.exerciseTracking, color: '#22c55e' },
+    { to: '/progress',        icon: TrendingUp,         label: tn.progress,         color: '#f59e0b' },
+    { to: '/nutrition',       icon: Utensils,           label: 'Nutrition',         color: '#ec4899' },
+    { to: '/coach/clients',   icon: UserCheck,          label: tn.clients,          color: '#8b5cf6' },
+    { to: '/coaches',         icon: Users,              label: coachNavLabel,       color: '#14b8a6' },
+    { to: '/profile',         icon: User,               label: tn.profile,          color: '#94a3b8' },
+    { to: '/subscription',    icon: CreditCard,         label: 'Subscription',      color: '#eab308' },
   ]
 
   const coachNav = [
-    { to: '/dashboard',     icon: LayoutDashboard, label: tn.overview },
-    { to: '/plans',         icon: ClipboardList,   label: tn.myPlans },
-    { to: '/exercise-library', icon: BookOpen, label: exerciseLibraryLabel },
-    { to: '/progress',      icon: TrendingUp,      label: tn.progress },
-    { to: '/nutrition',     icon: Utensils,        label: 'Nutrition' },
-    { to: '/coach/clients', icon: UserCheck,       label: tn.clients },
-    { to: '/coaches',       icon: Users,           label: tn.findCoach },
-    { to: '/profile',       icon: User,            label: tn.profile },
-    { to: '/subscription',  icon: CreditCard,      label: 'Subscription' },
+    { to: '/dashboard',       icon: LayoutDashboard,   label: tn.overview,         color: '#6366f1' },
+    { to: '/plans',           icon: ClipboardList,     label: tn.myPlans,          color: '#f97316' },
+    { to: '/exercise-library', icon: BookOpen,         label: exerciseLibraryLabel, color: '#06b6d4' },
+    { to: '/progress',        icon: TrendingUp,        label: tn.progress,         color: '#f59e0b' },
+    { to: '/nutrition',       icon: Utensils,          label: 'Nutrition',         color: '#ec4899' },
+    { to: '/coach/clients',   icon: UserCheck,         label: tn.clients,          color: '#8b5cf6' },
+    { to: '/coaches',         icon: Users,             label: tn.findCoach,        color: '#14b8a6' },
+    { to: '/profile',         icon: User,              label: tn.profile,          color: '#94a3b8' },
+    { to: '/subscription',    icon: CreditCard,        label: 'Subscription',      color: '#eab308' },
   ]
 
   const adminNav = [
-    { to: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { to: '/admin/reports', icon: Shield, label: 'Reports' },
-    { to: '/admin/users', icon: Users, label: 'Users' },
-    { to: '/admin/plans', icon: ClipboardList, label: 'Plans' },
-    { to: '/admin/payments', icon: CreditCard, label: 'Payments' },
-    { to: '/profile', icon: User, label: tn.profile },
+    { to: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard', color: '#6366f1' },
+    { to: '/admin/reports',   icon: Shield,          label: 'Reports',   color: '#f97316' },
+    { to: '/admin/users',     icon: Users,           label: 'Users',     color: '#22c55e' },
+    { to: '/admin/plans',     icon: ClipboardList,   label: 'Plans',     color: '#06b6d4' },
+    { to: '/admin/payments',  icon: CreditCard,      label: 'Payments',  color: '#eab308' },
+    { to: '/profile',         icon: User,            label: tn.profile,  color: '#94a3b8' },
   ]
 
   const navItems = isAdmin ? adminNav : isCoach ? coachNav : individualNav
@@ -300,6 +300,7 @@ interface NavItem {
   to: string
   icon: React.ComponentType<{ size?: number }>
   label: string
+  color?: string
 }
 
 interface LockedNavItem {
@@ -365,7 +366,7 @@ function SidebarInner({
         {!mini && (
           <span className="xn-nav-section">{isAdmin ? 'Admin' : isCoach ? tn.sectionCoach : tn.sectionTraining}</span>
         )}
-        {navItems.map(({ to, icon: Icon, label }) => (
+        {navItems.map(({ to, icon: Icon, label, color }) => (
           <NavLink
             key={to}
             to={to}
@@ -375,7 +376,7 @@ function SidebarInner({
             className={({ isActive }) => cn('xn-nav-item', isActive && 'active')}
             style={mini ? { justifyContent: 'center', padding: '10px 0' } : undefined}
           >
-            <Icon size={17} />
+            <Icon size={17} style={color ? { color } : undefined} />
             {!mini && label}
           </NavLink>
         ))}

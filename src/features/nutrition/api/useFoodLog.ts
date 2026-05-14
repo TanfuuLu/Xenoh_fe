@@ -43,7 +43,7 @@ export function useResolveFood() {
   })
 }
 
-export function useDayFoodLogs(date: string) {
+export function useDayFoodLogs(date: string, enabled = true) {
   return useQuery({
     queryKey: foodLogKeys.dayLogs(date),
     queryFn: () =>
@@ -51,6 +51,7 @@ export function useDayFoodLogs(date: string) {
         .get<FoodLogsForDateResponse>(ENDPOINTS.nutrition.dayFoods(date))
         .then((r) => r.data),
     staleTime: 5_000,
+    enabled,
   })
 }
 

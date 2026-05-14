@@ -76,6 +76,15 @@ export function PlansPage() {
     [plans],
   )
 
+  const coachAssignedPlans = useMemo(
+    () => displayedPlans.filter((p) => p.planType === 'Coach'),
+    [displayedPlans],
+  )
+  const selfPlans = useMemo(
+    () => displayedPlans.filter((p) => p.planType === 'Self'),
+    [displayedPlans],
+  )
+
   const schema = z.object({
     name: z.string().min(2, tp.nameError).max(100),
     startDate: z.string().min(1, tp.requiredError),
@@ -195,59 +204,102 @@ export function PlansPage() {
     <>
     {ConfirmDialog}
     <div className="space-y-6 sm:space-y-8">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-text">Plans</h1>
-            <InlineTip placement="plans" />
-          </div>
-          <p className="mt-1 text-sm text-muted">
-            {(plans?.length ?? 0)}/{planLimitLabel} {isCoach ? 'personal plans' : 'plans'}
-            {isCoach && ` - ${clientPlans?.length ?? 0} ${tcp.subtitle}`}
-          </p>
-        </div>
-        {canCreatePersonalPlan && (
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <Button onClick={() => setShowStarterPlan(true)} size="sm" variant="secondary" className="w-full gap-1.5 sm:w-auto">
-              <Sparkles size={16} /> AI starter
-            </Button>
-            <Button onClick={() => setShowCreate(true)} size="sm" className="w-full sm:w-auto">
-              <Plus size={16} /> {tp.createPlan}
-            </Button>
-          </div>
-        )}
+      <div className="flex items-center gap-2">
+        <h1 className="text-2xl font-bold text-text">Plans</h1>
+        <InlineTip placement="plans" />
       </div>
 
-      <section className="space-y-3">
-        <motion.div
-          initial={shouldReduce ? false : 'hidden'}
-          animate="visible"
-          variants={staggerContainer}
-          className="space-y-3"
-        >
-          <AnimatePresence>
-            {displayedPlans.map((plan) => (
-              <PlanRow
-                key={plan.id}
-                plan={plan}
-                onOpen={() => navigate(`/plans/${plan.id}`)}
-                onOverview={() => navigate(`/plans/${plan.id}/overview`)}
-                onActivate={() => activate(plan.id)}
-                onDeactivate={() => deactivate(plan.id)}
-                onDelete={async () => {
-                  if (await confirm(tp.deleteConfirm, { confirmLabel: t.common.delete, danger: true })) deletePlan(plan.id)
-                }}
-              />
-            ))}
-          </AnimatePresence>
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        {/* ── Coach Plans column ── */}
+        <section className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-base font-semibold text-text">Coach Plans</h2>
+              <p className="text-xs text-muted mt-0.5">{coachAssignedPlans.length} plan{coachAssignedPlans.length !== 1 ? 's' : ''}</p>
+            </div>
+          </div>
 
-          {plans?.length === 0 && (
-            <Card className="py-10 text-center text-muted">
-              {tp.empty}
-            </Card>
-          )}
-        </motion.div>
-      </section>
+          <motion.div
+            initial={shouldReduce ? false : 'hidden'}
+            animate="visible"
+            variants={staggerContainer}
+            className="flex flex-col gap-3"
+          >
+            <AnimatePresence>
+              {coachAssignedPlans.map((plan) => (
+                <PlanRow
+                  key={plan.id}
+                  plan={plan}
+                  onOpen={() => navigate(`/plans/${plan.id}`)}
+                  onOverview={() => navigate(`/plans/${plan.id}/overview`)}
+                  onActivate={() => activate(plan.id)}
+                  onDeactivate={() => deactivate(plan.id)}
+                  onDelete={async () => {
+                    if (await confirm(tp.deleteConfirm, { confirmLabel: t.common.delete, danger: true })) deletePlan(plan.id)
+                  }}
+                />
+              ))}
+            </AnimatePresence>
+
+            {coachAssignedPlans.length === 0 && (
+              <Card className="py-8 text-center text-muted text-sm">
+                No coach plans yet.
+              </Card>
+            )}
+          </motion.div>
+        </section>
+
+        {/* ── My Plans column ── */}
+        <section className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-base font-semibold text-text">My Plans</h2>
+              <p className="text-xs text-muted mt-0.5">
+                {selfPlans.length}/{planLimitLabel} plan{selfPlans.length !== 1 ? 's' : ''}
+              </p>
+            </div>
+            {canCreatePersonalPlan && (
+              <div className="flex gap-1.5">
+                <Button onClick={() => setShowStarterPlan(true)} size="sm" variant="secondary" className="gap-1.5">
+                  <Sparkles size={14} /> AI starter
+                </Button>
+                <Button onClick={() => setShowCreate(true)} size="sm">
+                  <Plus size={14} /> {tp.createPlan}
+                </Button>
+              </div>
+            )}
+          </div>
+
+          <motion.div
+            initial={shouldReduce ? false : 'hidden'}
+            animate="visible"
+            variants={staggerContainer}
+            className="flex flex-col gap-3"
+          >
+            <AnimatePresence>
+              {selfPlans.map((plan) => (
+                <PlanRow
+                  key={plan.id}
+                  plan={plan}
+                  onOpen={() => navigate(`/plans/${plan.id}`)}
+                  onOverview={() => navigate(`/plans/${plan.id}/overview`)}
+                  onActivate={() => activate(plan.id)}
+                  onDeactivate={() => deactivate(plan.id)}
+                  onDelete={async () => {
+                    if (await confirm(tp.deleteConfirm, { confirmLabel: t.common.delete, danger: true })) deletePlan(plan.id)
+                  }}
+                />
+              ))}
+            </AnimatePresence>
+
+            {selfPlans.length === 0 && (
+              <Card className="py-8 text-center text-muted text-sm">
+                {tp.empty}
+              </Card>
+            )}
+          </motion.div>
+        </section>
+      </div>
 
       {isCoach && (
         <section className="space-y-3">

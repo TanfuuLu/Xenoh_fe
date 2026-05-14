@@ -116,10 +116,10 @@ export function DashboardPage() {
           variants={staggerContainer}
           className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
         >
-          <MetricCard icon={<Flame size={18} />} label={td.streak} value={td.streakValue.replace('{n}', String(profile.currentStreak))} />
-          <MetricCard icon={<TrendingUp size={18} />} label={td.bodyweight} value={profile.latestBodyweight ? `${profile.latestBodyweight} kg` : '-'} />
-          <MetricCard icon={<Activity size={18} />} label="BMI" value={profile.bmi ? profile.bmi.toFixed(1) : '-'} sub={profile.bmiCategory ?? undefined} />
-          <MetricCard icon={<Dumbbell size={18} />} label="DOTS" value={profile.dotsScore ? profile.dotsScore.toFixed(1) : '-'} />
+          <MetricCard icon={<Flame size={18} />}     label={td.streak}     value={td.streakValue.replace('{n}', String(profile.currentStreak))}    accent="#f97316" />
+          <MetricCard icon={<TrendingUp size={18} />} label={td.bodyweight} value={profile.latestBodyweight ? `${profile.latestBodyweight} kg` : '-'} accent="#06b6d4" />
+          <MetricCard icon={<Activity size={18} />}   label="BMI"           value={profile.bmi ? profile.bmi.toFixed(1) : '-'} sub={profile.bmiCategory ?? undefined} accent="#22c55e" />
+          <MetricCard icon={<Dumbbell size={18} />}   label="DOTS"          value={profile.dotsScore ? profile.dotsScore.toFixed(1) : '-'}               accent="#6366f1" />
         </motion.div>
 
         <div className="mt-5 rounded-xl border border-border bg-panel p-4">
@@ -174,7 +174,7 @@ function TodayPanel({ workout }: { workout: PersonalDashboardTodayWorkout | null
   if (!workout) {
     return (
       <Card className="space-y-4">
-        <PanelHeader icon={<Calendar size={18} />} label={td.today} title={td.noWorkoutScheduled} />
+        <PanelHeader icon={<Calendar size={18} />} label={td.today} title={td.noWorkoutScheduled} accent="#f97316" />
         <p className="text-sm text-muted">{td.noWorkoutHint}</p>
         <Link to="/plans">
           <Button size="sm" variant="secondary">{td.openPlans}</Button>
@@ -195,6 +195,7 @@ function TodayPanel({ workout }: { workout: PersonalDashboardTodayWorkout | null
           label={td.today}
           title={isRest ? td.restDay : workout.dayOfWeek}
           subtitle={format(new Date(workout.date), 'd MMM yyyy')}
+          accent="#f97316"
         />
         {workout.isCompleted && <Badge variant="success">{td.done}</Badge>}
         {isRest && <Badge variant="default">{td.rest}</Badge>}
@@ -257,7 +258,7 @@ function PlanPanel({
   if (!plan) {
     return (
       <Card className="space-y-4">
-        <PanelHeader icon={<ClipboardList size={18} />} label={td.activePlanLabel} title={td.noActivePlan} />
+        <PanelHeader icon={<ClipboardList size={18} />} label={td.activePlanLabel} title={td.noActivePlan} accent="#6366f1" />
         <p className="text-sm text-muted">{td.createPlanHint}</p>
         <Link to="/plans"><Button size="sm">{td.createPlan}</Button></Link>
       </Card>
@@ -272,6 +273,7 @@ function PlanPanel({
           label={td.activePlanLabel}
           title={plan.name}
           subtitle={`${format(new Date(plan.startDate), 'dd/MM/yyyy')} - ${format(new Date(plan.endDate), 'dd/MM/yyyy')}`}
+          accent="#6366f1"
         />
         <Badge variant="success">{tc.active}</Badge>
       </div>
@@ -310,7 +312,7 @@ function NutritionPanel({ nutrition }: { nutrition: PersonalDashboardNutrition }
 
   return (
     <Card className="space-y-4">
-      <PanelHeader icon={<Utensils size={18} />} label={td.nutrition} title={td.todaysIntake} />
+      <PanelHeader icon={<Utensils size={18} />} label={td.nutrition} title={td.todaysIntake} accent="#ec4899" />
 
       {!hasTargets ? (
         <div className="rounded-xl border border-warning/30 p-4" style={{ background: 'var(--xn-warning-bg)' }}>
@@ -350,7 +352,7 @@ function NextActionsPanel({ actions }: { actions: PersonalDashboardAction[] }) {
   const shouldReduce = useReducedMotion()
   return (
     <Card className="space-y-4">
-      <PanelHeader icon={<Target size={18} />} label={td.nextActions} title={td.whatToDoNext} />
+      <PanelHeader icon={<Target size={18} />} label={td.nextActions} title={td.whatToDoNext} accent="#f59e0b" />
       <motion.div
         className="space-y-2"
         initial={shouldReduce ? false : 'hidden'}
@@ -409,7 +411,7 @@ function ProInsightsPanel({
   return (
     <Card className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <PanelHeader icon={<Sparkles size={18} />} label={td.proInsights} title={unlocked ? td.personalRecommendations : td.unlockDeeperGuidance} />
+        <PanelHeader icon={<Sparkles size={18} />} label={td.proInsights} title={unlocked ? td.personalRecommendations : td.unlockDeeperGuidance} accent="#8b5cf6" />
         {!unlocked && ctaRoute && (
           <Link to={ctaRoute}><Button size="sm">{ctaLabel ?? td.upgrade}</Button></Link>
         )}
@@ -440,10 +442,15 @@ function ProInsightsPanel({
   )
 }
 
-function MetricCard({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: string; sub?: string }) {
+function MetricCard({ icon, label, value, sub, accent }: { icon: React.ReactNode; label: string; value: string; sub?: string; accent?: string }) {
   return (
-    <motion.div variants={slideUp} className="rounded-xl border border-border bg-panel p-4">
-      <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-surface text-primary">{icon}</div>
+    <motion.div variants={slideUp} className="rounded-xl border bg-panel p-4" style={{ borderColor: accent ? `${accent}30` : 'var(--border-1)' }}>
+      <div
+        className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg"
+        style={{ background: accent ? `${accent}20` : 'var(--bg-surface)', color: accent ?? 'var(--color-primary)' }}
+      >
+        {icon}
+      </div>
       <p className="text-xs text-muted">{label}</p>
       <p className="text-lg font-bold text-text">{value}</p>
       {sub && <p className="text-xs text-muted">{sub}</p>}
@@ -474,15 +481,20 @@ function PanelHeader({
   label,
   title,
   subtitle,
+  accent,
 }: {
   icon: React.ReactNode
   label: string
   title: string
   subtitle?: string
+  accent?: string
 }) {
   return (
     <div className="flex min-w-0 items-start gap-3">
-      <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-panel text-primary">
+      <div
+        className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+        style={{ background: accent ? `${accent}20` : 'var(--bg-panel)', color: accent ?? 'var(--color-primary)' }}
+      >
         {icon}
       </div>
       <div className="min-w-0">

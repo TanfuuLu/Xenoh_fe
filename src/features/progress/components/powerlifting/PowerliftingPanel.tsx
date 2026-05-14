@@ -1,5 +1,5 @@
 import { motion, useReducedMotion } from 'framer-motion'
-import { Activity, Award, Dumbbell, Gauge, Percent, TrendingUp, Zap } from 'lucide-react'
+import { Activity, Award, Dumbbell, Gauge, Percent, TrendingUp, Zap, AlertTriangle } from 'lucide-react'
 import { Card } from '@/shared/components/Card'
 import { OneRepMaxCalculator } from '@/shared/components/OneRepMaxCalculator'
 import { useT } from '@/shared/i18n'
@@ -8,6 +8,23 @@ import type { LiftSeries, PowerliftingSection } from '../../types'
 import { LiftTrendChart } from './LiftTrendChart'
 import { PrTimeline } from './PrTimeline'
 import { DotsOverTimeChart } from './DotsOverTimeChart'
+
+const LIFT_COLORS: Record<string, string> = {
+  Squat:    '#6366f1',
+  Bench:    '#f97316',
+  Deadlift: '#22c55e',
+}
+
+const METRIC_COLORS = {
+  estimatedTotal:    '#6366f1',
+  trainingMax:       '#8b5cf6',
+  benchSquat:        '#f97316',
+  deadliftSquat:     '#22c55e',
+  prsLast30:         '#ec4899',
+  latestPr:          '#f59e0b',
+  plateau:           '#ef4444',
+  dots:              '#06b6d4',
+}
 
 interface Props {
   section: PowerliftingSection
@@ -39,19 +56,19 @@ export function PowerliftingPanel({ section }: Props) {
       <motion.div {...(shouldReduce ? {} : slideUp)}>
         <Card className="space-y-4">
           <div className="flex items-center gap-2">
-            <Gauge size={17} style={{ color: 'var(--color-primary)' }} />
+            <Gauge size={17} style={{ color: METRIC_COLORS.estimatedTotal }} />
             <h2 className="text-base font-semibold text-text">{tp.powerliftingAnalysisTitle}</h2>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <AnalysisMetric icon={<Dumbbell size={16} />} label={tp.totalEstimate} value={analysis.estimatedTotal} />
-            <AnalysisMetric icon={<Gauge size={16} />} label={tp.totalTrainingMax} value={analysis.trainingMaxTotal} />
-            <AnalysisMetric icon={<Percent size={16} />} label={tp.benchSquatRatio} value={analysis.benchSquatRatio} />
-            <AnalysisMetric icon={<Percent size={16} />} label={tp.deadliftSquatRatio} value={analysis.deadliftSquatRatio} />
-            <AnalysisMetric icon={<Award size={16} />} label={tp.prLast30} value={analysis.prsLast30} />
-            <AnalysisMetric icon={<Zap size={16} />} label={tp.latestPr} value={analysis.latestPr} />
-            <AnalysisMetric icon={<AlertIcon />} label={tp.plateauLifts} value={analysis.plateauLifts} />
-            <AnalysisMetric icon={<Activity size={16} />} label={tp.bodyweightForDots} value={analysis.dotsBodyweight} />
+            <AnalysisMetric icon={<Dumbbell size={16} />} label={tp.totalEstimate}       value={analysis.estimatedTotal}    accent={METRIC_COLORS.estimatedTotal} />
+            <AnalysisMetric icon={<Gauge size={16} />}    label={tp.totalTrainingMax}     value={analysis.trainingMaxTotal}  accent={METRIC_COLORS.trainingMax} />
+            <AnalysisMetric icon={<Percent size={16} />}  label={tp.benchSquatRatio}      value={analysis.benchSquatRatio}   accent={METRIC_COLORS.benchSquat} />
+            <AnalysisMetric icon={<Percent size={16} />}  label={tp.deadliftSquatRatio}   value={analysis.deadliftSquatRatio} accent={METRIC_COLORS.deadliftSquat} />
+            <AnalysisMetric icon={<Award size={16} />}    label={tp.prLast30}             value={analysis.prsLast30}         accent={METRIC_COLORS.prsLast30} />
+            <AnalysisMetric icon={<Zap size={16} />}      label={tp.latestPr}             value={analysis.latestPr}          accent={METRIC_COLORS.latestPr} />
+            <AnalysisMetric icon={<AlertTriangle size={16} />} label={tp.plateauLifts}    value={analysis.plateauLifts}      accent={METRIC_COLORS.plateau} />
+            <AnalysisMetric icon={<Activity size={16} />} label={tp.bodyweightForDots}    value={analysis.dotsBodyweight}    accent={METRIC_COLORS.dots} />
           </div>
 
           <div className="grid gap-3 lg:grid-cols-3">
@@ -69,7 +86,7 @@ export function PowerliftingPanel({ section }: Props) {
       <motion.div {...(shouldReduce ? {} : slideUp)}>
         <Card>
           <div className="mb-4 flex items-center gap-2">
-            <TrendingUp size={17} style={{ color: 'var(--color-primary)' }} />
+            <TrendingUp size={17} style={{ color: METRIC_COLORS.latestPr }} />
             <h2 className="text-base font-semibold text-text">{tp.estimatedOneRmTrend}</h2>
           </div>
           {lifts.every((l) => l.e1Rm.length === 0) ? (
@@ -87,7 +104,7 @@ export function PowerliftingPanel({ section }: Props) {
         <motion.div className="h-full" {...(shouldReduce ? {} : slideUp)}>
           <Card className="h-full">
             <div className="mb-4 flex items-center gap-2">
-              <Award size={17} style={{ color: 'var(--color-primary)' }} />
+              <Award size={17} style={{ color: METRIC_COLORS.prsLast30 }} />
               <h2 className="text-base font-semibold text-text">{tp.prTimeline}</h2>
             </div>
             {allPrs.length === 0 ? (
@@ -101,7 +118,7 @@ export function PowerliftingPanel({ section }: Props) {
         <motion.div className="h-full" {...(shouldReduce ? {} : slideUp)}>
           <Card className="flex h-full flex-col">
             <div className="mb-4 flex items-center gap-2">
-              <Activity size={17} style={{ color: 'var(--color-primary)' }} />
+              <Activity size={17} style={{ color: METRIC_COLORS.dots }} />
               <h2 className="text-base font-semibold text-text">{tp.dotsOverTime}</h2>
             </div>
             {section.dots.length === 0 ? (
@@ -125,45 +142,47 @@ export function PowerliftingPanel({ section }: Props) {
 
 function TrainingMaxCard({ lift, shouldReduce }: { lift: LiftSeries; shouldReduce: boolean }) {
   const tp = useT().progress
-  const accent =
-    lift.lift === 'Squat'
-      ? 'var(--color-primary)'
-      : lift.lift === 'Bench'
-        ? 'var(--color-warning)'
-        : 'var(--color-success)'
+  const accent = LIFT_COLORS[lift.lift] ?? '#6366f1'
 
   return (
     <motion.div
       variants={slideUp}
       initial={shouldReduce ? false : 'hidden'}
       animate="visible"
-      className="rounded-2xl p-4"
-      style={{ background: 'var(--bg-2)', border: '1px solid var(--border-1)' }}
+      className="rounded-2xl overflow-hidden"
+      style={{ background: 'var(--bg-2)', border: `1px solid ${accent}40` }}
     >
-      <div className="mb-2 flex items-center gap-2" style={{ color: accent }}>
-        <Dumbbell size={18} />
-        <span className="text-xs font-medium text-muted">{translateLift(lift.lift, tp)}</span>
-        {lift.isPlateau && (
-          <span
-            className="ml-auto rounded-md px-1.5 py-0.5 text-[10px] font-medium"
-            style={{ background: 'rgba(245,158,11,0.16)', color: 'var(--color-warning)' }}
-          >
-            {tp.plateau}
+      {/* Colored accent bar */}
+      <div className="h-1 w-full" style={{ background: accent }} />
+
+      <div className="p-4">
+        <div className="mb-2 flex items-center gap-2">
+          <Dumbbell size={18} style={{ color: accent }} />
+          <span className="text-xs font-semibold" style={{ color: accent }}>
+            {translateLift(lift.lift, tp)}
           </span>
-        )}
-      </div>
-      <div className="flex items-baseline gap-2">
-        <p className="text-2xl font-bold text-text">
-          {lift.currentE1Rm === null ? '—' : `${lift.currentE1Rm.toFixed(1)} ${tp.kgUnit}`}
+          {lift.isPlateau && (
+            <span
+              className="ml-auto rounded-md px-1.5 py-0.5 text-[10px] font-medium"
+              style={{ background: `${METRIC_COLORS.plateau}20`, color: METRIC_COLORS.plateau }}
+            >
+              {tp.plateau}
+            </span>
+          )}
+        </div>
+        <div className="flex items-baseline gap-2">
+          <p className="text-2xl font-bold text-text">
+            {lift.currentE1Rm === null ? '—' : `${lift.currentE1Rm.toFixed(1)} ${tp.kgUnit}`}
+          </p>
+          <span className="text-xs text-muted">{tp.e1rm}</span>
+        </div>
+        <p className="mt-1 text-xs text-muted">
+          {tp.trainingMax}:{' '}
+          <span className="font-semibold text-text">
+            {lift.currentTrainingMax === null ? '—' : `${lift.currentTrainingMax.toFixed(1)} ${tp.kgUnit}`}
+          </span>
         </p>
-        <span className="text-xs text-muted">{tp.e1rm}</span>
       </div>
-      <p className="mt-1 text-xs text-muted">
-        {tp.trainingMax}:{' '}
-        <span className="font-semibold text-text">
-          {lift.currentTrainingMax === null ? '—' : `${lift.currentTrainingMax.toFixed(1)} ${tp.kgUnit}`}
-        </span>
-      </p>
     </motion.div>
   )
 }
@@ -235,20 +254,19 @@ function buildPowerliftingAnalysis(section: PowerliftingSection, tp: Record<stri
   }
 }
 
-function AnalysisMetric({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function AnalysisMetric({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: string; accent: string }) {
   return (
-    <div className="rounded-xl border p-3" style={{ background: 'var(--bg-2)', borderColor: 'var(--border-1)' }}>
-      <div className="mb-2 flex items-center gap-2 text-muted">
+    <div
+      className="rounded-xl border p-3"
+      style={{ background: 'var(--bg-2)', borderColor: `${accent}30`, borderLeftWidth: 3, borderLeftColor: accent }}
+    >
+      <div className="mb-2 flex items-center gap-2" style={{ color: accent }}>
         {icon}
-        <p className="truncate text-xs font-medium">{label}</p>
+        <p className="truncate text-xs font-medium" style={{ color: 'var(--fg-3)' }}>{label}</p>
       </div>
       <p className="truncate text-lg font-bold text-text">{value}</p>
     </div>
   )
-}
-
-function AlertIcon() {
-  return <span className="text-sm font-bold">!</span>
 }
 
 function sumPresent(values: Array<number | null>): number {

@@ -3,10 +3,13 @@ import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Plus, PlusCircle } from 'lucide-react'
 import { format } from 'date-fns'
+import { useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/shared/components/Button'
 import { Spinner } from '@/shared/components/Spinner'
 import { useT } from '@/shared/i18n'
-import { useDayFoodLogs, useCreateFoodLog } from '../../api/useFoodLog'
+import { useMidnightRefresh } from '@/shared/hooks/useMidnightRefresh'
+import { useDayFoodLogs, useCreateFoodLog, foodLogKeys } from '../../api/useFoodLog'
+import { nutritionKeys } from '../../api/useNutrition'
 import type { FoodItemResponse } from '../../types'
 import { FoodSearchInput } from './FoodSearchInput'
 import { QuantityPicker } from './QuantityPicker'
@@ -23,8 +26,18 @@ interface Props {
   date?: Date
 }
 
-export function FoodLogPanel({ date = new Date() }: Props) {
-  const dateStr = format(date, 'yyyy-MM-dd')
+export function FoodLogPanel({ date }: Props) {
+  const [today, setToday] = useState<Date>(date ?? new Date())
+  const dateStr = format(today, 'yyyy-MM-dd')
+
+  const qc = useQueryClient()
+  useMidnightRefresh(() => {
+    const newToday = new Date()
+    setToday(newToday)
+    const newDateStr = format(newToday, 'yyyy-MM-dd')
+    void qc.invalidateQueries({ queryKey: foodLogKeys.dayLogs(newDateStr) })
+    void qc.invalidateQueries({ queryKey: nutritionKeys.summary() })
+  })
 
   const { data, isLoading, isError } = useDayFoodLogs(dateStr)
   const createFoodLog = useCreateFoodLog(dateStr)

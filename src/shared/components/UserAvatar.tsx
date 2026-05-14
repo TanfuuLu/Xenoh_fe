@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { UserRound } from 'lucide-react'
 import { cn } from '@/shared/utils/cn'
 
@@ -45,9 +46,11 @@ export function UserAvatar({
   title,
   variant = 'clay',
 }: UserAvatarProps) {
+  const [imgError, setImgError] = useState(false)
+  useEffect(() => { setImgError(false) }, [imageUrl])
   const initials = getInitials(name, email)
   const fontSize = Math.max(10, Math.round(size * 0.38))
-  const resolvedImageUrl = resolveImageUrl(imageUrl)
+  const resolvedImageUrl = imgError ? null : resolveImageUrl(imageUrl)
 
   const variantStyle =
     variant === 'primary'
@@ -87,6 +90,7 @@ export function UserAvatar({
           alt=""
           className="h-full w-full object-cover"
           referrerPolicy="no-referrer"
+          onError={() => setImgError(true)}
         />
       ) : initials ? (
         initials

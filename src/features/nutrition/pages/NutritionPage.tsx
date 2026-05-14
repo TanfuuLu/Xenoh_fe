@@ -7,8 +7,11 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
   Line,
   LineChart,
+  Pie,
+  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -27,6 +30,7 @@ import {
   useUpdateNutritionProfile,
 } from '../api/useNutrition'
 import { FoodLogPanel } from '../components/FoodLog/FoodLogPanel'
+import { NutritionHistoryCards } from '../components/NutritionHistoryCards'
 import type {
   ActivityLevel,
   NutritionGoal,
@@ -311,19 +315,6 @@ export function NutritionPage() {
         </Card>
       </div>
 
-      <Card>
-        <div className="mb-4 flex items-center gap-2">
-          <Target size={17} className="text-primary" />
-          <h2 className="text-lg font-semibold text-text">{tn.macroTargetsTitle}</h2>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <MacroCard label={tn.proteinShort} target={calc.proteinG} actual={readNumber(logForm.proteinG)} remaining={remaining?.proteinG} unit="g" missingLabel={tn.missing} loggedLabel={tn.logged} remainingLabel={tn.remaining} />
-          <MacroCard label={tn.carbsShort}   target={calc.carbsG}   actual={readNumber(logForm.carbsG)}   remaining={remaining?.carbsG}   unit="g" missingLabel={tn.missing} loggedLabel={tn.logged} remainingLabel={tn.remaining} />
-          <MacroCard label={tn.fatShort}     target={calc.fatG}     actual={readNumber(logForm.fatG)}     remaining={remaining?.fatG}     unit="g" missingLabel={tn.missing} loggedLabel={tn.logged} remainingLabel={tn.remaining} />
-          <MacroCard label={tn.caloriesShort} target={calc.calorieTarget} actual={readNumber(logForm.calories)} remaining={remaining?.calories} unit={tn.kcal} missingLabel={tn.missing} loggedLabel={tn.logged} remainingLabel={tn.remaining} />
-        </div>
-      </Card>
-
       <RequireTier feature={tn.requireFeature}>
         <NutritionHistoryPanel clientId={clientId} enabled={summary.canUseAdvancedAnalysis} calorieTarget={calc.calorieTarget} />
       </RequireTier>
@@ -440,6 +431,20 @@ function NutritionHistoryPanel({
           </div>
         </div>
       )}
+
+      <div className="mt-6 border-t pt-6" style={{ borderColor: 'var(--border)' }}>
+        <div className="mb-3 flex items-center gap-2">
+          <Utensils size={17} className="text-primary" />
+          <h3 className="text-base font-semibold text-text">{tn.historyCardsTitle}</h3>
+        </div>
+        <NutritionHistoryCards
+          from={from}
+          to={to}
+          enabled={enabled}
+          clientId={clientId}
+          calorieTarget={calorieTarget}
+        />
+      </div>
     </Card>
   )
 }
@@ -651,21 +656,21 @@ function NutritionValueDiagrams({
       target: calc.proteinG,
       actual: readNumber(logForm.proteinG),
       unit: 'g',
-      color: 'var(--color-primary)',
+      color: '#6366f1',
     },
     {
       label: tn.carbsShort,
       target: calc.carbsG,
       actual: readNumber(logForm.carbsG),
       unit: 'g',
-      color: 'var(--xn-success)',
+      color: '#22c55e',
     },
     {
       label: tn.fatShort,
       target: calc.fatG,
       actual: readNumber(logForm.fatG),
       unit: 'g',
-      color: 'var(--xn-warning)',
+      color: '#f97316',
     },
   ]
   const targetMax = Math.max(calc.bmr ?? 0, calc.tdee ?? 0, calc.calorieTarget ?? 0, 1)
@@ -682,31 +687,27 @@ function NutritionValueDiagrams({
           <Target size={17} className="text-primary" />
           <h2 className="text-lg font-semibold text-text">{tn.macroTargetsTitle}</h2>
         </div>
-        <div className="space-y-4">
-          {macroRows.map((row) => {
-            const target = row.target ?? 0
-            const percent = target > 0 ? Math.min(140, (row.actual / target) * 100) : 0
-            return (
-              <div key={row.label}>
-                <div className="mb-1 flex items-center justify-between gap-2 text-sm">
-                  <span className="font-medium text-text">{row.label}</span>
-                  <span className="text-muted">
-                    {Math.round(row.actual)} / {row.target ?? tn.missing} {row.unit}
-                  </span>
-                </div>
-                <div className="h-3 overflow-hidden rounded-full" style={{ background: 'var(--bg-3)' }}>
-                  <div
-                    className="h-full rounded-full"
-                    style={{
-                      width: `${Math.max(row.actual > 0 ? 4 : 0, Math.min(100, percent))}%`,
-                      background: row.color,
-                    }}
-                  />
-                </div>
-                <p className="mt-1 text-xs text-muted">{Math.round(percent)}%</p>
-              </div>
-            )
-          })}
+
+        <CaloriesBar
+          actual={readNumber(logForm.calories)}
+          target={calc.calorieTarget}
+          unit={tn.kcal}
+          missingLabel={tn.missing}
+        />
+
+        <div className="mt-5">
+          <MacroDonut
+            proteinG={readNumber(logForm.proteinG)}
+            carbsG={readNumber(logForm.carbsG)}
+            fatG={readNumber(logForm.fatG)}
+            proteinLabel={tn.proteinShort}
+            carbsLabel={tn.carbsShort}
+            fatLabel={tn.fatShort}
+            proteinTarget={calc.proteinG}
+            carbsTarget={calc.carbsG}
+            fatTarget={calc.fatG}
+            missingLabel={tn.missing}
+          />
         </div>
       </Card>
 
@@ -801,6 +802,115 @@ function MetricCard({ icon, label, value }: { icon: React.ReactNode; label: stri
     </Card>
   )
 }
+
+function MacroDonut({
+  proteinG,
+  carbsG,
+  fatG,
+  proteinLabel,
+  carbsLabel,
+  fatLabel,
+  proteinTarget,
+  carbsTarget,
+  fatTarget,
+  missingLabel,
+}: {
+  proteinG: number
+  carbsG: number
+  fatG: number
+  proteinLabel: string
+  carbsLabel: string
+  fatLabel: string
+  proteinTarget: number | null
+  carbsTarget: number | null
+  fatTarget: number | null
+  missingLabel: string
+}) {
+  const total = proteinG + carbsG + fatG
+  const segments = [
+    { label: proteinLabel, value: proteinG, target: proteinTarget, color: '#6366f1' },
+    { label: carbsLabel,   value: carbsG,   target: carbsTarget,   color: '#22c55e' },
+    { label: fatLabel,     value: fatG,     target: fatTarget,     color: '#f97316' },
+  ]
+  const pieData = total > 0
+    ? segments.map((s) => ({ ...s, pieValue: s.value }))
+    : [{ label: '', value: 0, target: null, color: 'var(--bg-3)', pieValue: 1 }]
+
+  return (
+    <div className="flex items-center gap-4">
+      <PieChart width={130} height={130}>
+        <Pie
+          data={pieData}
+          cx={65}
+          cy={65}
+          innerRadius={36}
+          outerRadius={58}
+          dataKey="pieValue"
+          strokeWidth={2}
+          stroke="var(--bg-2)"
+          startAngle={90}
+          endAngle={-270}
+        >
+          {pieData.map((entry, i) => (
+            <Cell key={i} fill={entry.color} />
+          ))}
+        </Pie>
+      </PieChart>
+
+      <div className="flex flex-1 flex-col gap-2.5">
+        {segments.map((s) => (
+          <div key={s.label} className="flex items-center gap-2 text-sm">
+            <span
+              className="h-2.5 w-2.5 shrink-0 rounded-full"
+              style={{ background: s.color }}
+            />
+            <span className="flex-1 text-muted">{s.label}</span>
+            <span className="font-semibold text-text">{Math.round(s.value)}g</span>
+            <span className="text-xs text-muted">/ {s.target ?? missingLabel}g</span>
+          </div>
+        ))}
+        {total > 0 && (
+          <p className="mt-0.5 text-xs text-muted">{Math.round(total)}g total</p>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function CaloriesBar({
+  actual,
+  target,
+  unit,
+  missingLabel,
+}: {
+  actual: number
+  target: number | null
+  unit: string
+  missingLabel: string
+}) {
+  const pct = target && target > 0 ? Math.min(100, Math.round((actual / target) * 100)) : 0
+  return (
+    <div>
+      <div className="mb-1.5 flex items-center justify-between text-sm">
+        <span className="font-medium" style={{ color: 'var(--fg-1)' }}>Calories</span>
+        <span style={{ color: 'var(--fg-3)' }}>
+          {Math.round(actual)} / {target ?? missingLabel} {unit}
+        </span>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full" style={{ background: 'var(--bg-3)' }}>
+        <div
+          className="h-full rounded-full transition-all duration-500"
+          style={{
+            width: `${Math.max(actual > 0 ? 2 : 0, pct)}%`,
+            background: 'var(--color-primary)',
+          }}
+        />
+      </div>
+      <p className="mt-1 text-xs" style={{ color: 'var(--fg-3)' }}>{pct}%</p>
+    </div>
+  )
+}
+
 
 function MacroCard({
   label,

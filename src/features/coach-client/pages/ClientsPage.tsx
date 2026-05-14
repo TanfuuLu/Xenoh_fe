@@ -8,6 +8,7 @@ import {
   ClipboardList, Tags,
 } from 'lucide-react'
 import { useAuthStore } from '@/features/auth'
+import { useSubscription } from '@/features/billing/api/useSubscription'
 import { format, differenceInDays, formatDistanceToNow } from 'date-fns'
 import { Card } from '@/shared/components/Card'
 import { UserAvatar } from '@/shared/components/UserAvatar'
@@ -34,6 +35,7 @@ import {
   useRejectRenewal,
 } from '../index'
 import { RenewalModal } from '../components/RenewalModal'
+import { CoachScheduleCalendar } from '../components/CoachScheduleCalendar'
 import { formatContractSelection } from '../utils/contractDisplay'
 
 function formatContractDate(value: string | null): string {
@@ -422,6 +424,8 @@ export function ClientsPage() {
   const shouldReduce = useReducedMotion()
   const navigate = useNavigate()
   const currentUserId = useAuthStore((s) => s.user?.id ?? '')
+  const { data: subscription } = useSubscription()
+  const maxClients = subscription?.tier === 'ProCoach' && subscription.isActive ? Number.MAX_SAFE_INTEGER : 5
   const { data: pending, isLoading: pendingLoading } = usePendingRequests()
   const { data: clients, isLoading: clientsLoading } = useMyClients()
   const { data: dashboardData, isLoading: dashboardLoading } = useCoachDashboard()
@@ -522,6 +526,13 @@ export function ClientsPage() {
         <StatCard icon={<ClipboardList size={15} />} label={tx.statNoActivePlan} value={String(noActivePlanCount)} />
         <StatCard icon={<CalendarDays size={15} />} label={tx.statInactive} value={String(inactiveCount)} />
       </div>
+
+      {/* Schedule calendar */}
+      <CoachScheduleCalendar
+        clients={activeClients}
+        pendingRequests={pending ?? []}
+        maxClients={maxClients}
+      />
 
       {/* Pending requests */}
       {(pending?.length ?? 0) > 0 && (

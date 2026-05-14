@@ -21,6 +21,9 @@ export interface UserProfileResponse {
   xpToNextLevel: number
   title: string
   coachMarketplaceProfile: CoachMarketplaceProfile | null
+  facebookUrl: string | null
+  instagramUrl: string | null
+  zaloUrl: string | null
 }
 
 export interface PublicUserProfileResponse {
@@ -46,6 +49,9 @@ export interface UpdateProfileRequest {
   gender?: Gender
   dateOfBirth?: string
   coachMarketplaceProfile?: CoachMarketplaceProfile
+  facebookUrl?: string
+  instagramUrl?: string
+  zaloUrl?: string
 }
 
 export interface BodyweightLogResponse {
