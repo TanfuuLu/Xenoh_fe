@@ -179,6 +179,14 @@ export const ENDPOINTS = {
     markAllRead: '/api/notifications/read-all',
   },
 
+  // Share (public, no auth)
+  share: {
+    prPage:  (userId: string, exerciseTemplateId: string) =>
+      `/api/share/pr/${userId}/${exerciseTemplateId}`,
+    prImage: (userId: string, exerciseTemplateId: string) =>
+      `/api/share/pr/${userId}/${exerciseTemplateId}/image.png`,
+  },
+
   // Admin
   admin: {
     dashboard: '/api/admin/dashboard',

@@ -19,6 +19,8 @@ import { slideUp } from '@/shared/utils/motion'
 import type { ExercisePrResponse } from '../types'
 import { RequireTier } from '@/features/billing/components/RequireTier'
 import { useExercisePrHistory, useExercisePrs } from '../index'
+import { SharePrButton } from '../components/SharePrButton'
+import { useAuthStore } from '@/features/auth'
 
 function formatDate(value: string | null | undefined, pattern = 'dd/MM/yyyy') {
   if (!value) return '-'
@@ -33,6 +35,7 @@ export function ExerciseTrackingPage() {
   const { data: prs, isLoading: loadingPrs } = useExercisePrs()
   const selectedId = selectedExerciseId || null
   const { data: history, isLoading: loadingHistory } = useExercisePrHistory(selectedId)
+  const userId = useAuthStore((s) => s.user?.id)
 
   const exercises = useMemo(() => (Array.isArray(prs) ? prs : []), [prs])
 
@@ -109,11 +112,20 @@ export function ExerciseTrackingPage() {
 
           {selectedPr && (
             <Card>
-              <div className="grid gap-4 md:grid-cols-4">
-                <SummaryStat label="Exercise" value={selectedPr.exerciseName} />
-                <SummaryStat label="Current PR" value={`${selectedPr.currentWeight} kg`} />
-                <SummaryStat label="Reps" value={`${selectedPr.reps}`} />
-                <SummaryStat label="Achieved" value={formatDate(selectedPr.achievedAt)} />
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                <div className="grid gap-4 sm:grid-cols-4">
+                  <SummaryStat label="Exercise" value={selectedPr.exerciseName} />
+                  <SummaryStat label="Current PR" value={`${selectedPr.currentWeight} kg`} />
+                  <SummaryStat label="Reps" value={`${selectedPr.reps}`} />
+                  <SummaryStat label="Achieved" value={formatDate(selectedPr.achievedAt)} />
+                </div>
+                {userId && (
+                  <SharePrButton
+                    userId={userId}
+                    exerciseTemplateId={selectedPr.exerciseTemplateId}
+                    exerciseName={selectedPr.exerciseName}
+                  />
+                )}
               </div>
             </Card>
           )}
