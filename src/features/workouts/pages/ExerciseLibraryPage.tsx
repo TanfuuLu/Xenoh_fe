@@ -24,6 +24,7 @@ import { InlineTip } from '@/features/tips'
 import { useAuthStore } from '@/features/auth'
 import { useSubscription } from '@/features/billing/api/useSubscription'
 import { useLangStore } from '@/shared/i18n'
+import { ExercisePrPanel } from '@/features/exercise-tracking/components/ExercisePrPanel'
 import type { CustomExerciseTemplateRequest, ExerciseTemplateResponse } from '../types'
 
 type ExerciseKindFilter = '' | 'Strength' | 'Cardio'
@@ -45,12 +46,14 @@ export function ExerciseLibraryPage() {
   const isAdmin = useAuthStore((s) => s.user?.roles?.includes('Admin') ?? false)
   const { data: subscription } = useSubscription()
   const isActivePro = isAdmin || (subscription?.isActive === true && subscription?.tier !== 'Free')
+  const localizeName = useLocalizedExerciseName()
 
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<MuscleGroupValue | ''>('')
   const [selectedType, setSelectedType] = useState<ExerciseKindFilter>('')
   const [search, setSearch] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [editingTemplate, setEditingTemplate] = useState<ExerciseTemplateResponse | null>(null)
+  const [prTemplate, setPrTemplate] = useState<ExerciseTemplateResponse | null>(null)
 
   const { data: templates = [], isLoading } = useExerciseTemplates({
     muscleGroup: selectedMuscleGroup || undefined,
@@ -262,6 +265,7 @@ export function ExerciseLibraryPage() {
               template={template}
               onEdit={openEditModal}
               onDelete={onDelete}
+              onSelect={setPrTemplate}
               deleting={deletingCustom}
               isActivePro={isActivePro}
               lang={lang}
@@ -269,6 +273,20 @@ export function ExerciseLibraryPage() {
           ))}
         </div>
       )}
+
+      <Modal
+        open={!!prTemplate}
+        onClose={() => setPrTemplate(null)}
+        title={prTemplate ? localizeName(prTemplate.name) : ''}
+        className="max-w-2xl"
+      >
+        {prTemplate && (
+          <ExercisePrPanel
+            exerciseTemplateId={prTemplate.id}
+            exerciseName={localizeName(prTemplate.name)}
+          />
+        )}
+      </Modal>
 
       <Modal
         open={modalOpen}
@@ -369,6 +387,7 @@ function ExerciseLibraryCard({
   template,
   onEdit,
   onDelete,
+  onSelect,
   deleting,
   isActivePro,
   lang,
@@ -376,6 +395,7 @@ function ExerciseLibraryCard({
   template: ExerciseTemplateResponse
   onEdit: (template: ExerciseTemplateResponse) => void
   onDelete: (template: ExerciseTemplateResponse) => void
+  onSelect: (template: ExerciseTemplateResponse) => void
   deleting: boolean
   isActivePro: boolean
   lang: 'en' | 'vi'
@@ -384,7 +404,11 @@ function ExerciseLibraryCard({
   const localizeName = useLocalizedExerciseName()
   const tx = exerciseLibraryText(lang)
   return (
-    <Card className="flex min-h-48 flex-col">
+    <Card
+      className="flex min-h-48 flex-col"
+      onClick={() => onSelect(template)}
+      style={{ cursor: 'pointer' }}
+    >
       <div className="mb-4 flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
           {template.imageUrl ? (
@@ -427,7 +451,7 @@ function ExerciseLibraryCard({
       )}
 
       {template.isCustom ? (
-        <div className="mt-auto flex gap-2">
+        <div className="mt-auto flex gap-2" onClick={(e) => e.stopPropagation()}>
           {isActivePro ? (
             <Button variant="secondary" size="sm" className="flex-1" onClick={() => onEdit(template)}>
               <Pencil size={14} /> {tx.edit}

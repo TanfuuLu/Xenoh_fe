@@ -40,7 +40,7 @@ export function SharePrButton({ userId, exerciseTemplateId, exerciseName }: Prop
   async function handleNativeShare() {
     setShare('loading')
     try {
-      const res  = await fetch(imageUrl)
+      const res  = await fetch(imageUrl, { cache: 'no-store' })
       const blob = await res.blob()
       const file = new File([blob], `xenoh-pr-${exerciseName}.png`, { type: 'image/png' })
 
@@ -71,13 +71,24 @@ export function SharePrButton({ userId, exerciseTemplateId, exerciseName }: Prop
 
   async function handleCopyImage() {
     try {
-      const res  = await fetch(imageUrl)
+      const res  = await fetch(imageUrl, { cache: 'no-store' })
       const blob = await res.blob()
       await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
       flashCopy('img-copied')
     } catch {
       flashCopy('img-error')
     }
+  }
+
+  async function handleDownload() {
+    const res  = await fetch(imageUrl, { cache: 'no-store' })
+    const blob = await res.blob()
+    const url  = URL.createObjectURL(blob)
+    const a    = document.createElement('a')
+    a.href     = url
+    a.download = `xenoh-pr-${exerciseName.replace(/\s+/g, '-').toLowerCase()}.png`
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   return (
@@ -178,15 +189,15 @@ export function SharePrButton({ userId, exerciseTemplateId, exerciseName }: Prop
               {copyState === 'link-copied' ? 'Copied!' : 'Copy link'}
             </button>
 
-            <a
-              href={imageUrl}
-              download={`xenoh-pr-${exerciseName.replace(/\s+/g, '-').toLowerCase()}.png`}
+            <button
+              type="button"
+              onClick={handleDownload}
               className="flex items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors"
               style={{ background: 'var(--bg-3)', color: 'var(--fg-2)' }}
             >
               <Download size={14} />
               Download
-            </a>
+            </button>
           </div>
         </div>
       </Modal>

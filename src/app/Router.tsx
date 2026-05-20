@@ -20,7 +20,6 @@ const DayWorkoutPage = lazy(() => import('@/features/workouts/pages/DayWorkoutPa
 const ExerciseLibraryPage = lazy(() => import('@/features/workouts/pages/ExerciseLibraryPage').then((m) => ({ default: m.ExerciseLibraryPage })))
 const ProfilePage = lazy(() => import('@/features/profile/pages/ProfilePage').then((m) => ({ default: m.ProfilePage })))
 const ChangePasswordPage = lazy(() => import('@/features/profile/pages/ChangePasswordPage').then((m) => ({ default: m.ChangePasswordPage })))
-const ExerciseTrackingPage = lazy(() => import('@/features/exercise-tracking/pages/ExerciseTrackingPage').then((m) => ({ default: m.ExerciseTrackingPage })))
 const CoachesPage = lazy(() => import('@/features/coaches/pages/CoachesPage').then((m) => ({ default: m.CoachesPage })))
 const ClientsPage = lazy(() => import('@/features/coach-client/pages/ClientsPage').then((m) => ({ default: m.ClientsPage })))
 const ClientProfilePage = lazy(() => import('@/features/profile/pages/ClientProfilePage').then((m) => ({ default: m.ClientProfilePage })))
@@ -167,15 +166,6 @@ export const router = createBrowserRouter([
           {
             path: 'coaches/:coachId',
             element: <Suspended><CoachProfilePage /></Suspended>,
-          },
-          {
-            element: <RoleRoute role="Individual" />,
-            children: [
-              {
-                path: 'exercise-tracking',
-                element: <Suspended><ExerciseTrackingPage /></Suspended>,
-              },
-            ],
           },
           {
             element: <RoleRoute role="Coach" redirectTo="/subscription?reason=coach-required" />,

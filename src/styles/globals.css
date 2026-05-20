@@ -282,10 +282,7 @@ body {
   max-width: none;
   margin: 20px 24px 32px;
   padding: 20px 24px 32px;
-  border: 2px solid var(--surface-border-soft);
-  border-radius: 18px;
   background: var(--bg-1);
-  box-shadow: var(--sh-sm);
 }
 .xn-page-container.wide { max-width: none; }
 

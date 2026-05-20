@@ -105,9 +105,11 @@ export function PlansPage() {
   })
 
   const starterPlanSchema = z.object({
-    goal: z.enum(['strength', 'hypertrophy', 'general_fitness', 'fat_loss']),
+    goal: z.enum(['hypertrophy', 'strength_hypertrophy', 'lean_bulk', 'fat_loss', 'body_recomposition']),
     experience: z.enum(['beginner', 'intermediate', 'advanced']),
     daysPerWeek: z.number().min(2).max(5),
+    splitPreference: z.enum(['full_body', 'upper_lower', 'push_pull_legs', 'bro_split']),
+    sessionLengthMinutes: z.number().refine((value) => [30, 45, 60, 75, 90].includes(value)),
     equipment: z.enum(['full_gym', 'barbell', 'dumbbells', 'home_gym', 'bodyweight']),
     startDate: z.string().min(1, tp.requiredError),
     endDate: z.string().min(1, tp.requiredError),
@@ -146,9 +148,11 @@ export function PlansPage() {
   } = useForm<StarterPlanFormData>({
     resolver: zodResolver(starterPlanSchema),
     defaultValues: {
-      goal: 'strength',
+      goal: 'hypertrophy',
       experience: 'beginner',
       daysPerWeek: 3,
+      splitPreference: 'full_body',
+      sessionLengthMinutes: 60,
       equipment: 'full_gym',
     },
   })
@@ -399,78 +403,118 @@ export function PlansPage() {
 
       <Modal open={showStarterPlan} onClose={() => setShowStarterPlan(false)} title="AI starter plan">
         <form onSubmit={handleSubmitStarterPlan(onSubmitStarterPlan)} className="space-y-4">
-          <Controller
-            name="goal"
-            control={starterPlanControl}
-            render={({ field }) => (
-              <Select
-                label="Goal"
-                value={field.value}
-                onChange={field.onChange}
-                error={starterPlanErrors.goal?.message}
-                options={[
-                  { value: 'strength', label: 'Strength' },
-                  { value: 'hypertrophy', label: 'Hypertrophy' },
-                  { value: 'general_fitness', label: 'General fitness' },
-                  { value: 'fat_loss', label: 'Fat loss' },
-                ]}
-              />
-            )}
-          />
-          <Controller
-            name="experience"
-            control={starterPlanControl}
-            render={({ field }) => (
-              <Select
-                label="Experience"
-                value={field.value}
-                onChange={field.onChange}
-                error={starterPlanErrors.experience?.message}
-                options={[
-                  { value: 'beginner', label: 'Beginner' },
-                  { value: 'intermediate', label: 'Intermediate' },
-                  { value: 'advanced', label: 'Advanced' },
-                ]}
-              />
-            )}
-          />
-          <Controller
-            name="daysPerWeek"
-            control={starterPlanControl}
-            render={({ field }) => (
-              <Select
-                label="Days per week"
-                value={String(field.value ?? '')}
-                onChange={(value) => field.onChange(Number(value))}
-                error={starterPlanErrors.daysPerWeek?.message}
-                options={[
-                  { value: '2', label: '2 days' },
-                  { value: '3', label: '3 days' },
-                  { value: '4', label: '4 days' },
-                  { value: '5', label: '5 days' },
-                ]}
-              />
-            )}
-          />
-          <Controller
-            name="equipment"
-            control={starterPlanControl}
-            render={({ field }) => (
-              <Select
-                label="Equipment"
-                value={field.value}
-                onChange={field.onChange}
-                error={starterPlanErrors.equipment?.message}
-                options={[
-                  { value: 'full_gym', label: 'Full gym' },
-                  { value: 'barbell', label: 'Barbell focused' },
-                  { value: 'dumbbells', label: 'Dumbbells' },
-                  { value: 'home_gym', label: 'Home gym' },
-                  { value: 'bodyweight', label: 'Bodyweight' },
-                ]}
-              />
-            )}
-          />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Controller
+              name="goal"
+              control={starterPlanControl}
+              render={({ field }) => (
+                <Select
+                  label="Goal"
+                  value={field.value}
+                  onChange={field.onChange}
+                  error={starterPlanErrors.goal?.message}
+                  options={[
+                    { value: 'hypertrophy', label: 'Hypertrophy' },
+                    { value: 'strength_hypertrophy', label: 'Strength + Hypertrophy' },
+                    { value: 'lean_bulk', label: 'Lean Bulk' },
+                    { value: 'fat_loss', label: 'Fat loss' },
+                    { value: 'body_recomposition', label: 'Body Recomposition' },
+                  ]}
+                />
+              )}
+            />
+            <Controller
+              name="experience"
+              control={starterPlanControl}
+              render={({ field }) => (
+                <Select
+                  label="Experience"
+                  value={field.value}
+                  onChange={field.onChange}
+                  error={starterPlanErrors.experience?.message}
+                  options={[
+                    { value: 'beginner', label: 'Beginner' },
+                    { value: 'intermediate', label: 'Intermediate' },
+                    { value: 'advanced', label: 'Advanced' },
+                  ]}
+                />
+              )}
+            />
+            <Controller
+              name="daysPerWeek"
+              control={starterPlanControl}
+              render={({ field }) => (
+                <Select
+                  label="Days per week"
+                  value={String(field.value ?? '')}
+                  onChange={(value) => field.onChange(Number(value))}
+                  error={starterPlanErrors.daysPerWeek?.message}
+                  options={[
+                    { value: '2', label: '2 days' },
+                    { value: '3', label: '3 days' },
+                    { value: '4', label: '4 days' },
+                    { value: '5', label: '5 days' },
+                  ]}
+                />
+              )}
+            />
+            <Controller
+              name="splitPreference"
+              control={starterPlanControl}
+              render={({ field }) => (
+                <Select
+                  label="Training split"
+                  value={field.value}
+                  onChange={field.onChange}
+                  error={starterPlanErrors.splitPreference?.message}
+                  options={[
+                    { value: 'full_body', label: 'Full body' },
+                    { value: 'upper_lower', label: 'Upper / Lower' },
+                    { value: 'push_pull_legs', label: 'Push / Pull / Legs' },
+                    { value: 'bro_split', label: 'Bro split' },
+                  ]}
+                />
+              )}
+            />
+            <Controller
+              name="sessionLengthMinutes"
+              control={starterPlanControl}
+              render={({ field }) => (
+                <Select
+                  label="Session length"
+                  value={String(field.value ?? '')}
+                  onChange={(value) => field.onChange(Number(value))}
+                  error={starterPlanErrors.sessionLengthMinutes?.message}
+                  options={[
+                    { value: '30', label: '30 minutes' },
+                    { value: '45', label: '45 minutes' },
+                    { value: '60', label: '60 minutes' },
+                    { value: '75', label: '75 minutes' },
+                    { value: '90', label: '90 minutes' },
+                  ]}
+                />
+              )}
+            />
+            <Controller
+              name="equipment"
+              control={starterPlanControl}
+              render={({ field }) => (
+                <Select
+                  label="Equipment"
+                  value={field.value}
+                  onChange={field.onChange}
+                  error={starterPlanErrors.equipment?.message}
+                  options={[
+                    { value: 'full_gym', label: 'Full gym' },
+                    { value: 'barbell', label: 'Barbell focused' },
+                    { value: 'dumbbells', label: 'Dumbbells' },
+                    { value: 'home_gym', label: 'Home gym' },
+                    { value: 'bodyweight', label: 'Bodyweight' },
+                  ]}
+                />
+              )}
+            />
+          </div>
           <Controller
             name="startDate"
             control={starterPlanControl}

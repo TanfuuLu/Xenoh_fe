@@ -47,6 +47,8 @@ export interface CreateAiStarterPlanRequest {
   goal: string
   experience: string
   daysPerWeek: number
+  splitPreference: string
+  sessionLengthMinutes: number
   equipment: string
   startDate: string
   endDate: string

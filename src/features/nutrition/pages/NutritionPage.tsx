@@ -4,8 +4,6 @@ import { Link, useParams } from 'react-router'
 import { format, subDays } from 'date-fns'
 import { Activity, ChevronLeft, Flame, LineChart as LineChartIcon, Scale, Sparkles, Target, TrendingUp, Utensils } from 'lucide-react'
 import {
-  Bar,
-  BarChart,
   CartesianGrid,
   Cell,
   Line,
@@ -402,23 +400,45 @@ function NutritionHistoryPanel({
           </div>
 
           <div className="grid gap-4 lg:grid-cols-[1fr_220px]">
-            <div className="h-56">
+            <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
+                <LineChart data={chartData} margin={{ top: 12, right: 16, bottom: 0, left: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border-1)" vertical={false} />
                   <XAxis dataKey="date" tick={{ fill: 'var(--fg-3)', fontSize: 12 }} />
-                  <YAxis tick={{ fill: 'var(--fg-3)', fontSize: 12 }} width={36} />
+                  <YAxis tick={{ fill: 'var(--fg-3)', fontSize: 12 }} width={40} />
                   <Tooltip
                     contentStyle={{ background: 'var(--bg-2)', border: '1px solid var(--border-1)', borderRadius: 8 }}
+                    cursor={{ stroke: 'var(--fg-3)', strokeDasharray: '4 4' }}
                     formatter={(value, name) => [
                       `${value} g`,
                       name === 'proteinG' ? tn.proteinShort : name === 'carbsG' ? tn.carbsShort : tn.fatShort,
                     ]}
                   />
-                  <Bar dataKey="proteinG" fill="var(--color-primary)" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="carbsG" fill="var(--xn-success)" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="fatG" fill="var(--xn-warning)" radius={[4, 4, 0, 0]} />
-                </BarChart>
+                  <Line
+                    type="monotone"
+                    dataKey="proteinG"
+                    stroke="var(--color-primary)"
+                    strokeWidth={3}
+                    dot={{ r: 3, strokeWidth: 2, fill: 'var(--bg-1)' }}
+                    activeDot={{ r: 6 }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="carbsG"
+                    stroke="var(--xn-success)"
+                    strokeWidth={3}
+                    dot={{ r: 3, strokeWidth: 2, fill: 'var(--bg-1)' }}
+                    activeDot={{ r: 6 }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="fatG"
+                    stroke="var(--xn-warning)"
+                    strokeWidth={3}
+                    dot={{ r: 3, strokeWidth: 2, fill: 'var(--bg-1)' }}
+                    activeDot={{ r: 6 }}
+                  />
+                </LineChart>
               </ResponsiveContainer>
             </div>
             {macroAverage && (

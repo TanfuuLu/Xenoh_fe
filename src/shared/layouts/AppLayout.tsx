@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, ClipboardList, User, Users,
   UserCheck, Menu, X, LogOut, ChevronDown,
-  PanelLeftClose, PanelLeftOpen, ChartNoAxesCombined, TrendingUp,
+  PanelLeftClose, PanelLeftOpen, TrendingUp,
   LockKeyhole, Lock, BookOpen, CreditCard,
   Shield, Utensils, Ban,
 } from 'lucide-react'
@@ -51,7 +51,6 @@ export function AppLayout() {
     { to: '/dashboard',       icon: LayoutDashboard,    label: tn.dashboard,        color: '#6366f1' },
     { to: '/plans',           icon: ClipboardList,      label: tn.myPlans,          color: '#f97316' },
     { to: '/exercise-library', icon: BookOpen,          label: exerciseLibraryLabel, color: '#06b6d4' },
-    { to: '/exercise-tracking', icon: ChartNoAxesCombined, label: tn.exerciseTracking, color: '#22c55e' },
     { to: '/progress',        icon: TrendingUp,         label: tn.progress,         color: '#f59e0b' },
     { to: '/nutrition',       icon: Utensils,           label: 'Nutrition',         color: '#ec4899' },
     { to: '/coach/clients',   icon: UserCheck,          label: tn.clients,          color: '#8b5cf6' },
@@ -92,7 +91,7 @@ export function AppLayout() {
   }
 
   function handleNavClick(to: string) {
-    if (to === '/exercise-tracking') {
+    if (to === '/exercise-library') {
       void queryClient.invalidateQueries({ queryKey: exerciseTrackingKeys.all })
     }
   }
