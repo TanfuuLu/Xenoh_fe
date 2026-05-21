@@ -278,9 +278,9 @@ body {
 }
 .xn-main  { display: flex; flex-direction: column; min-width: 0; }
 .xn-page-container {
-  width: auto;
-  max-width: none;
-  margin: 20px 24px 32px;
+  width: 100%;
+  max-width: 1170px;
+  margin: 20px auto 32px;
   padding: 20px 24px 32px;
   background: var(--bg-1);
 }
@@ -378,7 +378,7 @@ body {
   backdrop-filter: blur(14px);
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 50;
 }
 
 /* Cards */
@@ -492,8 +492,8 @@ body {
   }
 
   .xn-page-container {
-    max-width: none;
-    margin: 12px;
+    max-width: 1170px;
+    margin: 12px auto;
     padding: 14px 12px 24px;
     border-radius: 14px;
   }

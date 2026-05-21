@@ -3,7 +3,7 @@ import { api } from '@/shared/api/axios'
 import { ENDPOINTS } from '@/shared/api/endpoints'
 import { coachKeys } from '@/features/coaches/api/useCoaches'
 import { useLangStore } from '@/shared/i18n'
-import type { ClientResponse, CoachClientAiBriefResponse, CoachClientDashboardResponse, CoachRelationshipResponse, RequestCoachRequest, RequestRenewalRequest } from '../types'
+import type { ClientResponse, CoachClientAiBriefResponse, CoachClientDashboardResponse, CoachInviteCodeResponse, CoachRelationshipResponse, ConnectByCodeRequest, GenerateInviteCodeRequest, RequestCoachRequest, RequestRenewalRequest } from '../types'
 
 export const coachClientKeys = {
   pendingRequests: ['coach-client', 'pending'] as const,
@@ -11,6 +11,7 @@ export const coachClientKeys = {
   myClients: ['coach-client', 'my-clients'] as const,
   dashboard: ['coach-client', 'dashboard'] as const,
   aiBrief: (clientId: string, lang: 'en' | 'vi') => ['coach-client', clientId, 'ai-brief', lang] as const,
+  inviteCodes: ['coach-client', 'invite-codes'] as const,
 }
 
 export function usePendingRequests() {
@@ -36,6 +37,7 @@ export function useMyCoach(enabled = true) {
     // Poll every 8s while waiting for coach to accept so client sees update without manual refresh
     refetchInterval: (query) => {
       const data = query.state.data
+      if (data === null) return 10_000
       if (
         data?.status === 'Pending' ||
         data?.status === 'PendingTermination' ||
@@ -75,6 +77,9 @@ export function useMyClients(enabled = true) {
     queryFn: () =>
       api.get<ClientResponse[]>(ENDPOINTS.coachClient.myClients).then((r) => r.data),
     enabled,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+    refetchInterval: 15_000,
   })
 }
 
@@ -200,6 +205,56 @@ export function useRejectRenewal() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: coachClientKeys.myCoach })
       void qc.invalidateQueries({ queryKey: coachClientKeys.myClients })
+    },
+  })
+}
+
+// ─── Invite Code hooks ───────────────────────────────────────────────────────
+
+export function useMyInviteCodes(enabled = true) {
+  return useQuery({
+    queryKey: coachClientKeys.inviteCodes,
+    queryFn: () =>
+      api
+        .get<CoachInviteCodeResponse[]>(ENDPOINTS.coachClient.inviteCodes)
+        .then((r) => r.data),
+    enabled,
+  })
+}
+
+export function useGenerateInviteCode() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: GenerateInviteCodeRequest) =>
+      api
+        .post<CoachInviteCodeResponse>(ENDPOINTS.coachClient.inviteCodes, data)
+        .then((r) => r.data),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: coachClientKeys.inviteCodes })
+    },
+  })
+}
+
+export function useDeleteInviteCode() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) =>
+      api.delete(ENDPOINTS.coachClient.deleteInviteCode(id)),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: coachClientKeys.inviteCodes })
+    },
+  })
+}
+
+export function useConnectByCode() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: ConnectByCodeRequest) =>
+      api
+        .post<CoachRelationshipResponse>(ENDPOINTS.coachClient.connectByCode, data)
+        .then((r) => r.data),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: coachClientKeys.myCoach })
     },
   })
 }

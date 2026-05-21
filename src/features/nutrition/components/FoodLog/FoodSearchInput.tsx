@@ -4,7 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { Search, Sparkles } from 'lucide-react'
 import { cn } from '@/shared/utils/cn'
 import { scaleIn } from '@/shared/utils/motion'
-import { useT } from '@/shared/i18n'
+import { useT, useLangStore } from '@/shared/i18n'
 import { useFoodSearch, useResolveFood } from '../../api/useFoodLog'
 import type { FoodItemResponse } from '../../types'
 
@@ -14,6 +14,7 @@ interface Props {
 
 export function FoodSearchInput({ onSelect }: Props) {
   const t = useT()
+  const lang = useLangStore((s) => s.lang)
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
   const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({})
@@ -81,9 +82,10 @@ export function FoodSearchInput({ onSelect }: Props) {
                 className="w-full flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors hover:bg-white/6 select-none cursor-pointer"
                 style={{ color: 'var(--fg-1)' }}
               >
-                <span className="font-medium truncate">{food.nameVi}</span>
+                <span className="font-medium truncate">{lang === 'vi' ? food.nameVi : food.nameEn}</span>
                 <span className="ml-3 shrink-0 text-xs" style={{ color: 'var(--fg-3)' }}>
-                  {food.nameEn && <span className="mr-2">{food.nameEn}</span>}
+                  {lang === 'vi' && food.nameEn && <span className="mr-2">{food.nameEn}</span>}
+                  {lang === 'en' && food.nameVi && <span className="mr-2">{food.nameVi}</span>}
                   {Math.round(food.caloriesPer100g)} kcal/100g
                 </span>
               </button>

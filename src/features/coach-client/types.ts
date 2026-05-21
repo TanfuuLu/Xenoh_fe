@@ -92,3 +92,23 @@ export interface CoachClientAiBriefResponse {
   opportunities: string[]
   suggestedMessage: string
 }
+
+export interface CoachInviteCodeResponse {
+  id: string
+  code: string
+  coachingStartDate: string
+  coachingEndDate: string
+  isUsed: boolean
+  usedByClientId: string | null
+  usedAt: string | null
+  createdAt: string
+}
+
+export interface GenerateInviteCodeRequest {
+  coachingStartDate: string
+  coachingEndDate: string
+}
+
+export interface ConnectByCodeRequest {
+  code: string
+}

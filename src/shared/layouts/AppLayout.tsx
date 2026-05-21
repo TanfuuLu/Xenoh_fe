@@ -7,7 +7,7 @@ import {
   UserCheck, Menu, X, LogOut, ChevronDown,
   PanelLeftClose, PanelLeftOpen, TrendingUp,
   LockKeyhole, Lock, BookOpen, CreditCard,
-  Shield, Utensils, Ban,
+  Shield, Utensils, Ban, KeyRound,
 } from 'lucide-react'
 import { cn } from '@/shared/utils/cn'
 import { Link as RouterLink } from 'react-router'
@@ -19,6 +19,7 @@ import { ThemeToggle } from '@/shared/components/ThemeToggle'
 import { UserAvatar } from '@/shared/components/UserAvatar'
 import { NotificationBell } from '@/features/notifications/components/NotificationBell'
 import { useNotificationHub } from '@/features/notifications/hooks/useNotificationHub'
+import { useChatUnreadSync } from '@/features/chat'
 import { exerciseTrackingKeys } from '@/features/exercise-tracking'
 import { useMyCoach } from '@/features/coach-client'
 
@@ -42,21 +43,24 @@ export function AppLayout() {
   const changePasswordLabel = (tn as typeof tn & { changePassword?: string }).changePassword ?? 'Change password'
   const exerciseLibraryLabel = (tn as typeof tn & { exerciseLibrary?: string }).exerciseLibrary ?? 'Exercise Library'
   const isWeekDetailPage = /^\/plans\/[^/]+\/weeks\/[^/]+$/.test(location.pathname)
+  const hasChatSidebar =
+    (isCoach && location.pathname === '/coach/clients') ||
+    (isIndividual && location.pathname.startsWith('/coaches'))
 
   useNotificationHub()
+  useChatUnreadSync()
   const { data: myCoach } = useMyCoach(isIndividual)
   const coachNavLabel = myCoach ? t.coaches.coachTitle : tn.findCoach
 
   const individualNav = [
-    { to: '/dashboard',       icon: LayoutDashboard,    label: tn.dashboard,        color: '#6366f1' },
-    { to: '/plans',           icon: ClipboardList,      label: tn.myPlans,          color: '#f97316' },
-    { to: '/exercise-library', icon: BookOpen,          label: exerciseLibraryLabel, color: '#06b6d4' },
-    { to: '/progress',        icon: TrendingUp,         label: tn.progress,         color: '#f59e0b' },
-    { to: '/nutrition',       icon: Utensils,           label: 'Nutrition',         color: '#ec4899' },
-    { to: '/coach/clients',   icon: UserCheck,          label: tn.clients,          color: '#8b5cf6' },
-    { to: '/coaches',         icon: Users,              label: coachNavLabel,       color: '#14b8a6' },
-    { to: '/profile',         icon: User,               label: tn.profile,          color: '#94a3b8' },
-    { to: '/subscription',    icon: CreditCard,         label: 'Subscription',      color: '#eab308' },
+    { to: '/dashboard',         icon: LayoutDashboard,   label: tn.dashboard,         color: '#6366f1' },
+    { to: '/plans',             icon: ClipboardList,     label: tn.myPlans,           color: '#f97316' },
+    { to: '/exercise-library',  icon: BookOpen,          label: exerciseLibraryLabel,  color: '#06b6d4' },
+    { to: '/progress',          icon: TrendingUp,        label: tn.progress,          color: '#f59e0b' },
+    { to: '/nutrition',         icon: Utensils,          label: 'Nutrition',          color: '#ec4899' },
+    { to: '/coaches',           icon: Users,             label: coachNavLabel,        color: '#14b8a6' },
+    ...(!myCoach ? [{ to: '/enter-coach-code', icon: KeyRound, label: 'Mã Coach', color: '#8b5cf6' }] : []),
+    { to: '/subscription',      icon: CreditCard,        label: 'Subscription',       color: '#eab308' },
   ]
 
   const coachNav = [
@@ -67,7 +71,6 @@ export function AppLayout() {
     { to: '/nutrition',       icon: Utensils,          label: 'Nutrition',         color: '#ec4899' },
     { to: '/coach/clients',   icon: UserCheck,         label: tn.clients,          color: '#8b5cf6' },
     { to: '/coaches',         icon: Users,             label: tn.findCoach,        color: '#14b8a6' },
-    { to: '/profile',         icon: User,              label: tn.profile,          color: '#94a3b8' },
     { to: '/subscription',    icon: CreditCard,        label: 'Subscription',      color: '#eab308' },
   ]
 
@@ -77,13 +80,14 @@ export function AppLayout() {
     { to: '/admin/users',     icon: Users,           label: 'Users',     color: '#22c55e' },
     { to: '/admin/plans',     icon: ClipboardList,   label: 'Plans',     color: '#06b6d4' },
     { to: '/admin/payments',  icon: CreditCard,      label: 'Payments',  color: '#eab308' },
-    { to: '/profile',         icon: User,            label: tn.profile,  color: '#94a3b8' },
   ]
 
   const navItems = isAdmin ? adminNav : isCoach ? coachNav : individualNav
 
-  // TEMP TEST BYPASS: do not show coach features as locked while validating features.
-  const lockedCoachNavItems: LockedNavItem[] = []
+  // Individual users see Coach nav items as locked teasers — clicking navigates to the subscription page.
+  const lockedCoachNavItems: LockedNavItem[] = isIndividual
+    ? [{ icon: UserCheck, label: tn.clients, to: '/subscription?reason=coach-required' }]
+    : []
 
   function handleLogout() {
     setUserMenuOpen(false)
@@ -170,7 +174,7 @@ export function AppLayout() {
       </AnimatePresence>
 
       {/* ── Main column ───────────────────────────────────────────────── */}
-      <div className="xn-main min-w-0">
+      <div className="xn-main min-w-0" style={hasChatSidebar ? { paddingRight: 'calc(22rem + 16px)' } : undefined}>
 
         {/* Top bar */}
         <header className="xn-topbar">
@@ -297,7 +301,7 @@ export function AppLayout() {
 
 interface NavItem {
   to: string
-  icon: React.ComponentType<{ size?: number }>
+  icon: React.ComponentType<{ size?: number; style?: React.CSSProperties }>
   label: string
   color?: string
 }
@@ -305,6 +309,8 @@ interface NavItem {
 interface LockedNavItem {
   icon: React.ComponentType<{ size?: number }>
   label: string
+  /** Destination when clicked — defaults to /subscription */
+  to?: string
 }
 
 interface SidebarInnerProps {
@@ -379,10 +385,10 @@ function SidebarInner({
             {!mini && label}
           </NavLink>
         ))}
-        {lockedNavItems.map(({ icon: Icon, label }) => (
+        {lockedNavItems.map(({ icon: Icon, label, to = '/subscription' }) => (
           <RouterLink
             key={label}
-            to="/subscription"
+            to={to}
             title={mini ? `${label} — Upgrade to ProCoach` : undefined}
             className="xn-nav-item"
             style={{

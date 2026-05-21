@@ -28,7 +28,7 @@ export function UpgradePrompt({ feature, requiredTier }: Props) {
       </div>
       <div className="flex flex-col gap-1">
         <p className="font-semibold" style={{ color: 'var(--fg-1)' }}>
-          {ts.upgradeFeatureProTitle.replace('{feature}', feature)}
+          {(() => { const s = ts.upgradeFeatureProTitle.replace('{feature}', feature); return s.charAt(0).toUpperCase() + s.slice(1) })()}
         </p>
         <p className="text-sm" style={{ color: 'var(--fg-3)' }}>
           {ts.upgradeUnlockHint.replace('{tier}', TIER_LABELS[requiredTier])}

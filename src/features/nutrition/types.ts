@@ -71,7 +71,8 @@ export type FoodItemSource = 'Seed' | 'Ai' | 'UserCustom'
 
 export interface FoodServingResponse {
   id: string
-  label: string
+  labelVi: string
+  labelEn: string | null
   grams: number
 }
 
@@ -92,7 +93,8 @@ export interface FoodLogItemResponse {
   nameVi: string
   nameEn: string
   grams: number
-  servingLabel: string | null
+  servingLabelVi: string | null
+  servingLabelEn: string | null
   servingCount: number | null
   computedCalories: number
   computedProteinG: number

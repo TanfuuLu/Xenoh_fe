@@ -53,6 +53,9 @@ export const ENDPOINTS = {
     clientPowerlifting: (clientId: string) => `/api/coach-client/clients/${clientId}/powerlifting`,
     aiBrief: (clientId: string, lang: 'en' | 'vi') =>
       `/api/coach-client/clients/${clientId}/ai-brief?lang=${lang}`,
+    inviteCodes: '/api/coach-client/invite-codes',
+    deleteInviteCode: (id: string) => `/api/coach-client/invite-codes/${id}`,
+    connectByCode: '/api/coach-client/connect-by-code',
   },
 
   // Dashboard
@@ -120,11 +123,6 @@ export const ENDPOINTS = {
     customForClient: (clientId: string) => `/api/exercise-templates/custom/for-client/${clientId}`,
     lastPerformance: (exerciseTemplateId: string, dailyWorkoutId: string) =>
       `/api/exercise-templates/${exerciseTemplateId}/last-performance?dailyWorkoutId=${dailyWorkoutId}`,
-  },
-
-  // Leaderboard
-  leaderboard: {
-    big3: '/api/leaderboard/big3',
   },
 
   // Plan Comments
@@ -202,5 +200,12 @@ export const ENDPOINTS = {
     payments: '/api/admin/payments',
     paymentsSummary: '/api/admin/payments/summary',
     subscriptions: '/api/admin/subscriptions',
+  },
+
+  // Messages (Chat)
+  messages: {
+    byRelationship: (id: string) => `/api/messages/relationships/${id}`,
+    markRead: (id: string) => `/api/messages/relationships/${id}/read`,
+    unreadCounts: '/api/messages/unread-counts',
   },
 } as const

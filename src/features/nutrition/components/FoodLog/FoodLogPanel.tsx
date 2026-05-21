@@ -6,7 +6,7 @@ import { format } from 'date-fns'
 import { useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/shared/components/Button'
 import { Spinner } from '@/shared/components/Spinner'
-import { useT } from '@/shared/i18n'
+import { useT, useLangStore } from '@/shared/i18n'
 import { useMidnightRefresh } from '@/shared/hooks/useMidnightRefresh'
 import { useDayFoodLogs, useCreateFoodLog, foodLogKeys } from '../../api/useFoodLog'
 import { nutritionKeys } from '../../api/useNutrition'
@@ -47,6 +47,7 @@ export function FoodLogPanel({ date }: Props) {
   const [showCustomDialog, setShowCustomDialog] = useState(false)
 
   const t = useT()
+  const lang = useLangStore((s) => s.lang)
   const searchWrapperRef = useRef<HTMLDivElement>(null)
   const [panelPos, setPanelPos] = useState<{ top: number; left: number; width: number } | null>(null)
 
@@ -118,7 +119,7 @@ export function FoodLogPanel({ date }: Props) {
             >
               <div>
                 <p className="text-sm font-semibold" style={{ color: 'var(--fg-1)' }}>
-                  {selectedFood.nameVi}
+                  {lang === 'vi' ? selectedFood.nameVi : selectedFood.nameEn}
                 </p>
                 <p className="text-xs" style={{ color: 'var(--fg-3)' }}>
                   {selectedFood.caloriesPer100g} kcal · P {selectedFood.proteinPer100g}g · C{' '}

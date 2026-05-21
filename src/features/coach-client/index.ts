@@ -13,6 +13,10 @@ export {
   useMyClients,
   useCoachDashboard,
   useCoachClientAiBrief,
+  useMyInviteCodes,
+  useGenerateInviteCode,
+  useDeleteInviteCode,
+  useConnectByCode,
 } from './api/useCoachClient'
 export type {
   CoachRelationshipResponse,

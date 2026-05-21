@@ -37,6 +37,7 @@ const AdminPlansPage = lazy(() => import('@/features/admin/pages/AdminPlansPage'
 const AdminPaymentsPage = lazy(() => import('@/features/admin/pages/AdminPaymentsPage').then((m) => ({ default: m.AdminPaymentsPage })))
 const AdminReportsPage = lazy(() => import('@/features/reports/pages/AdminReportsPage').then((m) => ({ default: m.AdminReportsPage })))
 const BlocklistPage = lazy(() => import('@/features/blocks/pages/BlocklistPage').then((m) => ({ default: m.BlocklistPage })))
+const EnterCoachCodePage = lazy(() => import('@/features/coach-client/pages/EnterCoachCodePage').then((m) => ({ default: m.EnterCoachCodePage })))
 
 function SuspenseFallback() {
   return (
@@ -152,10 +153,6 @@ export const router = createBrowserRouter([
             element: <Suspended><InsightsPage /></Suspended>,
           },
           {
-            path: 'leaderboard',
-            element: <Navigate to="/dashboard" replace />,
-          },
-          {
             path: 'subscription',
             element: <Suspended><SubscriptionPage /></Suspended>,
           },
@@ -166,6 +163,10 @@ export const router = createBrowserRouter([
           {
             path: 'coaches/:coachId',
             element: <Suspended><CoachProfilePage /></Suspended>,
+          },
+          {
+            path: 'enter-coach-code',
+            element: <Suspended><EnterCoachCodePage /></Suspended>,
           },
           {
             element: <RoleRoute role="Coach" redirectTo="/subscription?reason=coach-required" />,
@@ -185,10 +186,6 @@ export const router = createBrowserRouter([
               {
                 path: 'coach/clients/:clientId/nutrition',
                 element: <Suspended><NutritionPage /></Suspended>,
-              },
-              {
-                path: 'coach/plans',
-                element: <Navigate to="/plans" replace />,
               },
             ],
           },

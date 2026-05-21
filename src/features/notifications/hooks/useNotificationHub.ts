@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import type { InfiniteData } from '@tanstack/react-query'
 import { useQueryClient } from '@tanstack/react-query'
 import * as signalR from '@microsoft/signalr'
 import { toast } from 'sonner'
@@ -6,6 +7,9 @@ import { useAuthStore } from '@/features/auth/store/authStore'
 import { planCommentKeys } from '@/features/comments/api/usePlanComments'
 import { weekCommentKeys } from '@/features/comments/api/useWeekComments'
 import type { CommentResponse } from '@/features/comments/types'
+import { messageKeys } from '@/features/chat/api/useMessages'
+import { useChatStore } from '@/features/chat/store/chatStore'
+import type { MessagePageResponse, MessageResponse } from '@/features/chat/types'
 import { useNotificationStore } from '../store/notificationStore'
 import type { NotificationResponse } from '../types'
 
@@ -92,6 +96,29 @@ export function useNotificationHub() {
         weekCommentKeys.byWeek(payload.weekId),
         (old = []) => old.filter((comment) => comment.id !== payload.commentId),
       )
+    })
+
+    connection.on('ReceiveMessage', (payload: MessageResponse) => {
+      queryClient.setQueryData<InfiniteData<MessagePageResponse>>(
+        messageKeys.byRelationship(payload.relationshipId),
+        (old) => {
+          if (!old) return old
+          const lastPage = old.pages[old.pages.length - 1]
+          if (lastPage.items.some((m) => m.id === payload.id)) return old
+          return {
+            ...old,
+            pages: [
+              ...old.pages.slice(0, -1),
+              { ...lastPage, items: [...lastPage.items, payload] },
+            ],
+          }
+        },
+      )
+
+      const currentUserId = useAuthStore.getState().user?.id
+      if (payload.senderId !== currentUserId) {
+        useChatStore.getState().incrementUnread(payload.relationshipId)
+      }
     })
 
     connection.start().catch(() => {})

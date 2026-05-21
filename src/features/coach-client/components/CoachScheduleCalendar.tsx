@@ -10,7 +10,8 @@ import {
   isBefore,
   isAfter,
 } from 'date-fns'
-import { slideUp } from '@/shared/utils/motion'
+import { motionProps } from '@/shared/utils/motion'
+import { MonthDetailModal } from './MonthDetailModal'
 import type { ClientResponse, CoachRelationshipResponse } from '../types'
 
 const MONTHS = 6
@@ -27,6 +28,11 @@ interface Props {
   maxClients: number
 }
 
+interface ModalState {
+  initialMonth: Date
+  clientsWithColors: { client: ClientResponse; color: string }[]
+}
+
 function parseYMD(str: string): Date {
   const [y, m, d] = str.split('-').map(Number)
   return new Date(y, m - 1, d)
@@ -36,6 +42,21 @@ export function CoachScheduleCalendar({ clients, pendingRequests, maxClients }: 
   const shouldReduce = useReducedMotion()
   const today = new Date()
   const [windowStart, setWindowStart] = useState(() => startOfMonth(addMonths(today, -1)))
+  const [modal, setModal] = useState<ModalState | null>(null)
+
+  const clientsWithColors = clients.map((client, idx) => ({
+    client,
+    color: BAR_COLORS[idx % BAR_COLORS.length],
+  }))
+
+  function relevantMonth(client: ClientResponse): Date {
+    const start = parseYMD(client.startDate)
+    const end = client.endDate ? parseYMD(client.endDate) : null
+    if (!isBefore(today, start) && (!end || !isAfter(today, end))) return startOfMonth(today)
+    if (isAfter(start, today)) return startOfMonth(start)
+    if (end) return startOfMonth(end)
+    return startOfMonth(today)
+  }
 
   const windowEnd = addMonths(windowStart, MONTHS)
   const totalWindowDays = differenceInCalendarDays(windowEnd, windowStart)
@@ -73,9 +94,10 @@ export function CoachScheduleCalendar({ clients, pendingRequests, maxClients }: 
   const todayPct = toPercent(today)
   const showTodayMarker = todayPct > 0 && todayPct < 100
 
-  const animProps = shouldReduce ? {} : slideUp
+  const animProps = shouldReduce ? {} : motionProps.slideUp
 
   return (
+    <>
     <motion.div
       {...animProps}
       className="overflow-hidden rounded-2xl"
@@ -119,16 +141,19 @@ export function CoachScheduleCalendar({ clients, pendingRequests, maxClients }: 
       <div className="flex" style={{ borderBottom: '1px solid var(--border-1)' }}>
         <div style={{ width: NAME_W, flexShrink: 0 }} />
         {months.map((m, i) => (
-          <div
+          <button
             key={i}
-            className="flex-1 py-1.5 text-center text-xs font-medium text-muted"
-            style={{ borderLeft: '1px solid var(--border-1)' }}
+            type="button"
+            onClick={() => setModal({ initialMonth: m, clientsWithColors })}
+            className="flex-1 py-1.5 text-center text-xs font-medium text-muted transition-colors hover:text-text hover:bg-[var(--bg-3)]"
+            style={{ borderLeft: '1px solid var(--border-1)', background: 'none', cursor: 'pointer' }}
+            title={`View ${format(m, 'MMMM yyyy')} detail`}
           >
             {format(m, 'MMM')}
             {m.getFullYear() !== today.getFullYear() && (
               <span className="ml-0.5 text-[10px]">{m.getFullYear()}</span>
             )}
-          </div>
+          </button>
         ))}
       </div>
 
@@ -137,9 +162,8 @@ export function CoachScheduleCalendar({ clients, pendingRequests, maxClients }: 
         <div className="px-4 py-6 text-center text-xs text-muted">No clients in this period</div>
       ) : (
         <>
-          {clients.map((client, idx) => {
+          {clientsWithColors.map(({ client, color }) => {
             const bar = barBounds(client.startDate, client.endDate)
-            const color = BAR_COLORS[idx % BAR_COLORS.length]
 
             return (
               <div
@@ -172,8 +196,8 @@ export function CoachScheduleCalendar({ clients, pendingRequests, maxClients }: 
                   )}
                   {bar && (
                     <div
-                      className="absolute rounded"
-                      title={`${client.fullName}: ${client.startDate} → ${client.endDate ?? '∞'}`}
+                      className="absolute rounded transition-opacity hover:opacity-75"
+                      onClick={() => setModal({ initialMonth: relevantMonth(client), clientsWithColors: [{ client, color }] })}
                       style={{
                         left: `${bar.leftPct}%`,
                         width: `${bar.widthPct}%`,
@@ -181,6 +205,7 @@ export function CoachScheduleCalendar({ clients, pendingRequests, maxClients }: 
                         height: '50%',
                         background: `${color}bb`,
                         border: `1px solid ${color}`,
+                        cursor: 'pointer',
                       }}
                     />
                   )}
@@ -291,5 +316,14 @@ export function CoachScheduleCalendar({ clients, pendingRequests, maxClients }: 
         })}
       </div>
     </motion.div>
+
+    {modal && (
+      <MonthDetailModal
+        initialMonth={modal.initialMonth}
+        clientsWithColors={modal.clientsWithColors}
+        onClose={() => setModal(null)}
+      />
+    )}
+  </>
   )
 }

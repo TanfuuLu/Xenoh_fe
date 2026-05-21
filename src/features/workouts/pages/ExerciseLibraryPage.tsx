@@ -168,48 +168,56 @@ export function ExerciseLibraryPage() {
       {ConfirmDialog}
 
       <section
-        className="relative z-20 overflow-visible rounded-3xl border"
+        className="relative overflow-hidden rounded-3xl"
         style={{
-          borderColor: 'var(--xn-clay-300)',
-          background: 'linear-gradient(135deg, var(--xn-clay-200), var(--bg-2) 58%, var(--xn-sage-100))',
+          border: '1px solid var(--xn-clay-300)',
+          background: 'linear-gradient(135deg, var(--xn-clay-200) 0%, var(--bg-2) 55%, var(--xn-sage-100) 100%)',
           boxShadow: 'var(--sh-lg)',
         }}
       >
-        <div className="flex flex-col gap-6 p-6 md:flex-row md:items-end md:justify-between md:p-8">
-          <div>
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold" style={{ background: 'rgba(255,250,243,0.7)', color: 'var(--xn-clay-800)' }}>
-              <BookOpen size={14} />
+        {/* Decorative blobs */}
+        <div className="pointer-events-none absolute -right-12 -top-12 h-56 w-56 rounded-full opacity-25" style={{ background: 'var(--xn-sage-200)', filter: 'blur(32px)' }} />
+        <div className="pointer-events-none absolute -bottom-8 left-1/3 h-32 w-32 rounded-full opacity-15" style={{ background: 'var(--xn-clay-400)', filter: 'blur(24px)' }} />
+
+        <div className="relative flex flex-col gap-6 p-7 md:flex-row md:items-center md:justify-between md:p-10">
+          {/* Left — text */}
+          <div className="max-w-xl">
+            <div className="mb-4 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold" style={{ background: 'rgba(255,250,243,0.75)', color: 'var(--xn-clay-800)', backdropFilter: 'blur(8px)', border: '1px solid var(--xn-clay-300)' }}>
+              <BookOpen size={12} />
               {tx.badge}
             </div>
             <div className="flex items-start gap-2">
-              <h1 className="font-display text-4xl font-bold leading-none text-text md:text-5xl">
+              <h1 className="font-display text-4xl font-black leading-[1.05] tracking-tight text-text md:text-5xl">
                 {tx.title}
               </h1>
               <InlineTip placement="exercise-library" />
             </div>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-muted md:text-base">
+            <p className="mt-3 text-sm leading-relaxed text-muted md:text-[15px]">
               {tx.subtitle}
             </p>
           </div>
-          {isActivePro ? (
-            <Button onClick={openCreateModal}>
-              <Plus size={16} /> {tx.createCustom}
-            </Button>
-          ) : (
-            <Button variant="secondary" onClick={() => navigate('/subscription')}>
-              <Lock size={16} /> {tx.createCustom}
-            </Button>
-          )}
+
+          {/* Right — stats + CTA */}
+          <div className="flex flex-shrink-0 flex-col items-start gap-4 md:items-end">
+            <div className="flex gap-3">
+              <HeroStat value={sharedCount} label={tx.sharedExercises} />
+              <HeroStat value={customCount} label={tx.customExercises} accent />
+              <HeroStat value={filteredTemplates.length} label={tx.showing} />
+            </div>
+            {isActivePro ? (
+              <Button onClick={openCreateModal}>
+                <Plus size={15} /> {tx.createCustom}
+              </Button>
+            ) : (
+              <Button variant="secondary" onClick={() => navigate('/subscription')}>
+                <Lock size={15} /> {tx.createCustom}
+              </Button>
+            )}
+          </div>
         </div>
       </section>
 
-      <div className="relative z-0 grid gap-4 md:grid-cols-3">
-        <LibraryStat label={tx.sharedExercises} value={sharedCount.toString()} />
-        <LibraryStat label={tx.customExercises} value={`${customCount}${isActivePro ? '' : '/0'}`} />
-        <LibraryStat label={tx.showing} value={filteredTemplates.length.toString()} />
-      </div>
-
-      <Card>
+      <Card className="mt-2">
         <div className="grid gap-3 lg:grid-cols-[1fr_220px_180px]">
           <div className="relative">
             <Search size={15} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted" />
@@ -367,19 +375,19 @@ export function ExerciseLibraryPage() {
   )
 }
 
-function LibraryStat({ label, value }: { label: string; value: string }) {
+function HeroStat({ value, label, accent }: { value: number | string; label: string; accent?: boolean }) {
   return (
-    <Card
-      className="flex items-center justify-between"
+    <div
+      className="flex min-w-[72px] flex-col items-center rounded-2xl px-4 py-3"
       style={{
-        background: 'var(--bg-2)',
-        borderColor: 'var(--xn-clay-300)',
-        boxShadow: 'var(--sh-md)',
+        background: accent ? 'rgba(255,250,243,0.6)' : 'rgba(255,255,255,0.35)',
+        border: '1px solid var(--xn-clay-300)',
+        backdropFilter: 'blur(8px)',
       }}
     >
-      <p className="text-sm text-muted">{label}</p>
-      <p className="font-display text-3xl font-bold text-text">{value}</p>
-    </Card>
+      <p className="font-display text-2xl font-black leading-none text-text">{value}</p>
+      <p className="mt-1 text-center text-[10px] font-medium leading-tight text-muted">{label}</p>
+    </div>
   )
 }
 

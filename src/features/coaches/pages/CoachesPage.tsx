@@ -11,11 +11,20 @@ import { useT } from '@/shared/i18n'
 import { staggerContainer, slideUp } from '@/shared/utils/motion'
 import { useMyCoach } from '@/features/coach-client'
 import { ConnectCoachModal } from '@/features/coach-client/components/ConnectCoachModal'
+import { RequireTier } from '@/features/billing/components/RequireTier'
 import { InlineTip } from '@/features/tips'
 import { useCoaches } from '../index'
 import { CoachProfileContent } from '../components/CoachProfileContent'
 
 export function CoachesPage() {
+  return (
+    <RequireTier feature="Find a Coach">
+      <CoachesPageContent />
+    </RequireTier>
+  )
+}
+
+function CoachesPageContent() {
   const shouldReduce = useReducedMotion()
   const navigate = useNavigate()
   const [search, setSearch] = useState('')

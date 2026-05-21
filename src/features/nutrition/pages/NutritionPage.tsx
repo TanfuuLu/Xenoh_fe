@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import type React from 'react'
 import { Link, useParams } from 'react-router'
 import { format, subDays } from 'date-fns'
@@ -41,7 +41,6 @@ export function NutritionPage() {
   const tn = t.nutrition
   const { clientId } = useParams()
   const isClientView = Boolean(clientId)
-  const today = format(new Date(), 'yyyy-MM-dd')
   const { data: summary, isLoading } = useNutritionSummary(clientId)
   const updateProfile = useUpdateNutritionProfile(clientId)
 
@@ -94,16 +93,6 @@ export function NutritionPage() {
       notes: summary.todayLog?.notes ?? '',
     })
   }, [summary])
-
-  const remaining = useMemo(() => {
-    if (!summary?.calculation.calorieTarget) return null
-    return {
-      calories: summary.calculation.calorieTarget - readNumber(logForm.calories),
-      proteinG: (summary.calculation.proteinG ?? 0) - readNumber(logForm.proteinG),
-      carbsG: (summary.calculation.carbsG ?? 0) - readNumber(logForm.carbsG),
-      fatG: (summary.calculation.fatG ?? 0) - readNumber(logForm.fatG),
-    }
-  }, [logForm, summary])
 
   function saveProfile() {
     const payload: UpdateNutritionProfileRequest = {
@@ -663,36 +652,6 @@ function NutritionValueDiagrams({
   tn: Record<string, string>
 }) {
   const calc = summary.calculation
-  const macroRows = [
-    {
-      label: tn.caloriesShort,
-      target: calc.calorieTarget,
-      actual: readNumber(logForm.calories),
-      unit: tn.kcal,
-      color: 'var(--xn-clay-800)',
-    },
-    {
-      label: tn.proteinShort,
-      target: calc.proteinG,
-      actual: readNumber(logForm.proteinG),
-      unit: 'g',
-      color: '#6366f1',
-    },
-    {
-      label: tn.carbsShort,
-      target: calc.carbsG,
-      actual: readNumber(logForm.carbsG),
-      unit: 'g',
-      color: '#22c55e',
-    },
-    {
-      label: tn.fatShort,
-      target: calc.fatG,
-      actual: readNumber(logForm.fatG),
-      unit: 'g',
-      color: '#f97316',
-    },
-  ]
   const targetMax = Math.max(calc.bmr ?? 0, calc.tdee ?? 0, calc.calorieTarget ?? 0, 1)
   const energyRows = [
     { label: tn.bmrLabel, value: calc.bmr },
@@ -931,37 +890,6 @@ function CaloriesBar({
   )
 }
 
-
-function MacroCard({
-  label,
-  target,
-  actual,
-  remaining,
-  unit,
-  missingLabel,
-  loggedLabel,
-  remainingLabel,
-}: {
-  label: string
-  target: number | null
-  actual: number
-  remaining?: number
-  unit: string
-  missingLabel: string
-  loggedLabel: string
-  remainingLabel: string
-}) {
-  return (
-    <div className="rounded-lg border border-border p-4">
-      <p className="text-sm font-semibold text-text">{label}</p>
-      <p className="mt-1 text-xl font-bold text-text">{target == null ? missingLabel : `${target} ${unit}`}</p>
-      <p className="mt-2 text-xs text-muted">{loggedLabel}: {actual} {unit}</p>
-      {remaining != null && (
-        <p className="mt-1 text-xs text-muted">{remainingLabel}: {Math.round(remaining)} {unit}</p>
-      )}
-    </div>
-  )
-}
 
 function toField(value: number | null | undefined) {
   return value == null ? '' : String(value)

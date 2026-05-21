@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useNavigate } from 'react-router'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
-import { Plus, ChevronRight, Zap, ZapOff, Trash2, BarChart2, Sparkles } from 'lucide-react'
+import { Plus, ChevronRight, Zap, ZapOff, Trash2, BarChart2, Sparkles, Lock } from 'lucide-react'
 import { format } from 'date-fns'
 import { Card } from '@/shared/components/Card'
 import { Button } from '@/shared/components/Button'
@@ -262,16 +262,28 @@ export function PlansPage() {
                 {selfPlans.length}/{planLimitLabel} plan{selfPlans.length !== 1 ? 's' : ''}
               </p>
             </div>
-            {canCreatePersonalPlan && (
-              <div className="flex gap-1.5">
+            <div className="flex gap-1.5">
+              {hasUnlimitedPlans ? (
                 <Button onClick={() => setShowStarterPlan(true)} size="sm" variant="secondary" className="gap-1.5">
                   <Sparkles size={14} /> AI starter
                 </Button>
+              ) : (
+                <Button
+                  onClick={() => navigate('/subscription')}
+                  size="sm"
+                  variant="secondary"
+                  className="gap-1.5 opacity-60"
+                  title="Upgrade to Pro to use AI Starter"
+                >
+                  <Lock size={14} /> AI starter
+                </Button>
+              )}
+              {canCreatePersonalPlan && (
                 <Button onClick={() => setShowCreate(true)} size="sm">
                   <Plus size={14} /> {tp.createPlan}
                 </Button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           <motion.div

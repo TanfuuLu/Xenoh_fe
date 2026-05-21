@@ -44,6 +44,7 @@ import { RenewalModal } from '@/features/coach-client/components/RenewalModal'
 import { ConnectCoachModal } from '@/features/coach-client/components/ConnectCoachModal'
 import { useCreateUserReport } from '@/features/reports'
 import { slideUp, staggerContainer } from '@/shared/utils/motion'
+import { ClientChatSidebar } from '@/features/chat'
 import {
   useCoachProfile,
   useCreateCoachRating,
@@ -154,10 +155,19 @@ export function CoachProfileContent({
     return tco.pending
   }
 
+  const isActiveChatVisible = activeRelationship?.status === 'Active'
+
   return (
     <>
       {ConfirmDialog}
-      <div className="space-y-6">
+      {isActiveChatVisible && (
+        <ClientChatSidebar
+          relationshipId={activeRelationship!.id}
+          coachName={coach.fullName}
+          coachAvatarUrl={coach.avatarUrl}
+        />
+      )}
+      <div className="space-y-6" style={undefined}>
         <div className="flex items-start gap-2">
           {showBack && (
             <Link to="/coaches">
@@ -357,75 +367,76 @@ export function CoachProfileContent({
             </Card>
           </motion.div>
 
-          <motion.div variants={slideUp}>
-            <Card className="flex flex-col justify-center space-y-4">
-              <div className="grid gap-3 sm:grid-cols-3 md:grid-cols-1">
-                <TrustStat icon={<Users size={24} />} value={String(coach.totalClients)} label={tcp.totalClients} />
-                <TrustStat icon={<Star size={24} fill="currentColor" />} value={coach.averageRating?.toFixed(1) ?? '-'} label={`${coach.ratingCount} reviews`} />
+          <motion.div variants={slideUp} className="flex flex-col gap-4">
+            <Card className="flex flex-col justify-center space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <TrustStat icon={<Users size={20} />} value={String(coach.totalClients)} label={tcp.totalClients} />
+                <TrustStat icon={<Star size={20} fill="currentColor" />} value={coach.averageRating?.toFixed(1) ?? '-'} label={`${coach.ratingCount} reviews`} />
               </div>
+            </Card>
+
+            {coach.canRate && (
+              <Card className="space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <h2 className="text-sm font-semibold text-text">{myRating ? 'Your review' : 'Rate this coach'}</h2>
+                  {myRating && (
+                    <Button variant="danger" size="sm" loading={deleteRating.isPending} onClick={() => deleteRating.mutate()}>
+                      <Trash2 size={13} />
+                    </Button>
+                  )}
+                </div>
+                {myRating && (
+                  <p className="text-xs text-muted">
+                    Current: {myRating.rating}/5{myRating.comment ? ` — ${myRating.comment}` : ''}
+                  </p>
+                )}
+                <div className="flex flex-col gap-2">
+                  <Select
+                    label="Rating"
+                    value={String(rating)}
+                    onChange={(value) => setRating(Number(value || 5))}
+                    options={[1, 2, 3, 4, 5].map((value) => ({ value: String(value), label: `${value} star${value > 1 ? 's' : ''}` }))}
+                  />
+                  <label className="flex flex-col gap-1.5">
+                    <span className="text-xs font-medium text-text">Comment</span>
+                    <textarea
+                      value={comment}
+                      onChange={(e) => setComment(e.target.value)}
+                      maxLength={1000}
+                      rows={2}
+                      className="xn-input resize-none text-sm"
+                      placeholder="Optional review..."
+                    />
+                  </label>
+                  <Button size="sm" loading={createRating.isPending || updateRating.isPending} onClick={submitRating} className="w-full">
+                    <Star size={13} /> {myRating ? 'Update' : 'Submit'}
+                  </Button>
+                </div>
+              </Card>
+            )}
+
+            <Card className="space-y-2">
+              <h2 className="text-sm font-semibold text-text">Reviews</h2>
+              {coach.ratings.length === 0 ? (
+                <p className="text-xs text-muted">No reviews yet.</p>
+              ) : (
+                <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">
+                  {coach.ratings.map((item) => (
+                    <div key={item.id} className="rounded-lg border border-border bg-panel px-3 py-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-medium text-text">{item.clientName}</p>
+                        <p className="flex items-center gap-1 text-xs text-muted">
+                          <Star size={12} fill="currentColor" /> {item.rating}/5
+                        </p>
+                      </div>
+                      {item.comment && <p className="mt-0.5 text-xs text-muted">{item.comment}</p>}
+                    </div>
+                  ))}
+                </div>
+              )}
             </Card>
           </motion.div>
         </motion.div>
-
-        {coach.canRate && (
-          <Card className="space-y-4">
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="text-base font-semibold text-text">{myRating ? 'Your review' : 'Rate this coach'}</h2>
-              {myRating && (
-                <Button variant="danger" size="sm" loading={deleteRating.isPending} onClick={() => deleteRating.mutate()}>
-                  <Trash2 size={15} /> Delete
-                </Button>
-              )}
-            </div>
-            {myRating && (
-              <p className="text-sm text-muted">
-                Current: {myRating.rating}/5{myRating.comment ? ` - ${myRating.comment}` : ''}
-              </p>
-            )}
-            <div className="grid gap-3 sm:grid-cols-[160px_1fr_auto]">
-              <Select
-                label="Rating"
-                value={String(rating)}
-                onChange={(value) => setRating(Number(value || 5))}
-                options={[1, 2, 3, 4, 5].map((value) => ({ value: String(value), label: `${value} star${value > 1 ? 's' : ''}` }))}
-              />
-              <label className="flex flex-col gap-1.5">
-                <span className="text-sm font-medium text-text">Comment</span>
-                <textarea
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  maxLength={1000}
-                  className="xn-input min-h-11 resize-y"
-                  placeholder="Optional review..."
-                />
-              </label>
-              <div className="flex items-end">
-                <Button loading={createRating.isPending || updateRating.isPending} onClick={submitRating}>
-                  <Star size={15} /> {myRating ? 'Update' : 'Submit'}
-                </Button>
-              </div>
-            </div>
-          </Card>
-        )}
-
-        <Card className="space-y-3">
-          <h2 className="text-base font-semibold text-text">Reviews</h2>
-          {coach.ratings.length === 0 ? (
-            <p className="text-sm text-muted">No reviews yet.</p>
-          ) : (
-            coach.ratings.map((item) => (
-              <div key={item.id} className="rounded-xl border border-border bg-panel px-3 py-2">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="font-medium text-text">{item.clientName}</p>
-                  <p className="flex items-center gap-1 text-sm text-muted">
-                    <Star size={14} fill="currentColor" /> {item.rating}/5
-                  </p>
-                </div>
-                {item.comment && <p className="mt-1 text-sm text-muted">{item.comment}</p>}
-              </div>
-            ))
-          )}
-        </Card>
 
         <Modal open={reportOpen} onClose={() => setReportOpen(false)} title="Report user">
           <div className="space-y-4">
@@ -488,10 +499,10 @@ export function CoachProfileContent({
 
 function TrustStat({ icon, value, label }: { icon: ReactNode; value: string; label: string }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-xl py-6" style={{ background: 'var(--bg-3)' }}>
+    <div className="flex flex-col items-center justify-center rounded-xl py-4" style={{ background: 'var(--bg-3)' }}>
       <span style={{ color: 'var(--color-primary)' }}>{icon}</span>
-      <p className="mt-2 text-4xl font-black text-text">{value}</p>
-      <p className="text-sm text-muted">{label}</p>
+      <p className="mt-1.5 text-2xl font-black text-text">{value}</p>
+      <p className="text-xs text-muted">{label}</p>
     </div>
   )
 }

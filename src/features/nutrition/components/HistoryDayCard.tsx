@@ -2,11 +2,11 @@ import { useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { ChevronDown } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
-import { vi } from 'date-fns/locale'
+import { vi, enUS } from 'date-fns/locale'
 import { Badge } from '@/shared/components/Badge'
 import { Spinner } from '@/shared/components/Spinner'
 import { slideUp } from '@/shared/utils/motion'
-import { useT } from '@/shared/i18n'
+import { useT, useLangStore } from '@/shared/i18n'
 import { cn } from '@/shared/utils/cn'
 import { useDayFoodLogs } from '../api/useFoodLog'
 import type { FoodLogItemResponse, NutritionHistoryItemResponse } from '../types'
@@ -21,8 +21,10 @@ interface FoodRowProps {
 }
 
 function FoodRow({ item }: FoodRowProps) {
-  const servingLabel = item.servingLabel
-    ? `${item.servingCount ?? 1}× ${item.servingLabel}`
+  const lang = useLangStore((s) => s.lang)
+  const name = lang === 'vi' ? item.nameVi : item.nameEn
+  const servingLabel = item.servingLabelVi
+    ? `${item.servingCount ?? 1}× ${lang === 'vi' ? item.servingLabelVi : (item.servingLabelEn ?? item.servingLabelVi)}`
     : `${Math.round(item.grams)}g`
 
   return (
@@ -30,9 +32,9 @@ function FoodRow({ item }: FoodRowProps) {
       <span
         className="text-sm truncate flex-1"
         style={{ color: 'var(--fg-1)' }}
-        title={item.nameVi}
+        title={name}
       >
-        {item.nameVi}
+        {name}
       </span>
       <span className="text-xs shrink-0" style={{ color: 'var(--fg-3)' }}>
         {servingLabel} · {Math.round(item.computedCalories)} kcal
@@ -45,10 +47,11 @@ export function HistoryDayCard({ entry, calorieTarget }: Props) {
   const [isExpanded, setIsExpanded] = useState(false)
   const shouldReduce = useReducedMotion()
   const t = useT()
+  const lang = useLangStore((s) => s.lang)
 
   const { data, isLoading, isError } = useDayFoodLogs(entry.date, isExpanded)
 
-  const formattedDate = format(parseISO(entry.date), 'EEEE, d MMMM yyyy', { locale: vi })
+  const formattedDate = format(parseISO(entry.date), 'EEEE, d MMMM yyyy', { locale: lang === 'vi' ? vi : enUS })
 
   const caloriePercent =
     calorieTarget && calorieTarget > 0

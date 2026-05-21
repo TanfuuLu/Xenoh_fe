@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { cn } from '@/shared/utils/cn'
 import { Select } from '@/shared/components/Select'
-import { useT } from '@/shared/i18n'
+import { useT, useLangStore } from '@/shared/i18n'
 import type { FoodItemResponse, FoodServingResponse } from '../../types'
 
 interface QuantityValue {
@@ -17,6 +17,7 @@ interface Props {
 
 export function QuantityPicker({ food, onChange }: Props) {
   const t = useT()
+  const lang = useLangStore((s) => s.lang)
   const hasServings = food.servings.length > 0
   const [mode, setMode] = useState<'grams' | 'serving'>(hasServings ? 'serving' : 'grams')
   const [grams, setGrams] = useState<string>('100')
@@ -34,9 +35,12 @@ export function QuantityPicker({ food, onChange }: Props) {
     if (!serving) return
     const count = parseFloat(countStr)
     if (!isNaN(count) && count > 0) {
-      onChange({ servingLabel: serving.label, servingCount: count })
+      onChange({ servingLabel: serving.labelVi, servingCount: count })
     }
   }
+
+  const servingDisplayLabel = (s: FoodServingResponse) =>
+    lang === 'vi' ? s.labelVi : (s.labelEn ?? s.labelVi)
 
   return (
     <div className="flex flex-col gap-2">
@@ -94,7 +98,7 @@ export function QuantityPicker({ food, onChange }: Props) {
           </span>
           <Select
             className="flex-1"
-            options={food.servings.map((s) => ({ value: s.id, label: `${s.label} (${s.grams}g)` }))}
+            options={food.servings.map((s) => ({ value: s.id, label: `${servingDisplayLabel(s)} (${s.grams}g)` }))}
             value={selectedServing?.id ?? ''}
             onChange={(val) => {
               const s = food.servings.find((sv) => sv.id === val) ?? null
