@@ -46,6 +46,11 @@ export interface PlanAnalyticsResponse {
   totalVolume: number
   consistencyPercent: number
   avgSessionsPerWeek: number
+  completedSets: number
+  avgRpe: number | null
+  highRpeSets: number
+  warningDays: number
+  totalDurationSeconds: number
   trainingScore: number
   insights: TrainingInsightResponse[]
   weeklyCompliance: WeekCompliancePoint[]

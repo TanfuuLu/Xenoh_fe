@@ -665,8 +665,9 @@ function WeeklyDiagramGrid({
         </div>
         <div className="max-h-[460px] space-y-3 overflow-y-auto pr-1">
           {chartData.map((day) => {
-            const actualWidth = Math.max(day.actual > 0 ? 4 : 0, (day.actual / maxLoad) * 100)
-            const plannedWidth = Math.max(day.planned > 0 ? 4 : 0, (day.planned / maxLoad) * 100)
+            const dayVolumeRatio = day.planned > 0 ? Math.round((day.actual / day.planned) * 100) : 0
+            const actualWidth = volumeBarWidth(day.actual, day.planned)
+            const plannedWidth = day.planned > 0 ? 100 : Math.max(day.actual > 0 ? 4 : 0, (day.actual / maxLoad) * 100)
             const setPct = day.totalSets > 0 ? Math.round((day.completedSets / day.totalSets) * 100) : 0
             return (
               <div
@@ -704,7 +705,7 @@ function WeeklyDiagramGrid({
                     />
                   </div>
                   <div className="mt-1 flex flex-wrap items-center gap-3 text-[11px] text-muted">
-                    <span>{ta.volumeVsPlan}: {day.planned > 0 ? Math.round((day.actual / day.planned) * 100) : 0}%</span>
+                    <span>{ta.volumeVsPlan}: {dayVolumeRatio}%</span>
                     <span>{ta.kgReps}</span>
                   </div>
                 </div>
@@ -740,6 +741,16 @@ function WeeklyDiagramGrid({
       </div>
     </div>
   )
+}
+
+function volumeBarWidth(actual: number, planned: number) {
+  if (actual <= 0) return 0
+  if (planned <= 0) return 100
+
+  const displayRatio = Math.round((actual / planned) * 100)
+  if (displayRatio >= 100) return 100
+
+  return Math.max(4, Math.min(100, (actual / planned) * 100))
 }
 
 function DiagramBar({

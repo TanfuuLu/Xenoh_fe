@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useNavigate } from 'react-router'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
-import { Plus, ChevronRight, Zap, ZapOff, Trash2, BarChart2, Sparkles, Lock } from 'lucide-react'
+import { Plus, ChevronRight, Zap, ZapOff, Trash2, BarChart2, Sparkles, Lock, Download } from 'lucide-react'
 import { format } from 'date-fns'
 import { Card } from '@/shared/components/Card'
 import { Button } from '@/shared/components/Button'
@@ -31,6 +31,7 @@ import {
   useDeletePlan,
   useCoachPlanOverview,
   useCreatePlanForUser,
+  useExportPlanCsv,
 } from '../index'
 import type { AxiosError } from 'axios'
 import type { ApiError } from '@/shared/types/api'
@@ -214,45 +215,6 @@ export function PlansPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        {/* ── Coach Plans column ── */}
-        <section className="flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-base font-semibold text-text">Coach Plans</h2>
-              <p className="text-xs text-muted mt-0.5">{coachAssignedPlans.length} plan{coachAssignedPlans.length !== 1 ? 's' : ''}</p>
-            </div>
-          </div>
-
-          <motion.div
-            initial={shouldReduce ? false : 'hidden'}
-            animate="visible"
-            variants={staggerContainer}
-            className="flex flex-col gap-3"
-          >
-            <AnimatePresence>
-              {coachAssignedPlans.map((plan) => (
-                <PlanRow
-                  key={plan.id}
-                  plan={plan}
-                  onOpen={() => navigate(`/plans/${plan.id}`)}
-                  onOverview={() => navigate(`/plans/${plan.id}/overview`)}
-                  onActivate={() => activate(plan.id)}
-                  onDeactivate={() => deactivate(plan.id)}
-                  onDelete={async () => {
-                    if (await confirm(tp.deleteConfirm, { confirmLabel: t.common.delete, danger: true })) deletePlan(plan.id)
-                  }}
-                />
-              ))}
-            </AnimatePresence>
-
-            {coachAssignedPlans.length === 0 && (
-              <Card className="py-8 text-center text-muted text-sm">
-                No coach plans yet.
-              </Card>
-            )}
-          </motion.div>
-        </section>
-
         {/* ── My Plans column ── */}
         <section className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
@@ -311,6 +273,45 @@ export function PlansPage() {
             {selfPlans.length === 0 && (
               <Card className="py-8 text-center text-muted text-sm">
                 {tp.empty}
+              </Card>
+            )}
+          </motion.div>
+        </section>
+
+        {/* ── Coach Plans column ── */}
+        <section className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-base font-semibold text-text">Coach Plans</h2>
+              <p className="text-xs text-muted mt-0.5">{coachAssignedPlans.length} plan{coachAssignedPlans.length !== 1 ? 's' : ''}</p>
+            </div>
+          </div>
+
+          <motion.div
+            initial={shouldReduce ? false : 'hidden'}
+            animate="visible"
+            variants={staggerContainer}
+            className="flex flex-col gap-3"
+          >
+            <AnimatePresence>
+              {coachAssignedPlans.map((plan) => (
+                <PlanRow
+                  key={plan.id}
+                  plan={plan}
+                  onOpen={() => navigate(`/plans/${plan.id}`)}
+                  onOverview={() => navigate(`/plans/${plan.id}/overview`)}
+                  onActivate={() => activate(plan.id)}
+                  onDeactivate={() => deactivate(plan.id)}
+                  onDelete={async () => {
+                    if (await confirm(tp.deleteConfirm, { confirmLabel: t.common.delete, danger: true })) deletePlan(plan.id)
+                  }}
+                />
+              ))}
+            </AnimatePresence>
+
+            {coachAssignedPlans.length === 0 && (
+              <Card className="py-8 text-center text-muted text-sm">
+                No coach plans yet.
               </Card>
             )}
           </motion.div>
@@ -653,6 +654,7 @@ interface PlanRowProps {
 function PlanRow({ plan, onOpen, onOverview, onActivate, onDeactivate, onDelete }: PlanRowProps) {
   const t = useT()
   const tc = t.common
+  const { mutate: exportCsv, isPending: exporting } = useExportPlanCsv()
 
   return (
     <motion.div
@@ -681,6 +683,15 @@ function PlanRow({ plan, onOpen, onOverview, onActivate, onDeactivate, onDelete 
         <div className="flex flex-shrink-0 items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
           <Button variant="ghost" size="sm" onClick={onOverview} title="Plan overview">
             <BarChart2 size={15} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            title="Export CSV"
+            loading={exporting}
+            onClick={() => exportCsv(plan.id)}
+          >
+            {!exporting && <Download size={15} />}
           </Button>
           {plan.isActive ? (
             <Button variant="ghost" size="sm" onClick={onDeactivate}>
@@ -711,6 +722,7 @@ interface ClientPlanRowProps {
 function ClientPlanRow({ plan, onOpen, onOverview, onDelete }: ClientPlanRowProps) {
   const t = useT()
   const tcp = t.coachPlans
+  const { mutate: exportCsv, isPending: exporting } = useExportPlanCsv()
 
   return (
     <motion.div
@@ -738,6 +750,15 @@ function ClientPlanRow({ plan, onOpen, onOverview, onDelete }: ClientPlanRowProp
         <div className="flex flex-shrink-0 items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
           <Button variant="ghost" size="sm" onClick={onOverview} title="Plan overview">
             <BarChart2 size={15} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            title="Export CSV"
+            loading={exporting}
+            onClick={() => exportCsv(plan.id)}
+          >
+            {!exporting && <Download size={15} />}
           </Button>
           <Button variant="ghost" size="sm" onClick={onOpen}>
             <ChevronRight size={18} />

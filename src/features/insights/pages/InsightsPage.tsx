@@ -354,7 +354,7 @@ function AiNarrativePanel({ content, labels }: { content: AnalysisContent; label
   return (
     <Card animate={false} className="space-y-4">
       <PanelTitle icon={<Sparkles size={17} />} title={labels.aiCoachNotes} />
-      <div className="grid gap-3 lg:grid-cols-2">
+      <div className="grid auto-cols-[minmax(18rem,1fr)] grid-flow-col gap-3 overflow-x-auto pb-1">
         {sections.map((item) => (
           <SummaryBlock key={item.label} label={item.label} icon={item.icon} section={item.section} />
         ))}

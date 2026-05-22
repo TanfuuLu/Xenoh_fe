@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/shared/api/axios'
 import { ENDPOINTS } from '@/shared/api/endpoints'
+import { exportPlanCsv } from '../utils/exportPlanCsv'
 import { coachClientKeys } from '@/features/coach-client/api/useCoachClient'
 import type {
   CoachPlanResponse,
@@ -8,6 +9,7 @@ import type {
   CreatePlanForUserRequest,
   CreatePlanRequest,
   PlanBalanceReviewResponse,
+  PlanDesignAnalysisResponse,
   PlanResponse,
   UpdatePlanRequest,
 } from '../types'
@@ -18,6 +20,7 @@ export const planKeys = {
   byId: (id: string) => ['plans', id] as const,
   coachOverview: ['plans', 'coach-overview'] as const,
   balanceCheck: (id: string, lang: 'en' | 'vi') => ['plans', id, 'balance-check', lang] as const,
+  designAnalysis: (id: string) => ['plans', id, 'design-analysis'] as const,
 }
 
 export function usePlans() {
@@ -127,5 +130,20 @@ export function usePlanBalanceCheck(planId: string) {
       api
         .post<PlanBalanceReviewResponse>(ENDPOINTS.plans.balanceCheck(planId, lang))
         .then((r) => r.data),
+  })
+}
+
+export function useExportPlanCsv() {
+  return useMutation({
+    mutationFn: (planId: string) => exportPlanCsv(planId),
+  })
+}
+
+export function usePlanDesignAnalysis(planId: string) {
+  return useQuery({
+    queryKey: planKeys.designAnalysis(planId),
+    queryFn: () =>
+      api.get<PlanDesignAnalysisResponse>(ENDPOINTS.plans.designAnalysis(planId)).then((r) => r.data),
+    enabled: !!planId,
   })
 }

@@ -65,6 +65,69 @@ export interface PlanBalanceReviewResponse {
   suggestions: string[]
 }
 
+export interface PlanDesignAnalysisResponse {
+  structure: {
+    totalWeeks: number
+    plannedTrainingDays: number
+    plannedRestDays: number
+    avgTrainingDaysPerWeek: number
+    longestTrainingStreak: number
+  }
+  workload: {
+    plannedExercises: number
+    plannedSets: number
+    plannedRepVolume: number
+    plannedTonnage: number
+    avgExercisesPerTrainingDay: number
+  }
+  muscleGroups: PlannedMuscleGroupPoint[]
+  balance: {
+    frontSets: number
+    backSets: number
+    upperSets: number
+    lowerSets: number
+    otherSets: number
+    maxSets: number
+    dominantMuscleGroups: string[]
+    undertrainedMajorMuscleGroups: string[]
+  }
+  movementPatterns: MovementPatternCoveragePoint[]
+  recoveryRisks: RecoveryRiskPoint[]
+  variety: {
+    uniqueExercises: number
+    repeatedExerciseCount: number
+    topRepeatedExercises: RepeatedExercisePoint[]
+  }
+}
+
+export interface PlannedMuscleGroupPoint {
+  muscleGroup: string
+  weightedSets: number
+  primarySets: number
+  secondarySets: number
+  percentOfTotal: number
+  status: string
+}
+
+export interface MovementPatternCoveragePoint {
+  pattern: string
+  isCovered: boolean
+  exerciseCount: number
+  plannedSets: number
+}
+
+export interface RecoveryRiskPoint {
+  type: string
+  severity: string
+  message: string
+  metric: string
+}
+
+export interface RepeatedExercisePoint {
+  exerciseName: string
+  count: number
+}
+
 export interface UpdatePlanRequest {
   name: string
   startDate: string

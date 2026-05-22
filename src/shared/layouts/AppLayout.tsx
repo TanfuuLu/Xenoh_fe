@@ -23,8 +23,8 @@ import { useChatUnreadSync } from '@/features/chat'
 import { exerciseTrackingKeys } from '@/features/exercise-tracking'
 import { useMyCoach } from '@/features/coach-client'
 
-const MINI_WIDTH  = 64
-const FULL_WIDTH  = 240
+const MINI_WIDTH  = 56
+const FULL_WIDTH  = 220
 
 export function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -43,13 +43,13 @@ export function AppLayout() {
   const changePasswordLabel = (tn as typeof tn & { changePassword?: string }).changePassword ?? 'Change password'
   const exerciseLibraryLabel = (tn as typeof tn & { exerciseLibrary?: string }).exerciseLibrary ?? 'Exercise Library'
   const isWeekDetailPage = /^\/plans\/[^/]+\/weeks\/[^/]+$/.test(location.pathname)
-  const hasChatSidebar =
-    (isCoach && location.pathname === '/coach/clients') ||
-    (isIndividual && location.pathname.startsWith('/coaches'))
 
   useNotificationHub()
   useChatUnreadSync()
   const { data: myCoach } = useMyCoach(isIndividual)
+  const hasChatSidebar =
+    (isCoach && location.pathname === '/coach/clients') ||
+    (isIndividual && myCoach?.status === 'Active' && location.pathname.startsWith('/coaches'))
   const coachNavLabel = myCoach ? t.coaches.coachTitle : tn.findCoach
 
   const individualNav = [
@@ -59,7 +59,7 @@ export function AppLayout() {
     { to: '/progress',          icon: TrendingUp,        label: tn.progress,          color: '#f59e0b' },
     { to: '/nutrition',         icon: Utensils,          label: 'Nutrition',          color: '#ec4899' },
     { to: '/coaches',           icon: Users,             label: coachNavLabel,        color: '#14b8a6' },
-    ...(!myCoach ? [{ to: '/enter-coach-code', icon: KeyRound, label: 'Mã Coach', color: '#8b5cf6' }] : []),
+    ...(!myCoach ? [{ to: '/enter-coach-code', icon: KeyRound, label: t.enterCoachCode.label, color: '#8b5cf6' }] : []),
     { to: '/subscription',      icon: CreditCard,        label: 'Subscription',       color: '#eab308' },
   ]
 
@@ -174,7 +174,7 @@ export function AppLayout() {
       </AnimatePresence>
 
       {/* ── Main column ───────────────────────────────────────────────── */}
-      <div className="xn-main min-w-0" style={hasChatSidebar ? { paddingRight: 'calc(22rem + 16px)' } : undefined}>
+      <div className="xn-main min-w-0">
 
         {/* Top bar */}
         <header className="xn-topbar">
@@ -287,7 +287,10 @@ export function AppLayout() {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto">
+        <main
+          className="flex-1 overflow-y-auto"
+          style={hasChatSidebar ? { paddingRight: 'calc(22rem + 16px)' } : undefined}
+        >
           <div className={cn('xn-page-container', isWeekDetailPage && 'wide')}>
             <Outlet />
           </div>

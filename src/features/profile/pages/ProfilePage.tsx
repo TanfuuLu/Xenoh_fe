@@ -14,6 +14,7 @@ import { Card } from '@/shared/components/Card'
 import { Button } from '@/shared/components/Button'
 import { Input } from '@/shared/components/Input'
 import { DatePicker } from '@/shared/components/DatePicker'
+import { Modal } from '@/shared/components/Modal'
 import { Select, type SelectOption } from '@/shared/components/Select'
 import { Spinner } from '@/shared/components/Spinner'
 import { UserAvatar } from '@/shared/components/UserAvatar'
@@ -210,11 +211,13 @@ export function ProfilePage() {
     updateProfile({
       firstName: data.firstName.trim(),
       lastName: data.lastName.trim(),
-      bio: data.bio?.trim() || undefined,
+      bio: data.bio?.trim() ?? '',
+      height: data.height,
+      gender: data.gender,
       dateOfBirth: data.dateOfBirth || undefined,
-      facebookUrl:  data.facebookUrl?.trim()  || undefined,
+      facebookUrl: data.facebookUrl?.trim() || undefined,
       instagramUrl: data.instagramUrl?.trim() || undefined,
-      zaloUrl:      data.zaloUrl?.trim()      || undefined,
+      zaloUrl: data.zaloUrl?.trim() || undefined,
     }, { onSuccess: () => setEditMode(false) })
   }
 
@@ -357,14 +360,14 @@ export function ProfilePage() {
               <p className="truncate text-sm text-muted">{profile?.email}</p>
             </div>
           </div>
-          <Button variant="secondary" size="sm" className="w-full sm:w-auto" onClick={() => setEditMode((e) => !e)}>
-            {editMode ? tp.cancelBtn : tp.editBtn}
+          <Button variant="secondary" size="sm" className="w-full sm:w-auto" onClick={() => setEditMode(true)}>
+            {tp.editBtn}
           </Button>
         </div>
 
-        {editMode ? (
-          <form onSubmit={handleProfileSubmit(onSaveProfile)} className="space-y-4">
-            <div className="grid gap-3 sm:grid-cols-2">
+        <Modal open={editMode} onClose={() => setEditMode(false)} title={tp.editBtn} className="profile-edit-modal max-w-2xl">
+          <form onSubmit={handleProfileSubmit(onSaveProfile)} className="space-y-3">
+            <div className="grid gap-2.5 sm:grid-cols-2">
               <Input
                 label={(tp as typeof tp & { firstNameLabel?: string }).firstNameLabel ?? 'First name'}
                 error={profileErrors.firstName?.message}
@@ -383,7 +386,7 @@ export function ProfilePage() {
               error={profileErrors.bio?.message}
               {...regProfile('bio')}
             />
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-2.5 sm:grid-cols-2">
               <Input
                 label={tp.heightLabel}
                 type="number"
@@ -420,7 +423,7 @@ export function ProfilePage() {
                 />
               )}
             />
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted">Social links</p>
               <Input
                 label="Facebook"
@@ -442,9 +445,15 @@ export function ProfilePage() {
               />
             </div>
             {apiError && <p className="text-sm text-danger">{apiError}</p>}
-            <Button type="submit" className="w-full sm:w-auto" loading={saving}>{tp.saveBtn}</Button>
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button type="button" variant="ghost" className="w-full sm:w-auto" onClick={() => setEditMode(false)}>
+                {tp.cancelBtn}
+              </Button>
+              <Button type="submit" className="w-full sm:w-auto" loading={saving}>{tp.saveBtn}</Button>
+            </div>
           </form>
-        ) : (
+        </Modal>
+
           <div className="grid gap-4 min-[390px]:grid-cols-2 md:grid-cols-4">
             <div className="min-[390px]:col-span-2 md:col-span-4">
               <p className="text-xs text-muted">{tp.bioStat}</p>
@@ -459,9 +468,8 @@ export function ProfilePage() {
             <Stat label={tp.dotsStat}   value={profile?.dotsScore ? profile.dotsScore.toFixed(1) : '—'} />
             <Stat label={tp.streakStat} value={`${profile?.currentStreak ?? 0} ${tc.days}`} />
           </div>
-        )}
 
-        {!editMode && (profile?.facebookUrl || profile?.instagramUrl || profile?.zaloUrl) && (
+        {(profile?.facebookUrl || profile?.instagramUrl || profile?.zaloUrl) && (
           <div className="flex flex-wrap items-center gap-2 pt-1">
             {profile?.facebookUrl && (
               <a

@@ -1,4 +1,4 @@
-/* Google Fonts (Fraunces, Geist, JetBrains Mono) are loaded via <link> in index.html.
+/* Google Fonts (Be Vietnam Pro, Fraunces, Geist, JetBrains Mono) are loaded via <link> in index.html.
    Fraunces is the display serif — chosen over Namdhinggo because it ships full
    Vietnamese diacritics. Local Namdhinggo TTFs in /public/fonts are unused now
    but kept on disk for reference; remove them when the brand decision is final. */
@@ -177,11 +177,11 @@ html[data-theme="dark"] {
   --sh-inset: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
-/* ── Vietnamese: single-font system using Fraunces everywhere ──────────── */
+/* ── Vietnamese: use a UI font built for Vietnamese diacritics ─────────── */
 html[lang="vi"] {
-  --font-display: "Fraunces", Georgia, serif;
-  --font-sans:    "Fraunces", Georgia, serif;
-  --font-mono:    "Fraunces", Georgia, serif;
+  --font-display: "Be Vietnam Pro", "Geist", system-ui, -apple-system, sans-serif;
+  --font-sans:    "Be Vietnam Pro", "Geist", system-ui, -apple-system, sans-serif;
+  --font-mono:    "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
 }
 html[lang="vi"] body,
 html[lang="vi"] input,
@@ -222,7 +222,7 @@ html {
   color-scheme: light;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  font-size: 106.25%;
+  font-size: 90%;
 }
 
 body {
@@ -271,7 +271,7 @@ body {
 /* Shell */
 .xn-shell {
   display: grid;
-  grid-template-columns: var(--xn-sidebar-width, 240px) minmax(0, 1fr);
+  grid-template-columns: var(--xn-sidebar-width, 220px) minmax(0, 1fr);
   min-height: 100vh;
   background: var(--bg-1);
   transition: grid-template-columns 0.22s cubic-bezier(0.22,1,0.36,1);
@@ -279,9 +279,9 @@ body {
 .xn-main  { display: flex; flex-direction: column; min-width: 0; }
 .xn-page-container {
   width: 100%;
-  max-width: 1170px;
-  margin: 20px auto 32px;
-  padding: 20px 24px 32px;
+  max-width: 1040px;
+  margin: 12px auto 20px;
+  padding: 14px 16px 22px;
   background: var(--bg-1);
 }
 .xn-page-container.wide { max-width: none; }
@@ -290,10 +290,10 @@ body {
 .xn-sidebar {
   background: var(--bg-2);
   border-right: 2px solid var(--surface-border-soft);
-  padding: 0 10px 18px;
+  padding: 0 7px 12px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
   position: sticky;
   top: 0;
   height: 100vh;
@@ -304,8 +304,8 @@ body {
 .xn-brand {
   display: flex;
   align-items: center;
-  gap: 10px;
-  height: 60px;
+  gap: 8px;
+  height: 50px;
   flex-shrink: 0;
   padding: 0 6px;
   border-bottom: 1px solid var(--border-1);
@@ -313,28 +313,28 @@ body {
 .xn-brand-name {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 27px;
+  font-size: 21px;
   letter-spacing: -0.01em;
   color: var(--xn-clay-800);
 }
 .xn-nav { display: flex; flex-direction: column; gap: 2px; }
 .xn-nav-section {
   font-family: var(--font-sans);
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--fg-3);
-  margin: 10px 10px 4px;
+  margin: 8px 8px 3px;
 }
 .xn-nav-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  border-radius: 10px;
+  gap: 8px;
+  padding: 6px 7px;
+  border-radius: 8px;
   font-family: var(--font-sans);
-  font-size: 17px;
+  font-size: 14px;
   color: var(--fg-2);
   text-decoration: none;
   font-weight: 500;
@@ -345,8 +345,8 @@ body {
 .xn-nav-item.active { background: var(--xn-clay-200); color: var(--xn-clay-900); }
 
 .xn-theme-toggle {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border: 1px solid var(--border-1);
   border-radius: 999px;
   background: var(--bg-2);
@@ -371,8 +371,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 60px;
-  padding: 0 28px;
+  height: 48px;
+  padding: 0 16px;
   border-bottom: 2px solid var(--surface-border-soft);
   background: color-mix(in oklch, var(--xn-paper) 85%, transparent);
   backdrop-filter: blur(14px);
@@ -385,8 +385,8 @@ body {
 .xn-card {
   background: var(--bg-2);
   border: 2px solid var(--surface-border-soft);
-  border-radius: 14px;
-  padding: 18px 20px;
+  border-radius: 10px;
+  padding: 12px 14px;
   box-shadow: var(--sh-sm);
   transition:
     border-color var(--dur-fast) var(--ease-out),
@@ -403,14 +403,14 @@ body {
 .xn-btn {
   font-family: var(--font-sans);
   font-weight: 500;
-  font-size: 17px;
-  padding: 10px 20px;
+  font-size: 14px;
+  padding: 7px 14px;
   border-radius: 999px;
   border: 1px solid transparent;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   line-height: 1;
   transition: all var(--dur-fast) var(--ease-out);
   white-space: nowrap;
@@ -431,11 +431,11 @@ body {
 .xn-btn.ghost { background: transparent; color: var(--fg-1); }
 .xn-btn.ghost:hover { background: var(--bg-3); }
 .xn-btn.danger { background: var(--xn-danger); color: #fbf6ea; }
-.xn-btn.sm { font-size: 16px; padding: 7px 15px; }
+.xn-btn.sm { font-size: 12px; padding: 5px 11px; }
 
 @media (max-width: 767px) {
   html {
-    font-size: 100%;
+    font-size: 85%;
   }
 
   .xn-shell {
@@ -453,11 +453,11 @@ body {
   }
 
   .xn-brand-name {
-    font-size: 24px;
+    font-size: 21px;
   }
 
   .xn-nav-item {
-    font-size: 16px;
+    font-size: 14px;
   }
 
   h1,
@@ -492,7 +492,7 @@ body {
   }
 
   .xn-page-container {
-    max-width: 1170px;
+    max-width: 1040px;
     margin: 12px auto;
     padding: 14px 12px 24px;
     border-radius: 14px;
@@ -559,8 +559,8 @@ body {
 .xn-chip {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 4px 12px;
+  gap: 4px;
+  padding: 2px 9px;
   border-radius: 999px;
   font-family: var(--font-sans);
   font-weight: 500;
@@ -576,14 +576,14 @@ body {
 
 /* Plan card */
 .xn-plan {
-  padding: 20px 22px;
+  padding: 14px 16px;
   border: 2px solid var(--surface-border-soft);
-  border-radius: 14px;
+  border-radius: 10px;
   background: var(--bg-2);
   box-shadow: var(--sh-sm);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   transition:
     border-color var(--dur-fast) var(--ease-out),
     box-shadow var(--dur-fast) var(--ease-out),
@@ -596,7 +596,7 @@ body {
 .xn-plan .plan-name {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 25px;
+  font-size: 20px;
   letter-spacing: -0.01em;
   color: var(--fg-1);
 }
@@ -619,9 +619,9 @@ body {
 
 /* Hero today card */
 .xn-hero {
-  padding: 26px 28px;
+  padding: 18px 20px;
   background: linear-gradient(135deg, var(--xn-clay-200) 0%, var(--xn-clay-300) 100%);
-  border-radius: 20px;
+  border-radius: 14px;
   border: 2px solid var(--surface-border);
   box-shadow: var(--sh-sm);
   position: relative;
@@ -641,8 +641,8 @@ body {
 .xn-ex {
   background: var(--bg-2);
   border: 2px solid var(--surface-border-soft);
-  border-radius: 14px;
-  padding: 16px 18px;
+  border-radius: 10px;
+  padding: 11px 13px;
   box-shadow: var(--sh-sm);
   transition:
     border-color var(--dur-fast) var(--ease-out),
@@ -660,13 +660,13 @@ body {
 .xn-ex .ex-name {
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: 23px;
+  font-size: 18px;
   color: var(--fg-1);
   letter-spacing: -0.01em;
 }
 .xn-ex .ex-setline {
   font-family: var(--font-mono);
-  font-size: 16px;
+  font-size: 13px;
   color: var(--fg-1);
   font-variant-numeric: tabular-nums;
 }
@@ -674,11 +674,11 @@ body {
 /* Exercise set row */
 .xn-set {
   flex: 1;
-  padding: 10px 14px;
+  padding: 7px 10px;
   border: 2px solid var(--surface-border-soft);
-  border-radius: 10px;
+  border-radius: 8px;
   font-family: var(--font-mono);
-  font-size: 15px;
+  font-size: 13px;
   color: var(--fg-2);
   background: var(--bg-1);
   display: flex;
@@ -693,8 +693,8 @@ body {
 .xn-day {
   background: var(--bg-2);
   border: 2px solid var(--surface-border-soft);
-  border-radius: 12px;
-  padding: 10px 8px;
+  border-radius: 9px;
+  padding: 8px 6px;
   text-align: center;
   cursor: pointer;
   display: flex;
@@ -710,7 +710,7 @@ body {
 .xn-stat .stat-label {
   font-family: var(--font-sans);
   font-weight: 600;
-  font-size: 12px;
+  font-size: 10px;
   letter-spacing: 0.13em;
   text-transform: uppercase;
   color: var(--fg-3);
@@ -718,12 +718,12 @@ body {
 .xn-stat .stat-value {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 47px;
+  font-size: 35px;
   line-height: 1;
   letter-spacing: -0.02em;
   color: var(--fg-1);
   font-variant-numeric: tabular-nums;
-  margin-top: 8px;
+  margin-top: 6px;
 }
 
 /* Client row */
@@ -731,11 +731,11 @@ body {
   display: grid;
   grid-template-columns: auto 1fr auto auto auto;
   align-items: center;
-  gap: 14px;
-  padding: 14px 16px;
+  gap: 9px;
+  padding: 10px 12px;
   background: var(--bg-2);
   border: 2px solid var(--surface-border-soft);
-  border-radius: 12px;
+  border-radius: 9px;
   cursor: pointer;
   transition: all var(--dur-fast) var(--ease-out);
 }
@@ -801,14 +801,14 @@ body {
 
 /* Avatar */
 .xn-avatar {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   border-radius: 999px;
   background: var(--xn-clay-300);
   color: var(--xn-clay-900);
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 16px;
+  font-size: 14px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -829,9 +829,9 @@ body {
   border: 2px solid var(--surface-border-soft);
   border-radius: 8px;
   background: var(--bg-2);
-  padding: 10px 14px;
+  padding: 7px 10px;
   font-family: var(--font-sans);
-  font-size: 16px;
+  font-size: 14px;
   color: var(--fg-1);
   transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
   outline: none;
@@ -843,6 +843,34 @@ body {
 }
 .xn-input.error { border-color: var(--xn-danger); }
 .xn-input.error:focus { box-shadow: 0 0 0 3px color-mix(in oklch, var(--xn-danger) 20%, transparent); }
+
+.profile-edit-modal {
+  padding: 14px 16px;
+}
+
+.profile-edit-modal h2 {
+  font-size: 18px !important;
+}
+
+.profile-edit-modal label,
+.profile-edit-modal p {
+  font-size: 12px;
+}
+
+.profile-edit-modal .xn-input {
+  padding: 7px 10px;
+  font-size: 12px;
+}
+
+.profile-edit-modal textarea.xn-input {
+  min-height: 88px;
+}
+
+.profile-edit-modal .xn-btn {
+  min-height: 34px;
+  padding: 7px 14px;
+  font-size: 12px;
+}
 
 
 

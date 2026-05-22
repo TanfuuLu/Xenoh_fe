@@ -11,20 +11,20 @@ import { useConnectByCode, useMyCoach } from '../api/useCoachClient'
 import { useAuthStore } from '@/features/auth'
 import { useT } from '@/shared/i18n'
 
-const _baseSchema = z.object({
-  code: z.string().min(1).length(8).transform((v) => v.toUpperCase()),
-})
-
-type FormData = z.output<typeof _baseSchema>
-
 export function EnterCoachCodePage() {
   const navigate = useNavigate()
   const connect = useConnectByCode()
   const isIndividual = useAuthStore((s) => !s.user?.roles?.includes('Coach') && !s.user?.roles?.includes('Admin'))
   const { data: myCoach } = useMyCoach(isIndividual)
   const tx = useT().enterCoachCode
-
-  if (myCoach) return <Navigate to="/coaches" replace />
+  const schema = z.object({
+    code: z
+      .string()
+      .min(1, tx.errorRequired)
+      .length(8, tx.errorLength)
+      .transform((v) => v.toUpperCase()),
+  })
+  type FormData = z.output<typeof schema>
 
   const {
     register,
@@ -32,15 +32,7 @@ export function EnterCoachCodePage() {
     setError,
     formState: { errors },
   } = useForm<z.input<typeof schema>, unknown, FormData>({
-    resolver: zodResolver(
-      z.object({
-        code: z
-          .string()
-          .min(1, tx.errorRequired)
-          .length(8, tx.errorLength)
-          .transform((v) => v.toUpperCase()),
-      }),
-    ),
+    resolver: zodResolver(schema),
   })
 
   const onSubmit = async (data: FormData) => {
@@ -54,6 +46,8 @@ export function EnterCoachCodePage() {
       setError('code', { message: msg })
     }
   }
+
+  if (myCoach) return <Navigate to="/coaches" replace />
 
   return (
     <motion.div {...motionProps.slideUp} className="mx-auto max-w-md space-y-6 py-8">

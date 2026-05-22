@@ -49,9 +49,20 @@ export function ClientChatSidebar({ relationshipId, coachName, coachAvatarUrl, o
         style={{ borderBottom: '1px solid var(--border-1)' }}
       >
         <UserAvatar name={coachName} imageUrl={coachAvatarUrl} size={32} variant="sage" />
-        <p className="truncate text-sm font-semibold" style={{ color: 'var(--fg-1)' }}>
+        <p className="min-w-0 flex-1 truncate text-sm font-semibold" style={{ color: 'var(--fg-1)' }}>
           {coachName}
         </p>
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-lg transition hover:shadow-sm"
+            style={{ color: 'var(--fg-3)' }}
+            aria-label="Close chat"
+          >
+            <X size={16} />
+          </button>
+        )}
       </div>
 
       <MessageList

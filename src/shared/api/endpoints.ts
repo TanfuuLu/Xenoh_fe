@@ -80,10 +80,12 @@ export const ENDPOINTS = {
     activate: (id: string) => `/api/plans/${id}/activate`,
     deactivate: (id: string) => `/api/plans/${id}/deactivate`,
     analytics: (id: string) => `/api/plans/${id}/analytics`,
+    designAnalysis: (id: string) => `/api/plans/${id}/design-analysis`,
     coachOverview: '/api/plans/coach-overview',
     forUser: '/api/plans/for-user',
     starterAi: '/api/plans/starter-ai',
     balanceCheck: (id: string, lang: 'en' | 'vi') => `/api/plans/${id}/balance-check?lang=${lang}`,
+    exportCsv: (id: string) => `/api/plans/${id}/export`,
   },
 
   // Weekly Workouts
