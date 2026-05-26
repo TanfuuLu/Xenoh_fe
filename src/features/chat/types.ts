@@ -4,6 +4,7 @@ export interface MessageResponse {
   senderId: string
   senderName: string
   content: string
+  kind: 'User' | 'System'
   isRead: boolean
   createdAt: string
 }

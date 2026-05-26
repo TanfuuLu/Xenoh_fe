@@ -63,13 +63,6 @@ export const TIPS: readonly Tip[] = [
     placements: ['profile'],
   },
   {
-    id: 'coach-marketplace-fit',
-    category: 'app',
-    audience: 'individual',
-    icon: 'Users',
-    placements: ['coaches'],
-  },
-  {
     id: 'coach-client-priorities',
     category: 'app',
     audience: 'coach',
@@ -158,13 +151,6 @@ export const TIPS: readonly Tip[] = [
     category: 'app',
     audience: 'all',
     icon: 'TrendingUp',
-    placements: [],
-  },
-  {
-    id: 'connecting-coach',
-    category: 'app',
-    audience: 'individual',
-    icon: 'Users',
     placements: [],
   },
 ]

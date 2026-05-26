@@ -10,18 +10,16 @@ import { useT } from '@/shared/i18n'
 import { useCreateCustomFood } from '../../api/useFoodLog'
 import type { FoodItemResponse } from '../../types'
 
-const _baseSchema = z.object({
-  nameVi: z.string().min(1),
-  nameEn: z.string().min(1),
-  caloriesPer100g: z.coerce.number().min(0),
-  proteinPer100g: z.coerce.number().min(0),
-  carbsPer100g: z.coerce.number().min(0),
-  fatPer100g: z.coerce.number().min(0),
-  defaultServingLabel: z.string().optional(),
-  defaultServingGrams: z.coerce.number().optional(),
-})
-
-type FormData = z.output<typeof _baseSchema>
+interface FormData {
+  nameVi: string
+  nameEn: string
+  caloriesPer100g: number
+  proteinPer100g: number
+  carbsPer100g: number
+  fatPer100g: number
+  defaultServingLabel?: string
+  defaultServingGrams?: number
+}
 
 interface Props {
   onClose: () => void

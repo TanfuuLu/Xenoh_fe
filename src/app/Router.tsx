@@ -20,11 +20,10 @@ const DayWorkoutPage = lazy(() => import('@/features/workouts/pages/DayWorkoutPa
 const ExerciseLibraryPage = lazy(() => import('@/features/workouts/pages/ExerciseLibraryPage').then((m) => ({ default: m.ExerciseLibraryPage })))
 const ProfilePage = lazy(() => import('@/features/profile/pages/ProfilePage').then((m) => ({ default: m.ProfilePage })))
 const ChangePasswordPage = lazy(() => import('@/features/profile/pages/ChangePasswordPage').then((m) => ({ default: m.ChangePasswordPage })))
-const CoachesPage = lazy(() => import('@/features/coaches/pages/CoachesPage').then((m) => ({ default: m.CoachesPage })))
 const ClientsPage = lazy(() => import('@/features/coach-client/pages/ClientsPage').then((m) => ({ default: m.ClientsPage })))
+const MyCoachPage = lazy(() => import('@/features/coach-client/pages/MyCoachPage').then((m) => ({ default: m.MyCoachPage })))
 const ClientProfilePage = lazy(() => import('@/features/profile/pages/ClientProfilePage').then((m) => ({ default: m.ClientProfilePage })))
 const ClientAiInsightPage = lazy(() => import('@/features/profile/pages/ClientAiInsightPage').then((m) => ({ default: m.ClientAiInsightPage })))
-const CoachProfilePage = lazy(() => import('@/features/coaches/pages/CoachProfilePage').then((m) => ({ default: m.CoachProfilePage })))
 const ProgressPage = lazy(() => import('@/features/progress/pages/ProgressPage').then((m) => ({ default: m.ProgressPage })))
 const NutritionPage = lazy(() => import('@/features/nutrition/pages/NutritionPage').then((m) => ({ default: m.NutritionPage })))
 const InsightsPage = lazy(() => import('@/features/insights').then((m) => ({ default: m.InsightsPage })))
@@ -157,12 +156,8 @@ export const router = createBrowserRouter([
             element: <Suspended><SubscriptionPage /></Suspended>,
           },
           {
-            path: 'coaches',
-            element: <Suspended><CoachesPage /></Suspended>,
-          },
-          {
-            path: 'coaches/:coachId',
-            element: <Suspended><CoachProfilePage /></Suspended>,
+            path: 'coach',
+            element: <Suspended><MyCoachPage /></Suspended>,
           },
           {
             path: 'enter-coach-code',

@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router'
 import { X, Calendar, TrendingUp, Dumbbell, ArrowRight } from 'lucide-react'
 import { format, differenceInCalendarDays } from 'date-fns'
 import { Button } from '@/shared/components/Button'
-import { formatContractSelection } from '../utils/contractDisplay'
 import type { ClientResponse, CoachClientDashboardResponse } from '../types'
 
 interface Props {
@@ -42,16 +41,6 @@ export function ScheduleClientDetailModal({ client, dashData, barColor, onClose 
   const durationDays = client.endDate
     ? differenceInCalendarDays(new Date(client.endDate + 'T00:00:00'), new Date(client.startDate + 'T00:00:00'))
     : null
-
-  const contractLine =
-    client.selectedCoachingType && client.selectedCurrency
-      ? formatContractSelection({
-          type: client.selectedCoachingType,
-          price: client.selectedPriceAmount,
-          currency: client.selectedCurrency,
-          quantity: client.selectedQuantity,
-        })
-      : null
 
   const attention = dashData ? ATTENTION_STYLE[dashData.attentionLevel] ?? ATTENTION_STYLE.None : null
   const planProgress = dashData?.activePlanProgressPercent ?? null
@@ -117,9 +106,6 @@ export function ScheduleClientDetailModal({ client, dashData, barColor, onClose 
                 <span className="text-xs" style={{ color: 'var(--fg-3)' }}>({durationDays}d)</span>
               )}
             </div>
-            {contractLine && (
-              <p className="text-xs" style={{ color: 'var(--fg-3)' }}>{contractLine}</p>
-            )}
           </div>
 
           {/* Activity */}

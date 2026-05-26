@@ -1698,7 +1698,7 @@ function SetRow({ set, canComplete, isCardio = false, onComplete }: SetRowProps)
   return (
     <div
       className="flex items-center gap-1.5 overflow-x-auto whitespace-nowrap rounded-lg border border-border px-2 py-2 sm:gap-2 sm:px-3"
-      style={{ background: '#ffffff' }}
+      style={{ background: 'var(--bg-1)' }}
     >
       <span className="shrink-0 text-sm font-medium text-muted">Set {set.setNumber}</span>
 

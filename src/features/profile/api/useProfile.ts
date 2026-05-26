@@ -2,17 +2,19 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/shared/api/axios'
 import { ENDPOINTS } from '@/shared/api/endpoints'
 import { useAuthStore } from '@/features/auth'
-import { coachKeys } from '@/features/coaches/api/useCoaches'
 import type {
   BodyweightLogResponse,
   LogBodyweightRequest,
   PublicUserProfileResponse,
+  UpdatePreferencesRequest,
   UpdateProfileRequest,
+  UserPreferencesResponse,
   UserProfileResponse,
 } from '../types'
 
 export const profileKeys = {
   me: ['profile', 'me'] as const,
+  preferences: ['profile', 'preferences'] as const,
   bodyweight: ['profile', 'bodyweight'] as const,
 }
 
@@ -38,8 +40,6 @@ export function useUpdateProfile() {
         fullName: `${data.firstName} ${data.lastName}`.trim(),
         avatarUrl: data.avatarUrl,
       })
-      void qc.invalidateQueries({ queryKey: coachKeys.all })
-      void qc.invalidateQueries({ queryKey: coachKeys.profile(data.id) })
     },
   })
 }
@@ -65,6 +65,26 @@ export function useUpdateAvatar() {
         fullName: `${data.firstName} ${data.lastName}`.trim(),
         avatarUrl: data.avatarUrl,
       })
+    },
+  })
+}
+
+export function useMyPreferences(enabled = true) {
+  return useQuery({
+    queryKey: profileKeys.preferences,
+    queryFn: () => api.get<UserPreferencesResponse>(ENDPOINTS.users.preferences).then((r) => r.data),
+    enabled,
+  })
+}
+
+export function useUpdatePreferences() {
+  const qc = useQueryClient()
+
+  return useMutation({
+    mutationFn: (data: UpdatePreferencesRequest) =>
+      api.put<UserPreferencesResponse>(ENDPOINTS.users.preferences, data).then((r) => r.data),
+    onSuccess: (data) => {
+      qc.setQueryData(profileKeys.preferences, data)
     },
   })
 }

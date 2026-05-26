@@ -8,6 +8,20 @@ interface Props {
 }
 
 export function MessageBubble({ message, isMine }: Props) {
+  if (message.kind === 'System') {
+    return (
+      <div className="flex justify-center">
+        <div
+          className="max-w-[86%] rounded-full px-3 py-1.5 text-center text-xs"
+          style={{ background: 'var(--bg-3)', color: 'var(--fg-3)' }}
+        >
+          <span className="whitespace-pre-wrap break-words">{message.content}</span>
+          <span className="ml-2 opacity-60">{format(new Date(message.createdAt), 'HH:mm')}</span>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className={cn('flex', isMine ? 'justify-end' : 'justify-start')}>
       <div

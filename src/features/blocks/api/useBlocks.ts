@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/shared/api/axios'
 import { ENDPOINTS } from '@/shared/api/endpoints'
-import { coachKeys } from '@/features/coaches/api/useCoaches'
 import type { BlockUserRequest, BlockedUserResponse } from '../types'
 
 export const blockKeys = {
@@ -23,10 +22,8 @@ export function useBlockUser() {
       const body: BlockUserRequest = { reason: reason ?? null }
       return api.post(ENDPOINTS.blocks.block(userId), body)
     },
-    onSuccess: (_, { userId }) => {
+    onSuccess: () => {
       void qc.invalidateQueries({ queryKey: blockKeys.list })
-      void qc.invalidateQueries({ queryKey: coachKeys.all })
-      void qc.invalidateQueries({ queryKey: coachKeys.profile(userId) })
     },
   })
 }
@@ -35,10 +32,8 @@ export function useUnblockUser() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (userId: string) => api.delete(ENDPOINTS.blocks.unblock(userId)),
-    onSuccess: (_, userId) => {
+    onSuccess: () => {
       void qc.invalidateQueries({ queryKey: blockKeys.list })
-      void qc.invalidateQueries({ queryKey: coachKeys.all })
-      void qc.invalidateQueries({ queryKey: coachKeys.profile(userId) })
     },
   })
 }

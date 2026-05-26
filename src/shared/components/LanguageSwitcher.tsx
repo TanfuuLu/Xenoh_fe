@@ -4,6 +4,7 @@ import type { Lang } from '@/shared/i18n'
 interface Props {
   /** 'pill' = rounded toggle chip (auth pages), 'text' = slim inline links (topbar/sidebar) */
   variant?: 'pill' | 'text'
+  onChange?: (lang: Lang) => void
 }
 
 const LANGS: { value: Lang; label: string }[] = [
@@ -11,8 +12,12 @@ const LANGS: { value: Lang; label: string }[] = [
   { value: 'vi', label: 'VI' },
 ]
 
-export function LanguageSwitcher({ variant = 'text' }: Props) {
+export function LanguageSwitcher({ variant = 'text', onChange }: Props) {
   const { lang, setLang } = useLangStore()
+  const selectLang = (value: Lang) => {
+    setLang(value)
+    onChange?.(value)
+  }
 
   if (variant === 'pill') {
     return (
@@ -28,7 +33,7 @@ export function LanguageSwitcher({ variant = 'text' }: Props) {
         {LANGS.map(({ value, label }) => (
           <button
             key={value}
-            onClick={() => setLang(value)}
+            onClick={() => selectLang(value)}
             style={{
               padding: '4px 10px',
               borderRadius: 6,
@@ -60,7 +65,7 @@ export function LanguageSwitcher({ variant = 'text' }: Props) {
             <span style={{ color: 'var(--fg-4)', fontSize: 11, userSelect: 'none' }}>·</span>
           )}
           <button
-            onClick={() => setLang(value)}
+            onClick={() => selectLang(value)}
             style={{
               padding: '2px 5px',
               border: 'none',

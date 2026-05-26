@@ -1,9 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/shared/api/axios'
 import { ENDPOINTS } from '@/shared/api/endpoints'
-import { coachKeys } from '@/features/coaches/api/useCoaches'
 import { useLangStore } from '@/shared/i18n'
-import type { ClientResponse, CoachClientAiBriefResponse, CoachClientDashboardResponse, CoachInviteCodeResponse, CoachRelationshipResponse, ConnectByCodeRequest, GenerateInviteCodeRequest, RequestCoachRequest, RequestRenewalRequest } from '../types'
+import type { ClientResponse, CoachClientAiBriefResponse, CoachClientDashboardResponse, CoachInviteCodeResponse, CoachRelationshipResponse, ConnectByCodeRequest, GenerateInviteCodeRequest, RequestRenewalRequest } from '../types'
 
 export const coachClientKeys = {
   pendingRequests: ['coach-client', 'pending'] as const,
@@ -83,21 +82,6 @@ export function useMyClients(enabled = true) {
   })
 }
 
-export function useRequestCoach() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (data: RequestCoachRequest) =>
-      api
-        .post<CoachRelationshipResponse>(ENDPOINTS.coachClient.request, data)
-        .then((r) => r.data),
-    onSuccess: (relationship) => {
-      void qc.invalidateQueries({ queryKey: coachClientKeys.myCoach })
-      void qc.invalidateQueries({ queryKey: coachKeys.all })
-      void qc.invalidateQueries({ queryKey: coachKeys.profile(relationship.coachId) })
-    },
-  })
-}
-
 export function useAcceptRequest() {
   const qc = useQueryClient()
   return useMutation({
@@ -105,12 +89,10 @@ export function useAcceptRequest() {
       api
         .put<CoachRelationshipResponse>(ENDPOINTS.coachClient.accept(relationshipId))
         .then((r) => r.data),
-    onSuccess: (relationship) => {
+    onSuccess: () => {
       void qc.invalidateQueries({ queryKey: coachClientKeys.pendingRequests })
       void qc.invalidateQueries({ queryKey: coachClientKeys.myClients })
       void qc.invalidateQueries({ queryKey: coachClientKeys.myCoach })
-      void qc.invalidateQueries({ queryKey: coachKeys.all })
-      void qc.invalidateQueries({ queryKey: coachKeys.profile(relationship.coachId) })
     },
   })
 }
@@ -125,7 +107,6 @@ export function useTerminateRelationship() {
       void qc.invalidateQueries({ queryKey: coachClientKeys.myCoach })
       void qc.invalidateQueries({ queryKey: coachClientKeys.myClients })
       void qc.invalidateQueries({ queryKey: coachClientKeys.pendingRequests })
-      void qc.invalidateQueries({ queryKey: coachKeys.all })
     },
   })
 }
@@ -152,7 +133,6 @@ export function useAcceptTermination() {
       void qc.invalidateQueries({ queryKey: coachClientKeys.myCoach })
       void qc.invalidateQueries({ queryKey: coachClientKeys.myClients })
       void qc.invalidateQueries({ queryKey: coachClientKeys.pendingRequests })
-      void qc.invalidateQueries({ queryKey: coachKeys.all })
     },
   })
 }

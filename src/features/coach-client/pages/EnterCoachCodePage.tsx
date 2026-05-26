@@ -47,7 +47,7 @@ export function EnterCoachCodePage() {
     }
   }
 
-  if (myCoach) return <Navigate to="/coaches" replace />
+  if (myCoach) return <Navigate to="/dashboard" replace />
 
   return (
     <motion.div {...motionProps.slideUp} className="mx-auto max-w-md space-y-6 py-8">

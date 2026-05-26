@@ -22,6 +22,7 @@ import { Modal } from '@/shared/components/Modal'
 import { Select } from '@/shared/components/Select'
 import { Spinner } from '@/shared/components/Spinner'
 import { useConfirm } from '@/shared/components/ConfirmModal'
+import { DateRangePicker } from '@/shared/components/DateRangePicker'
 import { MuscleGroup, type MuscleGroup as MuscleGroupValue } from '@/shared/types/api'
 import { slideUp, staggerContainer } from '@/shared/utils/motion'
 import { useLangStore, useT } from '@/shared/i18n'
@@ -415,20 +416,28 @@ export function ClientProfilePage() {
             error={planForm.formState.errors.name?.message}
             {...planForm.register('name')}
           />
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Input
-              label={vx.startDate}
-              type="date"
-              error={planForm.formState.errors.startDate?.message}
-              {...planForm.register('startDate')}
-            />
-            <Input
-              label={vx.endDate}
-              type="date"
-              error={planForm.formState.errors.endDate?.message}
-              {...planForm.register('endDate')}
-            />
-          </div>
+          <Controller
+            name="startDate"
+            control={planForm.control}
+            render={({ field: startField }) => (
+              <Controller
+                name="endDate"
+                control={planForm.control}
+                render={({ field: endField }) => (
+                  <DateRangePicker
+                    startLabel={vx.startDate}
+                    endLabel={vx.endDate}
+                    startValue={startField.value}
+                    endValue={endField.value}
+                    onStartChange={startField.onChange}
+                    onEndChange={endField.onChange}
+                    startError={planForm.formState.errors.startDate?.message}
+                    endError={planForm.formState.errors.endDate?.message}
+                  />
+                )}
+              />
+            )}
+          />
           {createPlanApiError && (
             <p className="rounded-lg px-3 py-2 text-sm" style={{ background: 'var(--xn-danger-bg)', color: 'var(--xn-danger)' }}>
               {createPlanApiError}

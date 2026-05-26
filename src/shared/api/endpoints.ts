@@ -16,6 +16,7 @@ export const ENDPOINTS = {
   // Users
   users: {
     me: '/api/users/me',
+    preferences: '/api/users/me/preferences',
     avatar: '/api/users/me/avatar',
     bodyweight: '/api/users/me/bodyweight',
     bodyweightById: (id: string) => `/api/users/me/bodyweight/${id}`,
@@ -28,16 +29,8 @@ export const ENDPOINTS = {
     report: (userId: string) => `/api/users/${userId}/reports`,
   },
 
-  // Coaches
-  coaches: {
-    list: '/api/coaches',
-    profile: (coachId: string) => `/api/coaches/${coachId}`,
-    rating: (coachId: string) => `/api/coaches/${coachId}/rating`,
-  },
-
   // Coach-Client
   coachClient: {
-    request: '/api/coach-client/request',
     accept: (id: string) => `/api/coach-client/accept/${id}`,
     terminate: (id: string) => `/api/coach-client/${id}`,
     requestTermination: (id: string) => `/api/coach-client/${id}/request-termination`,

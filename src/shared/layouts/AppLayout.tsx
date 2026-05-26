@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { NavLink, Link, Outlet, useLocation, useNavigate } from 'react-router'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -7,13 +7,16 @@ import {
   UserCheck, Menu, X, LogOut, ChevronDown,
   PanelLeftClose, PanelLeftOpen, TrendingUp,
   LockKeyhole, Lock, BookOpen, CreditCard,
-  Shield, Utensils, Ban, KeyRound,
+  Shield, Utensils, Ban, KeyRound, MessageCircle,
 } from 'lucide-react'
 import { cn } from '@/shared/utils/cn'
 import { Link as RouterLink } from 'react-router'
 import { useAuthStore } from '@/features/auth'
 import { useLogout } from '@/features/auth'
 import { useT } from '@/shared/i18n'
+import { useLangStore, type Lang } from '@/shared/i18n'
+import { useThemeStore, type Theme } from '@/shared/theme'
+import { usePreferenceStore, type WeightUnit } from '@/shared/preferences'
 import { LanguageSwitcher } from '@/shared/components/LanguageSwitcher'
 import { ThemeToggle } from '@/shared/components/ThemeToggle'
 import { UserAvatar } from '@/shared/components/UserAvatar'
@@ -22,6 +25,7 @@ import { useNotificationHub } from '@/features/notifications/hooks/useNotificati
 import { useChatUnreadSync } from '@/features/chat'
 import { exerciseTrackingKeys } from '@/features/exercise-tracking'
 import { useMyCoach } from '@/features/coach-client'
+import { useMyPreferences, useUpdatePreferences } from '@/features/profile'
 
 const MINI_WIDTH  = 56
 const FULL_WIDTH  = 220
@@ -40,6 +44,14 @@ export function AppLayout() {
   const location  = useLocation()
   const t         = useT()
   const tn        = t.nav
+  const lang = useLangStore((s) => s.lang)
+  const setLang = useLangStore((s) => s.setLang)
+  const theme = useThemeStore((s) => s.theme)
+  const setTheme = useThemeStore((s) => s.setTheme)
+  const weightUnit = usePreferenceStore((s) => s.weightUnit)
+  const setWeightUnit = usePreferenceStore((s) => s.setWeightUnit)
+  const { data: preferences } = useMyPreferences(!!user)
+  const updatePreferences = useUpdatePreferences()
   const changePasswordLabel = (tn as typeof tn & { changePassword?: string }).changePassword ?? 'Change password'
   const exerciseLibraryLabel = (tn as typeof tn & { exerciseLibrary?: string }).exerciseLibrary ?? 'Exercise Library'
   const isWeekDetailPage = /^\/plans\/[^/]+\/weeks\/[^/]+$/.test(location.pathname)
@@ -47,10 +59,25 @@ export function AppLayout() {
   useNotificationHub()
   useChatUnreadSync()
   const { data: myCoach } = useMyCoach(isIndividual)
-  const hasChatSidebar =
-    (isCoach && location.pathname === '/coach/clients') ||
-    (isIndividual && myCoach?.status === 'Active' && location.pathname.startsWith('/coaches'))
-  const coachNavLabel = myCoach ? t.coaches.coachTitle : tn.findCoach
+  const hasChatSidebar = isCoach && location.pathname === '/coach/clients'
+
+  useEffect(() => {
+    if (!preferences) return
+    setLang(preferences.language)
+    setTheme(preferences.theme)
+    setWeightUnit(preferences.weightUnit)
+  }, [preferences, setLang, setTheme, setWeightUnit])
+
+  function savePreferences(next: Partial<{ language: Lang; theme: Theme; weightUnit: WeightUnit }>) {
+    const language = next.language ?? lang
+    const nextTheme = next.theme ?? theme
+    const nextWeightUnit = next.weightUnit ?? weightUnit
+
+    setLang(language)
+    setTheme(nextTheme)
+    setWeightUnit(nextWeightUnit)
+    updatePreferences.mutate({ language, theme: nextTheme, weightUnit: nextWeightUnit })
+  }
 
   const individualNav = [
     { to: '/dashboard',         icon: LayoutDashboard,   label: tn.dashboard,         color: '#6366f1' },
@@ -58,7 +85,7 @@ export function AppLayout() {
     { to: '/exercise-library',  icon: BookOpen,          label: exerciseLibraryLabel,  color: '#06b6d4' },
     { to: '/progress',          icon: TrendingUp,        label: tn.progress,          color: '#f59e0b' },
     { to: '/nutrition',         icon: Utensils,          label: 'Nutrition',          color: '#ec4899' },
-    { to: '/coaches',           icon: Users,             label: coachNavLabel,        color: '#14b8a6' },
+    ...(myCoach ? [{ to: '/coach', icon: MessageCircle, label: 'Coach', color: '#8b5cf6' }] : []),
     ...(!myCoach ? [{ to: '/enter-coach-code', icon: KeyRound, label: t.enterCoachCode.label, color: '#8b5cf6' }] : []),
     { to: '/subscription',      icon: CreditCard,        label: 'Subscription',       color: '#eab308' },
   ]
@@ -70,7 +97,6 @@ export function AppLayout() {
     { to: '/progress',        icon: TrendingUp,        label: tn.progress,         color: '#f59e0b' },
     { to: '/nutrition',       icon: Utensils,          label: 'Nutrition',         color: '#ec4899' },
     { to: '/coach/clients',   icon: UserCheck,         label: tn.clients,          color: '#8b5cf6' },
-    { to: '/coaches',         icon: Users,             label: tn.findCoach,        color: '#14b8a6' },
     { to: '/subscription',    icon: CreditCard,        label: 'Subscription',      color: '#eab308' },
   ]
 
@@ -197,8 +223,8 @@ export function AppLayout() {
 
           {/* Right: lang switcher + notification bell + user menu */}
           <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-            <LanguageSwitcher variant="text" />
-            <ThemeToggle />
+            <LanguageSwitcher variant="text" onChange={(language) => savePreferences({ language })} />
+            <ThemeToggle onChange={(nextTheme) => savePreferences({ theme: nextTheme })} />
             <NotificationBell />
             <div className="relative">
               <button
@@ -224,7 +250,7 @@ export function AppLayout() {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -8, scale: 0.96 }}
                       transition={{ duration: 0.13 }}
-                      className="xn-card absolute right-0 top-full z-20 mt-2 w-52"
+                      className="xn-card absolute right-0 top-full z-20 mt-2 w-64"
                       style={{ padding: 0, overflow: 'hidden', borderRadius: 14 }}
                     >
                       <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-1)' }}>
@@ -259,6 +285,41 @@ export function AppLayout() {
                           <Ban size={15} />
                           Blocklist
                         </NavLink>
+                        <div style={{ borderTop: '1px solid var(--border-1)', margin: '6px 0', padding: '10px 8px 4px' }}>
+                          <p className="text-xs font-semibold uppercase" style={{ color: 'var(--fg-3)', margin: '0 0 8px', letterSpacing: '0.08em' }}>
+                            Preferences
+                          </p>
+                          <PreferenceRow label="Language">
+                            <SegmentedPreference
+                              value={lang}
+                              options={[
+                                { value: 'en', label: 'EN' },
+                                { value: 'vi', label: 'VI' },
+                              ]}
+                              onChange={(language) => savePreferences({ language })}
+                            />
+                          </PreferenceRow>
+                          <PreferenceRow label="Theme">
+                            <SegmentedPreference
+                              value={theme}
+                              options={[
+                                { value: 'light', label: 'Light' },
+                                { value: 'dark', label: 'Dark' },
+                              ]}
+                              onChange={(nextTheme) => savePreferences({ theme: nextTheme })}
+                            />
+                          </PreferenceRow>
+                          <PreferenceRow label="Weight">
+                            <SegmentedPreference
+                              value={weightUnit}
+                              options={[
+                                { value: 'kg', label: 'kg' },
+                                { value: 'lb', label: 'lb' },
+                              ]}
+                              onChange={(nextWeightUnit) => savePreferences({ weightUnit: nextWeightUnit })}
+                            />
+                          </PreferenceRow>
+                        </div>
                         <button
                           onClick={handleLogout}
                           className="xn-nav-item w-full text-left"
@@ -296,6 +357,71 @@ export function AppLayout() {
           </div>
         </main>
       </div>
+    </div>
+  )
+}
+
+interface PreferenceRowProps {
+  label: string
+  children: React.ReactNode
+}
+
+function PreferenceRow({ label, children }: PreferenceRowProps) {
+  return (
+    <div className="flex items-center justify-between gap-3" style={{ marginBottom: 8 }}>
+      <span className="text-xs font-medium" style={{ color: 'var(--fg-2)' }}>
+        {label}
+      </span>
+      {children}
+    </div>
+  )
+}
+
+interface SegmentedPreferenceProps<T extends string> {
+  value: T
+  options: Array<{ value: T; label: string }>
+  onChange: (value: T) => void
+}
+
+function SegmentedPreference<T extends string>({ value, options, onChange }: SegmentedPreferenceProps<T>) {
+  return (
+    <div
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 2,
+        padding: 2,
+        background: 'var(--bg-3)',
+        border: '1px solid var(--border-1)',
+        borderRadius: 8,
+      }}
+    >
+      {options.map((option) => {
+        const active = option.value === value
+        return (
+          <button
+            key={option.value}
+            type="button"
+            onClick={() => onChange(option.value)}
+            style={{
+              minWidth: 36,
+              padding: '4px 8px',
+              border: 'none',
+              borderRadius: 6,
+              cursor: 'pointer',
+              fontFamily: 'var(--font-sans)',
+              fontSize: 12,
+              fontWeight: active ? 700 : 500,
+              background: active ? 'var(--bg-2)' : 'transparent',
+              color: active ? 'var(--fg-1)' : 'var(--fg-3)',
+              boxShadow: active ? 'var(--sh-xs)' : 'none',
+              transition: 'all 140ms',
+            }}
+          >
+            {option.label}
+          </button>
+        )
+      })}
     </div>
   )
 }

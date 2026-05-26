@@ -48,11 +48,6 @@ export const FEATURE_TIP_ENTRIES: Record<Lang, Record<string, TipEntry>> = {
       title: 'Bodyweight powers multiple metrics',
       body: 'Update bodyweight regularly so BMI, DOTS, nutrition targets, and trend charts stay accurate. Same time of day gives the cleanest trend.',
     },
-    'coach-marketplace-fit': {
-      label: 'Coach tip',
-      title: 'Choose based on fit, not just price',
-      body: 'Compare coaching style, response time, methods, and availability. The best coach is the one whose workflow matches your goal and schedule.',
-    },
     'coach-client-priorities': {
       label: 'Client dashboard tip',
       title: 'Handle attention flags first',
@@ -104,11 +99,6 @@ export const FEATURE_TIP_ENTRIES: Record<Lang, Record<string, TipEntry>> = {
       label: 'Tip hồ sơ',
       title: 'Cân nặng ảnh hưởng nhiều chỉ số',
       body: 'Cập nhật cân nặng đều để BMI, DOTS, mục tiêu dinh dưỡng và biểu đồ xu hướng chính xác hơn. Cân cùng thời điểm mỗi ngày sẽ sạch dữ liệu hơn.',
-    },
-    'coach-marketplace-fit': {
-      label: 'Tip chọn coach',
-      title: 'Chọn theo độ phù hợp, không chỉ theo giá',
-      body: 'So sánh phong cách coaching, thời gian phản hồi, phương thức làm việc và lịch nhận client. Coach tốt nhất là người hợp mục tiêu và lịch của bạn.',
     },
     'coach-client-priorities': {
       label: 'Tip client',

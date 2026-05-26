@@ -1,5 +1,19 @@
 import type { Gender } from '@/shared/types/api'
-import type { CoachMarketplaceProfile } from '@/features/coaches'
+import type { Lang } from '@/shared/i18n'
+import type { Theme } from '@/shared/theme'
+import type { WeightUnit } from '@/shared/preferences'
+
+export interface UserPreferencesResponse {
+  language: Lang
+  theme: Theme
+  weightUnit: WeightUnit
+}
+
+export interface UpdatePreferencesRequest {
+  language: Lang
+  theme: Theme
+  weightUnit: WeightUnit
+}
 
 export interface UserProfileResponse {
   id: string
@@ -20,7 +34,6 @@ export interface UserProfileResponse {
   totalXp: number
   xpToNextLevel: number
   title: string
-  coachMarketplaceProfile: CoachMarketplaceProfile | null
   facebookUrl: string | null
   instagramUrl: string | null
   zaloUrl: string | null
@@ -48,7 +61,6 @@ export interface UpdateProfileRequest {
   height?: number
   gender?: Gender
   dateOfBirth?: string
-  coachMarketplaceProfile?: CoachMarketplaceProfile
   facebookUrl?: string
   instagramUrl?: string
   zaloUrl?: string

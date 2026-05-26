@@ -5,7 +5,7 @@ import {
   CheckCircle2, XCircle, User, Users, Clock, Mail, FileText,
   Flame, Dumbbell, Ruler, Weight, AlertTriangle, TrendingUp,
   CalendarDays, Scale, UserMinus, RefreshCw,
-  ClipboardList, Tags, Plus, Trash2, KeyRound,
+  ClipboardList, Plus, Trash2, KeyRound,
 } from 'lucide-react'
 import { useAuthStore } from '@/features/auth'
 import { useSubscription } from '@/features/billing/api/useSubscription'
@@ -40,7 +40,6 @@ import { CoachChatSidebar } from '@/features/chat/components/CoachChatSidebar'
 import { RenewalModal } from '../components/RenewalModal'
 import { InviteCodeModal } from '../components/InviteCodeModal'
 import { CoachScheduleCalendar } from '../components/CoachScheduleCalendar'
-import { formatContractSelection } from '../utils/contractDisplay'
 
 function formatContractDate(value: string | null): string {
   if (!value) return 'chưa đặt'
@@ -134,18 +133,6 @@ function RequesterProfileModal({
             <CalendarDays size={14} />
             Requested contract: {formatContractDate(req.startDate)} - {formatContractDate(req.endDate)}
           </p>
-          {req.selectedCoachingType && (
-            <p className="flex items-center gap-1 text-sm text-text">
-              <Tags size={14} />
-              {formatContractSelection({
-                type: req.selectedCoachingType,
-                price: req.selectedPriceAmount,
-                currency: req.selectedCurrency ?? 'VND',
-                quantity: req.selectedQuantity,
-              })}
-            </p>
-          )}
-
           <div className="flex justify-end gap-2 pt-1">
             <Button variant="secondary" onClick={onClose}>Cancel</Button>
             <Button variant="danger" size="sm" loading={declining} onClick={onDecline}>
@@ -218,6 +205,16 @@ function ClientCard({ client, stats, currentUserId, onView, onDisconnect, onCanc
     attentionLevel === 'Medium' ? 'warning' :
     attentionLevel === 'Low' ? 'primary' :
     'default'
+  const latestCompletedWorkoutDate = stats?.latestCompletedWorkoutDate ?? null
+  const completedWorkoutToday = stats?.completedWorkoutToday ?? false
+  const completionLabel = completedWorkoutToday
+    ? tx.doneToday
+    : latestCompletedWorkoutDate
+      ? tx.lastDone.replace('{time}', formatDistanceToNow(new Date(latestCompletedWorkoutDate), { addSuffix: true }))
+      : null
+  const completionCount = stats && stats.activePlanTotalWorkoutCount > 0
+    ? `${stats.activePlanCompletedWorkoutCount}/${stats.activePlanTotalWorkoutCount}`
+    : null
 
   return (
     <motion.div
@@ -311,17 +308,6 @@ function ClientCard({ client, stats, currentUserId, onView, onDisconnect, onCanc
 
       <div className="px-4 pb-2 text-xs text-muted">
         {tx.contract}: {formatContractDate(client.startDate)} → {formatContractDate(client.endDate)}
-        {client.selectedCoachingType && (
-          <span className="ml-2 inline-flex items-center gap-1 text-text">
-            <Tags size={11} />
-            {formatContractSelection({
-              type: client.selectedCoachingType,
-              price: client.selectedPriceAmount,
-              currency: client.selectedCurrency ?? 'VND',
-              quantity: client.selectedQuantity,
-            })}
-          </span>
-        )}
         {isPendingRenewal && client.proposedEndDate && (
           <span className="ml-1 text-warning">({tx.proposed} {formatContractDate(client.proposedEndDate)})</span>
         )}
@@ -362,6 +348,25 @@ function ClientCard({ client, stats, currentUserId, onView, onDisconnect, onCanc
                 {translateAttentionReason(reason, lang)}
               </Badge>
             ))}
+          </div>
+        )}
+        {completionLabel && (
+          <div
+            className="flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs"
+            style={{ background: completedWorkoutToday ? 'rgba(34,197,94,0.12)' : 'var(--bg-3)' }}
+          >
+            <span
+              className="flex items-center gap-1 font-medium"
+              style={{ color: completedWorkoutToday ? 'var(--color-success)' : 'var(--fg-2)' }}
+            >
+              <CheckCircle2 size={12} />
+              {completionLabel}
+            </span>
+            {completionCount && (
+              <span style={{ color: 'var(--fg-3)' }}>
+                {completionCount}
+              </span>
+            )}
           </div>
         )}
       </div>
@@ -576,19 +581,6 @@ export function ClientsPage() {
                         <CalendarDays size={11} />
                         <span>{formatContractDate(req.startDate)} - {formatContractDate(req.endDate)}</span>
                       </div>
-                      {req.selectedCoachingType && (
-                        <div className="mt-0.5 flex items-center gap-1 text-xs text-muted">
-                          <Tags size={11} />
-                          <span>
-                            {formatContractSelection({
-                type: req.selectedCoachingType,
-                price: req.selectedPriceAmount,
-                currency: req.selectedCurrency ?? 'VND',
-                quantity: req.selectedQuantity,
-              })}
-                          </span>
-                        </div>
-                      )}
                     </div>
                   </div>
                   <div className="flex w-full gap-2 sm:w-auto">
@@ -781,6 +773,8 @@ function clientsPageText(lang: 'en' | 'vi') {
       noData: 'Chưa có dữ liệu',
       weight: 'Cân nặng',
       bigThreePr: 'PR Big 3',
+      doneToday: 'Đã tập hôm nay',
+      lastDone: 'Tập gần nhất {time}',
     }
     : {
       activeClientsCount: '{n} active client(s)',
@@ -802,6 +796,8 @@ function clientsPageText(lang: 'en' | 'vi') {
       noData: 'No data',
       weight: 'Weight',
       bigThreePr: 'Big 3 PR',
+      doneToday: 'Done today',
+      lastDone: 'Last done {time}',
     }
 }
 

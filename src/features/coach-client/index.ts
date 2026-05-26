@@ -1,5 +1,4 @@
 export {
-  useRequestCoach,
   useAcceptRequest,
   useTerminateRelationship,
   useRequestTermination,
@@ -21,7 +20,6 @@ export {
 export type {
   CoachRelationshipResponse,
   ClientResponse,
-  RequestCoachRequest,
   RequestRenewalRequest,
   CoachClientDashboardResponse,
   CoachClientAiBriefResponse,
