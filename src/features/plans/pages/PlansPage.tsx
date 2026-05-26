@@ -4,8 +4,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useNavigate } from 'react-router'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
-import { Plus, ChevronRight, Zap, ZapOff, Trash2, BarChart2, Sparkles, Lock, Download } from 'lucide-react'
-import { format } from 'date-fns'
+import { Plus, ChevronRight, Zap, ZapOff, Trash2, BarChart2, Sparkles, Lock, Download, Copy } from 'lucide-react'
+import { addDays, differenceInCalendarDays, format } from 'date-fns'
 import { Card } from '@/shared/components/Card'
 import { Button } from '@/shared/components/Button'
 import { Input } from '@/shared/components/Input'
@@ -32,6 +32,7 @@ import {
   useCoachPlanOverview,
   useCreatePlanForUser,
   useExportPlanCsv,
+  useDuplicatePlan,
 } from '../index'
 import type { AxiosError } from 'axios'
 import type { ApiError } from '@/shared/types/api'
@@ -44,6 +45,7 @@ export function PlansPage() {
   const [showCreate, setShowCreate] = useState(false)
   const [showStarterPlan, setShowStarterPlan] = useState(false)
   const [showCreateClientPlan, setShowCreateClientPlan] = useState(false)
+  const [duplicatingPlan, setDuplicatingPlan] = useState<PlanResponse | null>(null)
 
   const { data: plans, isLoading } = usePlans()
   const { data: clientPlans, isLoading: clientPlansLoading } = useCoachPlanOverview(isCoach)
@@ -54,6 +56,7 @@ export function PlansPage() {
   const { mutate: activate } = useActivatePlan()
   const { mutate: deactivate } = useDeactivatePlan()
   const { mutate: deletePlan } = useDeletePlan()
+  const { mutate: duplicatePlan, isPending: duplicating, error: duplicateError } = useDuplicatePlan()
   const { confirm, ConfirmDialog } = useConfirm()
 
   const t = useT()
@@ -120,9 +123,19 @@ export function PlansPage() {
     path: ['endDate'],
   })
 
+  const duplicateSchema = z.object({
+    name: z.string().min(2, tp.nameError).max(100),
+    startDate: z.string().min(1, tp.requiredError),
+    endDate: z.string().min(1, tp.requiredError),
+  }).refine((d) => d.endDate > d.startDate, {
+    message: tp.endDateError,
+    path: ['endDate'],
+  })
+
   type FormData = z.infer<typeof schema>
   type ClientPlanFormData = z.infer<typeof clientPlanSchema>
   type StarterPlanFormData = z.infer<typeof starterPlanSchema>
+  type DuplicateFormData = z.infer<typeof duplicateSchema>
 
   const {
     register,
@@ -158,6 +171,14 @@ export function PlansPage() {
     },
   })
 
+  const {
+    register: registerDuplicate,
+    handleSubmit: handleSubmitDuplicate,
+    reset: resetDuplicate,
+    control: duplicateControl,
+    formState: { errors: duplicateErrors },
+  } = useForm<DuplicateFormData>({ resolver: zodResolver(duplicateSchema) })
+
   function onSubmit(data: FormData) {
     createPlan(data, {
       onSuccess: () => {
@@ -165,6 +186,21 @@ export function PlansPage() {
         setShowCreate(false)
       },
     })
+  }
+
+  function onSubmitDuplicate(data: DuplicateFormData) {
+    if (!duplicatingPlan) return
+    duplicatePlan({ id: duplicatingPlan.id, data }, {
+      onSuccess: () => {
+        resetDuplicate()
+        setDuplicatingPlan(null)
+      },
+    })
+  }
+
+  function openDuplicatePlan(plan: PlanResponse) {
+    resetDuplicate(buildDuplicateDefaults(plan))
+    setDuplicatingPlan(plan)
   }
 
   function onSubmitClientPlan(data: ClientPlanFormData) {
@@ -195,6 +231,7 @@ export function PlansPage() {
   const apiError = (createError as AxiosError<ApiError>)?.response?.data?.message
   const starterPlanApiError = (starterPlanError as AxiosError<ApiError>)?.response?.data?.message
   const clientPlanApiError = (createClientPlanError as AxiosError<ApiError>)?.response?.data?.message
+  const duplicateApiError = (duplicateError as AxiosError<ApiError>)?.response?.data?.message
   const loading = isLoading || subscriptionLoading || (isCoach && (clientPlansLoading || clientsLoading))
 
   if (loading) {
@@ -263,6 +300,7 @@ export function PlansPage() {
                   onOverview={() => navigate(`/plans/${plan.id}/overview`)}
                   onActivate={() => activate(plan.id)}
                   onDeactivate={() => deactivate(plan.id)}
+                  onDuplicate={() => openDuplicatePlan(plan)}
                   onDelete={async () => {
                     if (await confirm(tp.deleteConfirm, { confirmLabel: t.common.delete, danger: true })) deletePlan(plan.id)
                   }}
@@ -302,6 +340,7 @@ export function PlansPage() {
                   onOverview={() => navigate(`/plans/${plan.id}/overview`)}
                   onActivate={() => activate(plan.id)}
                   onDeactivate={() => deactivate(plan.id)}
+                  onDuplicate={() => openDuplicatePlan(plan)}
                   onDelete={async () => {
                     if (await confirm(tp.deleteConfirm, { confirmLabel: t.common.delete, danger: true })) deletePlan(plan.id)
                   }}
@@ -637,9 +676,89 @@ export function PlansPage() {
           </div>
         </form>
       </Modal>
+
+      <Modal
+        open={!!duplicatingPlan}
+        onClose={() => { setDuplicatingPlan(null); resetDuplicate() }}
+        title={tp.duplicateModalTitle}
+      >
+        <form onSubmit={handleSubmitDuplicate(onSubmitDuplicate)} className="space-y-4">
+          <Input
+            label={tp.nameLabel}
+            placeholder={tp.namePlaceholder}
+            error={duplicateErrors.name?.message}
+            {...registerDuplicate('name')}
+          />
+          <Controller
+            name="startDate"
+            control={duplicateControl}
+            render={({ field: startField }) => (
+              <Controller
+                name="endDate"
+                control={duplicateControl}
+                render={({ field: endField }) => (
+                  <DateRangePicker
+                    startLabel={tp.startDateLabel}
+                    endLabel={tp.endDateLabel}
+                    startValue={startField.value}
+                    endValue={endField.value}
+                    onStartChange={startField.onChange}
+                    onEndChange={endField.onChange}
+                    startError={duplicateErrors.startDate?.message}
+                    endError={duplicateErrors.endDate?.message}
+                  />
+                )}
+              />
+            )}
+          />
+          {duplicateApiError && (
+            duplicateApiError.toLowerCase().includes('limit') || duplicateApiError.toLowerCase().includes('upgrade') ? (
+              <div
+                className="flex flex-col items-center gap-2 rounded-xl p-4 text-center"
+                style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid var(--color-primary)' }}
+              >
+                <p className="text-sm font-semibold" style={{ color: 'var(--fg-1)' }}>Plan limit reached</p>
+                <p className="text-xs" style={{ color: 'var(--fg-3)' }}>Upgrade to Pro for unlimited plans.</p>
+                <Button size="sm" onClick={() => { setDuplicatingPlan(null); navigate('/subscription') }}>
+                  View Plans
+                </Button>
+              </div>
+            ) : (
+              <p className="text-sm text-danger">{duplicateApiError}</p>
+            )
+          )}
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variant="secondary" type="button" className="w-full sm:w-auto" onClick={() => { setDuplicatingPlan(null); resetDuplicate() }}>
+              {tc.cancel}
+            </Button>
+            <Button type="submit" className="w-full sm:w-auto" loading={duplicating}>
+              {tp.duplicateCreate}
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
     </>
   )
+}
+
+function buildDuplicateDefaults(plan: PlanResponse) {
+  const originalStart = parseDateOnly(plan.startDate)
+  const originalEnd = parseDateOnly(plan.endDate)
+  const durationOffset = Math.max(0, differenceInCalendarDays(originalEnd, originalStart))
+  const startDate = addDays(originalEnd, 1)
+  const endDate = addDays(startDate, durationOffset)
+
+  return {
+    name: `${plan.name.slice(0, 95)} Copy`,
+    startDate: format(startDate, 'yyyy-MM-dd'),
+    endDate: format(endDate, 'yyyy-MM-dd'),
+  }
+}
+
+function parseDateOnly(value: string) {
+  const [year, month, day] = value.slice(0, 10).split('-').map(Number)
+  return new Date(year, month - 1, day)
 }
 
 interface PlanRowProps {
@@ -648,10 +767,11 @@ interface PlanRowProps {
   onOverview: () => void
   onActivate: () => void
   onDeactivate: () => void
+  onDuplicate: () => void
   onDelete: () => void
 }
 
-function PlanRow({ plan, onOpen, onOverview, onActivate, onDeactivate, onDelete }: PlanRowProps) {
+function PlanRow({ plan, onOpen, onOverview, onActivate, onDeactivate, onDuplicate, onDelete }: PlanRowProps) {
   const t = useT()
   const tc = t.common
   const { mutate: exportCsv, isPending: exporting } = useExportPlanCsv()
@@ -676,7 +796,7 @@ function PlanRow({ plan, onOpen, onOverview, onActivate, onDeactivate, onDelete 
             {format(new Date(plan.startDate), 'dd/MM/yyyy')} - {format(new Date(plan.endDate), 'dd/MM/yyyy')}
           </p>
           <p className="text-xs text-muted mt-0.5">
-            {plan.completedDays}/{plan.totalDays} {tc.days} - {plan.totalWeeks} {tc.weeks}
+            {plan.completedWeeks}/{plan.totalWeeks} {tc.weeks} · {plan.completedDays}/{plan.totalDays} {tc.days}
           </p>
         </div>
 
@@ -700,6 +820,11 @@ function PlanRow({ plan, onOpen, onOverview, onActivate, onDeactivate, onDelete 
           ) : (
             <Button variant="ghost" size="sm" onClick={onActivate}>
               <Zap size={15} />
+            </Button>
+          )}
+          {plan.totalWeeks > 0 && plan.completedWeeks === plan.totalWeeks && (
+            <Button variant="ghost" size="sm" onClick={onDuplicate} title="Duplicate plan" className="text-primary">
+              <Copy size={15} />
             </Button>
           )}
           <Button variant="ghost" size="sm" onClick={onDelete}>

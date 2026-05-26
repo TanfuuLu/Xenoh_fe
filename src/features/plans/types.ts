@@ -11,6 +11,7 @@ export interface PlanResponse {
   createdByCoachId: string | null
   coachName: string | null
   totalWeeks: number
+  completedWeeks: number
   totalDays: number
   completedDays: number
   isActive: boolean
@@ -129,6 +130,12 @@ export interface RepeatedExercisePoint {
 }
 
 export interface UpdatePlanRequest {
+  name: string
+  startDate: string
+  endDate: string
+}
+
+export interface DuplicatePlanRequest {
   name: string
   startDate: string
   endDate: string

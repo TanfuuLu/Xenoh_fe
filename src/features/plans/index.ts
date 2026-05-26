@@ -12,6 +12,7 @@ export {
   usePlanBalanceCheck,
   usePlanDesignAnalysis,
   useExportPlanCsv,
+  useDuplicatePlan,
 } from './api/usePlans'
 export type {
   PlanResponse,
@@ -19,6 +20,7 @@ export type {
   CreatePlanRequest,
   CreatePlanForUserRequest,
   CreateAiStarterPlanRequest,
+  DuplicatePlanRequest,
   PlanBalanceReviewResponse,
   PlanDesignAnalysisResponse,
   UpdatePlanRequest,

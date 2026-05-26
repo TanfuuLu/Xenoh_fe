@@ -86,6 +86,7 @@ export const ENDPOINTS = {
     starterAi: '/api/plans/starter-ai',
     balanceCheck: (id: string, lang: 'en' | 'vi') => `/api/plans/${id}/balance-check?lang=${lang}`,
     exportCsv: (id: string) => `/api/plans/${id}/export`,
+    duplicate: (id: string) => `/api/plans/${id}/duplicate`,
   },
 
   // Weekly Workouts

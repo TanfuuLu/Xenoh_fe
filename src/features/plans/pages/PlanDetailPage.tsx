@@ -179,7 +179,7 @@ export function PlanDetailPage() {
         <AnimatePresence>
           {displayedWeeks.map((week) => {
             const pct      = week.totalDays > 0 ? Math.round((week.completedDays / week.totalDays) * 100) : 0
-            const weekDone = week.totalDays > 0 && week.completedDays === week.totalDays
+            const weekDone = week.isCompleted
             const warningDaysInWeek = warningDaysByWeek[week.id]?.length ?? 0
             const hasWarning = week.hasWarning || warningDaysInWeek > 0
             const isCurrentWeek = currentCalendarWeek?.id === week.id

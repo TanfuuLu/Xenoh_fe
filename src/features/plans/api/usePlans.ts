@@ -8,6 +8,7 @@ import type {
   CreateAiStarterPlanRequest,
   CreatePlanForUserRequest,
   CreatePlanRequest,
+  DuplicatePlanRequest,
   PlanBalanceReviewResponse,
   PlanDesignAnalysisResponse,
   PlanResponse,
@@ -136,6 +137,15 @@ export function usePlanBalanceCheck(planId: string) {
 export function useExportPlanCsv() {
   return useMutation({
     mutationFn: (planId: string) => exportPlanCsv(planId),
+  })
+}
+
+export function useDuplicatePlan() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: DuplicatePlanRequest }) =>
+      api.post<PlanResponse>(ENDPOINTS.plans.duplicate(id), data).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: planKeys.all }),
   })
 }
 

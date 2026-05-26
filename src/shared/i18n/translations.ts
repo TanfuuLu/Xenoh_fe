@@ -242,6 +242,9 @@ export const translations = {
       endDateLabel: 'End date',
       endDateError: 'End date must be after start date',
       create: 'Create',
+      duplicateBtn: 'Duplicate plan',
+      duplicateModalTitle: 'Duplicate plan',
+      duplicateCreate: 'Duplicate',
     },
 
     // ── Plan detail ───────────────────────────────────────────────────────────
@@ -1287,6 +1290,9 @@ export const translations = {
       endDateLabel: 'Ngày kết thúc',
       endDateError: 'Ngày kết thúc phải sau ngày bắt đầu',
       create: 'Tạo',
+      duplicateBtn: 'Nhân bản plan',
+      duplicateModalTitle: 'Nhân bản plan',
+      duplicateCreate: 'Nhân bản',
     },
 
     planDetail: {
