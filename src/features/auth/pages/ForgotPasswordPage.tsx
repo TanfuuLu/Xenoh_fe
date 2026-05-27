@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Link, useNavigate } from 'react-router'
-import { KeyRound, Lock, Mail } from 'lucide-react'
+import { CheckCircle2, KeyRound, Lock, Mail, XCircle } from 'lucide-react'
 import { Button } from '@/shared/components/Button'
 import { Input } from '@/shared/components/Input'
 import { LanguageSwitcher } from '@/shared/components/LanguageSwitcher'
@@ -34,10 +34,23 @@ const emailSchema = z.object({
   email: z.string().email(),
 })
 
+const PASSWORD_RULES = [
+  { label: 'At least 10 characters',       test: (v: string) => v.length >= 10 },
+  { label: 'One uppercase letter (A–Z)',    test: (v: string) => /[A-Z]/.test(v) },
+  { label: 'One lowercase letter (a–z)',    test: (v: string) => /[a-z]/.test(v) },
+  { label: 'One digit (0–9)',               test: (v: string) => /[0-9]/.test(v) },
+  { label: 'One special character (!@#…)',  test: (v: string) => /[^A-Za-z0-9]/.test(v) },
+]
+
 const resetSchema = z.object({
   code: z.string().regex(/^\d{6}$/, copy.codeLength),
-  newPassword: z.string().min(6),
-  confirmPassword: z.string().min(6),
+  newPassword: z.string()
+    .min(10, 'At least 10 characters')
+    .regex(/[A-Z]/, 'One uppercase letter')
+    .regex(/[a-z]/, 'One lowercase letter')
+    .regex(/[0-9]/, 'One digit')
+    .regex(/[^A-Za-z0-9]/, 'One special character'),
+  confirmPassword: z.string().min(1),
 }).refine((data) => data.newPassword === data.confirmPassword, {
   message: copy.passwordMismatch,
   path: ['confirmPassword'],
@@ -62,6 +75,8 @@ export function ForgotPasswordPage() {
   const resetForm = useForm<ResetForm>({
     resolver: zodResolver(resetSchema),
   })
+  const newPasswordValue = resetForm.watch('newPassword') ?? ''
+  const isSubmitted = resetForm.formState.isSubmitted
 
   function onSendCode(data: EmailForm) {
     sendCode(data, {
@@ -145,6 +160,7 @@ export function ForgotPasswordPage() {
                   error={resetForm.formState.errors.newPassword?.message}
                   {...resetForm.register('newPassword')}
                 />
+                <PasswordRules value={newPasswordValue} submitted={isSubmitted} />
                 <Input
                   label={tf.confirmPasswordLabel}
                   type="password"
@@ -181,6 +197,42 @@ export function ForgotPasswordPage() {
           One code. Back to the plan.
         </h2>
       </div>
+    </div>
+  )
+}
+
+function PasswordRules({ value, submitted }: { value: string; submitted: boolean }) {
+  if (!value && !submitted) return null
+  return (
+    <div style={{
+      marginTop: 2,
+      padding: '10px 12px',
+      borderRadius: 10,
+      background: 'var(--bg-3)',
+      border: '1px solid var(--border-1)',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 7,
+    }}>
+      {PASSWORD_RULES.map((rule) => {
+        const met = rule.test(value)
+        return (
+          <div key={rule.label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {met
+              ? <CheckCircle2 size={15} style={{ color: 'var(--color-success)', flexShrink: 0 }} />
+              : <XCircle size={15} style={{ color: submitted ? 'var(--color-danger)' : 'var(--color-muted)', flexShrink: 0 }} />
+            }
+            <span style={{
+              fontSize: 13,
+              fontWeight: met ? 500 : 400,
+              color: met ? 'var(--color-success)' : submitted ? 'var(--color-danger)' : 'var(--fg-3)',
+              transition: 'color 150ms',
+            }}>
+              {rule.label}
+            </span>
+          </div>
+        )
+      })}
     </div>
   )
 }

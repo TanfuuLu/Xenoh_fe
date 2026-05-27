@@ -35,7 +35,6 @@ import {
   useDailyWorkouts,
   useCopyDay,
   useMarkDayStatus,
-  useDailyWorkoutGuidance,
 } from '../index'
 import type { ExerciseResponse, ExerciseSetResponse, ExerciseTemplateResponse, WorkoutGuidanceResponse } from '../types'
 import { useMyProfile } from '@/features/profile'
@@ -63,8 +62,7 @@ export function DayWorkoutPage() {
   const [orderedExercises, setOrderedExercises] = useState<ExerciseResponse[]>([])
   const [draggedExerciseId, setDraggedExerciseId] = useState<string | null>(null)
   const [plannedWeightEdited, setPlannedWeightEdited] = useState(false)
-  const [aiGuidanceRequested, setAiGuidanceRequested] = useState(false)
-  const [showAiGuidance, setShowAiGuidance] = useState(false)
+
   const [showDayResult, setShowDayResult] = useState(false)
   const [listHeight, setListHeight] = useState(400)
   const autoScrollFrame = useRef<number | null>(null)
@@ -96,13 +94,7 @@ export function DayWorkoutPage() {
   const { data: siblingDays } = useDailyWorkouts(weeklyWorkoutId)
   const { mutate: copyDay, isPending: copying } = useCopyDay(weeklyWorkoutId, planId)
   const { mutate: markDayStatus, isPending: markingStatus } = useMarkDayStatus(weeklyWorkoutId, planId)
-  const {
-    data: aiGuidance,
-    isLoading: aiGuidanceLoading,
-    isFetching: aiGuidanceFetching,
-    isError: aiGuidanceError,
-    refetch: refetchAiGuidance,
-  } = useDailyWorkoutGuidance(dailyWorkoutId, canComplete && aiGuidanceRequested)
+
   const { confirm, ConfirmDialog } = useConfirm()
 
   const currentDay = siblingDays?.find((d) => d.id === dailyWorkoutId)
@@ -351,20 +343,7 @@ export function DayWorkoutPage() {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-          {canComplete && (
-            <Button
-              size="sm"
-              variant="secondary"
-              className="flex-1 min-[390px]:flex-none"
-              onClick={() => {
-                setAiGuidanceRequested(true)
-                setShowAiGuidance(true)
-              }}
-            >
-              <Sparkles size={15} className={aiGuidanceFetching ? 'animate-spin' : ''} />
-              {tdw.aiGuidance}
-            </Button>
-          )}
+
           {canComplete && !isDayCompleted && (
             <Button
               variant="secondary"
@@ -700,22 +679,6 @@ export function DayWorkoutPage() {
         )}
       </AnimatePresence>
 
-      <Modal
-        open={showAiGuidance}
-        onClose={() => setShowAiGuidance(false)}
-        title={tdw.aiWorkoutGuidance}
-        className="max-w-5xl"
-      >
-        <WorkoutGuidancePanel
-          guidance={aiGuidance}
-          loading={aiGuidanceLoading}
-          fetching={aiGuidanceFetching}
-          error={aiGuidanceError}
-          requested={aiGuidanceRequested}
-          onRequest={() => setAiGuidanceRequested(true)}
-          onRefresh={() => refetchAiGuidance()}
-        />
-      </Modal>
 
       <Modal
         open={showDayResult}

@@ -1,7 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import type { AxiosError } from 'axios'
 import { api } from '@/shared/api/axios'
 import { ENDPOINTS } from '@/shared/api/endpoints'
 import { useLangStore } from '@/shared/i18n'
+import { useAuthStore } from '@/features/auth/store/authStore'
 import type { ClientResponse, CoachClientAiBriefResponse, CoachClientDashboardResponse, CoachInviteCodeResponse, CoachRelationshipResponse, ConnectByCodeRequest, GenerateInviteCodeRequest, RequestRenewalRequest } from '../types'
 
 export const coachClientKeys = {
@@ -24,19 +26,23 @@ export function usePendingRequests() {
 }
 
 export function useMyCoach(enabled = true) {
+  const isCoach = useAuthStore((s) => s.user?.roles.includes('Coach') ?? false)
   return useQuery({
     queryKey: coachClientKeys.myCoach,
     queryFn: () =>
       api
         .get<CoachRelationshipResponse | null>(ENDPOINTS.coachClient.myCoach)
-        .then((r) => r.data),
-    enabled,
-    refetchOnMount: 'always',
+        .then((r) => r.data)
+        .catch((err: AxiosError) => {
+          if (err.response?.status === 404) return null
+          throw err
+        }),
+    enabled: enabled && !isCoach,
+    staleTime: 30_000,
     refetchOnWindowFocus: true,
-    // Poll every 8s while waiting for coach to accept so client sees update without manual refresh
+    // Poll every 8s while waiting for status to change; don't poll when there's no relationship
     refetchInterval: (query) => {
       const data = query.state.data
-      if (data === null) return 10_000
       if (
         data?.status === 'Pending' ||
         data?.status === 'PendingTermination' ||

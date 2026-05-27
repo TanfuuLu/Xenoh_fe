@@ -4,7 +4,7 @@ import { Card } from '@/shared/components/Card'
 import { Spinner } from '@/shared/components/Spinner'
 import { UserAvatar } from '@/shared/components/UserAvatar'
 import { ChatPanel } from '@/features/chat/components/ChatPanel'
-import { useMyCoach } from '../api/useCoachClient'
+import { useMyCoach, useAcceptTermination } from '../api/useCoachClient'
 
 const chatStatuses = new Set(['Active', 'PendingTermination', 'PendingRenewal'])
 
@@ -16,6 +16,7 @@ function formatDate(value: string | null | undefined) {
 export function MyCoachPage() {
   const navigate = useNavigate()
   const { data: relationship, isLoading } = useMyCoach()
+  const acceptTermination = useAcceptTermination()
   const canChat = relationship ? chatStatuses.has(relationship.status) : false
 
   if (isLoading) {
@@ -82,6 +83,16 @@ export function MyCoachPage() {
             <MessageCircle size={15} />
             <span>Messages stay tied to this coaching relationship.</span>
           </div>
+
+          {relationship.status === 'PendingTermination' && (
+            <button
+              className="xn-btn danger w-full"
+              onClick={() => acceptTermination.mutate(relationship.id)}
+              disabled={acceptTermination.isPending}
+            >
+              {acceptTermination.isPending ? 'Accepting…' : 'Accept Termination'}
+            </button>
+          )}
         </Card>
       </div>
 

@@ -354,7 +354,7 @@ function TodayPanel({ workout }: { workout: PersonalDashboardTodayWorkout | null
           to={workout.route}
           state={{ canEdit: true, canComplete: true, weeklyWorkoutId: workout.weeklyWorkoutId }}
         >
-          <Button size="sm" disabled={workout.isCompleted} className="gap-1.5">
+          <Button size="sm" variant={workout.isCompleted ? 'secondary' : 'primary'} className="gap-1.5">
             {ctaLabel} <ArrowRight size={15} />
           </Button>
         </Link>

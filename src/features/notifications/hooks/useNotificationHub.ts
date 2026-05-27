@@ -54,7 +54,7 @@ export function useNotificationHub() {
         accessTokenFactory: () => useAuthStore.getState().accessToken ?? '',
       })
       .withAutomaticReconnect()
-      .configureLogging(signalR.LogLevel.Warning)
+      .configureLogging(signalR.LogLevel.None)
       .build()
 
     connection.on('ReceiveNotification', (payload: NotificationResponse) => {
@@ -112,10 +112,10 @@ export function useNotificationHub() {
       }
     })
 
-    connection.start().catch(() => {})
+    void connection.start().catch(() => {})
 
     return () => {
-      connection.stop().catch(() => {})
+      void connection.stop()
     }
   }, [accessToken, addNotification, queryClient])
 }
