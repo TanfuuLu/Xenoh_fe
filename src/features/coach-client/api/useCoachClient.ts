@@ -78,7 +78,6 @@ export function useMyClients(enabled = true) {
     enabled,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
-    refetchInterval: 15_000,
   })
 }
 

@@ -1,11 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/shared/api/axios'
 import { ENDPOINTS } from '@/shared/api/endpoints'
+import { weekKeys } from './workoutQueryCache'
 import type { UpdateWeeklyWorkoutRequest, WeeklyWorkoutResponse } from '../types'
-
-export const weekKeys = {
-  byPlan: (planId: string) => ['weeks', planId] as const,
-}
 
 export function useWeeklyWorkouts(planId: string) {
   return useQuery({

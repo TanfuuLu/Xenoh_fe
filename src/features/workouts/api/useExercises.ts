@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/shared/api/axios'
 import { ENDPOINTS } from '@/shared/api/endpoints'
-import { profileKeys } from '@/features/profile/api/useProfile'
+import { exerciseKeys, invalidateWorkoutQueries } from './workoutQueryCache'
 import type {
   CompleteSetRequest,
   CreateExerciseRequest,
@@ -9,10 +9,6 @@ import type {
   ReorderExercisesRequest,
   UpdateExerciseRequest,
 } from '../types'
-
-export const exerciseKeys = {
-  byDay: (dayId: string) => ['exercises', dayId] as const,
-}
 
 export function useExercises(dailyWorkoutId: string) {
   return useQuery({
@@ -29,15 +25,13 @@ export function useExercises(dailyWorkoutId: string) {
   })
 }
 
-export function useCreateExercise(dailyWorkoutId: string) {
+export function useCreateExercise(dailyWorkoutId: string, weeklyWorkoutId?: string, planId?: string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (data: CreateExerciseRequest) =>
       api.post<ExerciseResponse>(ENDPOINTS.exercises.create, data).then((r) => r.data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: exerciseKeys.byDay(dailyWorkoutId) })
-      qc.invalidateQueries({ queryKey: ['days'] })
-      qc.invalidateQueries({ queryKey: ['weeks'] })
+      invalidateWorkoutQueries(qc, { dailyWorkoutId, weeklyWorkoutId, planId })
     },
   })
 }
@@ -51,19 +45,17 @@ export function useUpdateExercise(dailyWorkoutId: string) {
   })
 }
 
-export function useDeleteExercise(dailyWorkoutId: string) {
+export function useDeleteExercise(dailyWorkoutId: string, weeklyWorkoutId?: string, planId?: string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => api.delete(ENDPOINTS.exercises.delete(id)),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: exerciseKeys.byDay(dailyWorkoutId) })
-      qc.invalidateQueries({ queryKey: ['days'] })
-      qc.invalidateQueries({ queryKey: ['weeks'] })
+      invalidateWorkoutQueries(qc, { dailyWorkoutId, weeklyWorkoutId, planId })
     },
   })
 }
 
-export function useReorderExercises(dailyWorkoutId: string) {
+export function useReorderExercises(dailyWorkoutId: string, weeklyWorkoutId?: string, planId?: string) {
   const qc = useQueryClient()
   const key = exerciseKeys.byDay(dailyWorkoutId)
 
@@ -93,11 +85,11 @@ export function useReorderExercises(dailyWorkoutId: string) {
       if (ctx?.previous) qc.setQueryData(key, ctx.previous)
     },
     onSuccess: (data) => qc.setQueryData(key, data),
-    onSettled: () => qc.invalidateQueries({ queryKey: key }),
+    onSettled: () => invalidateWorkoutQueries(qc, { dailyWorkoutId, weeklyWorkoutId, planId }),
   })
 }
 
-export function useCompleteSet(dailyWorkoutId: string) {
+export function useCompleteSet(dailyWorkoutId: string, weeklyWorkoutId?: string, planId?: string) {
   const qc = useQueryClient()
   const key = exerciseKeys.byDay(dailyWorkoutId)
 
@@ -151,15 +143,18 @@ export function useCompleteSet(dailyWorkoutId: string) {
 
     // Sync server truth after settle — also invalidate days, weeks, and profile (XP update)
     onSettled: () => {
-      qc.invalidateQueries({ queryKey: key })
-      qc.invalidateQueries({ queryKey: ['days'] })
-      qc.invalidateQueries({ queryKey: ['weeks'] })
-      qc.invalidateQueries({ queryKey: profileKeys.me })
+      invalidateWorkoutQueries(qc, {
+        dailyWorkoutId,
+        weeklyWorkoutId,
+        planId,
+        includeUserProgress: true,
+        includeExerciseTracking: true,
+      })
     },
   })
 }
 
-export function useSetExerciseDuration(dailyWorkoutId: string) {
+export function useSetExerciseDuration(dailyWorkoutId: string, weeklyWorkoutId?: string, planId?: string) {
   const qc = useQueryClient()
   const key = exerciseKeys.byDay(dailyWorkoutId)
 
@@ -175,8 +170,7 @@ export function useSetExerciseDuration(dailyWorkoutId: string) {
       qc.setQueryData<ExerciseResponse[]>(key, (old) =>
         old?.map((exercise) => (exercise.id === updated.id ? updated : exercise)),
       )
-      qc.invalidateQueries({ queryKey: ['days'] })
-      qc.invalidateQueries({ queryKey: ['weeks'] })
+      invalidateWorkoutQueries(qc, { dailyWorkoutId, weeklyWorkoutId, planId, includeUserProgress: true })
     },
     onSettled: () => qc.invalidateQueries({ queryKey: key }),
   })
@@ -198,7 +192,7 @@ export function useStartExerciseTimer(dailyWorkoutId: string) {
   })
 }
 
-export function useFinishExerciseTimer(dailyWorkoutId: string) {
+export function useFinishExerciseTimer(dailyWorkoutId: string, weeklyWorkoutId?: string, planId?: string) {
   const qc = useQueryClient()
   const key = exerciseKeys.byDay(dailyWorkoutId)
 
@@ -209,8 +203,7 @@ export function useFinishExerciseTimer(dailyWorkoutId: string) {
       qc.setQueryData<ExerciseResponse[]>(key, (old) =>
         old?.map((exercise) => (exercise.id === updated.id ? updated : exercise)),
       )
-      qc.invalidateQueries({ queryKey: ['days'] })
-      qc.invalidateQueries({ queryKey: ['weeks'] })
+      invalidateWorkoutQueries(qc, { dailyWorkoutId, weeklyWorkoutId, planId, includeUserProgress: true })
     },
     onSettled: () => qc.invalidateQueries({ queryKey: key }),
   })

@@ -2,14 +2,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/shared/api/axios'
 import { ENDPOINTS } from '@/shared/api/endpoints'
 import { useLangStore } from '@/shared/i18n'
+import { dayKeys, invalidateWorkoutQueries } from './workoutQueryCache'
 import type { DayStatus } from '@/shared/types/api'
 import type { CopyDayRequest, CopyDayResponse, DailyWorkoutResponse, WorkoutGuidanceResponse } from '../types'
-
-export const dayKeys = {
-  byWeek: (weekId: string) => ['days', weekId] as const,
-  aiGuidance: (dailyWorkoutId: string, lang: 'en' | 'vi') =>
-    ['days', dailyWorkoutId, 'ai-guidance', lang] as const,
-}
 
 export function useDailyWorkouts(weeklyWorkoutId: string) {
   return useQuery({
@@ -26,28 +21,33 @@ export function useDailyWorkouts(weeklyWorkoutId: string) {
   })
 }
 
-export function useMarkDayStatus(weeklyWorkoutId: string) {
+export function useMarkDayStatus(weeklyWorkoutId: string, planId?: string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: ({ dailyWorkoutId, status }: { dailyWorkoutId: string; status: DayStatus }) =>
       api.patch(ENDPOINTS.days.markStatus(dailyWorkoutId), { status }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: dayKeys.byWeek(weeklyWorkoutId) })
-    },
+    onSuccess: (_result, vars) =>
+      invalidateWorkoutQueries(qc, {
+        dailyWorkoutId: vars.dailyWorkoutId,
+        weeklyWorkoutId,
+        planId,
+      }),
   })
 }
 
-export function useCopyDay(weeklyWorkoutId: string) {
+export function useCopyDay(weeklyWorkoutId: string, planId?: string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: ({ sourceDailyWorkoutId, data }: { sourceDailyWorkoutId: string; data: CopyDayRequest }) =>
       api
         .post<CopyDayResponse>(ENDPOINTS.days.copy(sourceDailyWorkoutId), data)
         .then((r) => r.data),
-    onSuccess: (result) => {
-      qc.invalidateQueries({ queryKey: dayKeys.byWeek(weeklyWorkoutId) })
-      qc.invalidateQueries({ queryKey: ['exercises', result.targetDailyWorkoutId] })
-    },
+    onSuccess: (result) =>
+      invalidateWorkoutQueries(qc, {
+        dailyWorkoutId: result.targetDailyWorkoutId,
+        weeklyWorkoutId,
+        planId,
+      }),
   })
 }
 

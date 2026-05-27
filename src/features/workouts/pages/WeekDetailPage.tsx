@@ -13,7 +13,7 @@ import { cn } from '@/shared/utils/cn'
 import { staggerContainer, slideUp } from '@/shared/utils/motion'
 import { useT, useLangStore } from '@/shared/i18n'
 import { NotFoundPage } from '@/shared/components/NotFoundPage'
-import { useDailyWorkouts, useWeeklyWorkouts } from '../index'
+import { exerciseKeys, useDailyWorkouts, useWeeklyWorkouts } from '../index'
 import { InlineTip } from '@/features/tips'
 import type { ExerciseResponse } from '../types'
 import { CommentSection } from '@/features/comments/components/CommentSection'
@@ -67,7 +67,7 @@ export function WeekDetailPage() {
   const daysWithExercises = days?.filter((d) => d.totalExercises > 0) ?? []
   const exerciseQueries = useQueries({
     queries: daysWithExercises.map((day) => ({
-      queryKey: ['exercises', day.id],
+      queryKey: exerciseKeys.byDay(day.id),
       queryFn: () =>
         api.get<ExerciseResponse[]>(ENDPOINTS.exercises.byDay(day.id)).then((r) => r.data),
     })),
@@ -250,7 +250,7 @@ export function WeekDetailPage() {
             >
               <Link
                 to={`/days/${day.id}`}
-                state={{ canEdit, canComplete, weeklyWorkoutId: day.weeklyWorkoutId }}
+                state={{ canEdit, canComplete, weeklyWorkoutId: day.weeklyWorkoutId, planId }}
                 className="flex items-center gap-3 p-3"
               >
                 <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl" style={isToday ? { background: 'var(--color-primary)', color: 'white' } : { background: 'var(--bg-3)', color: 'var(--fg-1)' }}>
@@ -326,7 +326,7 @@ export function WeekDetailPage() {
               >
                 <Link
                   to={`/days/${day.id}`}
-                  state={{ canEdit, canComplete, weeklyWorkoutId: day.weeklyWorkoutId }}
+                  state={{ canEdit, canComplete, weeklyWorkoutId: day.weeklyWorkoutId, planId }}
                   className="flex flex-col h-full min-h-36 p-3 transition-opacity hover:opacity-80"
                 >
                   {/* Date number */}

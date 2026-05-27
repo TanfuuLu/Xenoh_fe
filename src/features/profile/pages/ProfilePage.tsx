@@ -2,11 +2,7 @@ import { useRef, useState, type ChangeEvent, type TextareaHTMLAttributes } from 
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { motion } from 'framer-motion'
-import { Camera, Trash2 } from 'lucide-react'
-import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-} from 'recharts'
+import { Camera } from 'lucide-react'
 import { format, isValid } from 'date-fns'
 import { Card } from '@/shared/components/Card'
 import { Button } from '@/shared/components/Button'
@@ -17,7 +13,6 @@ import { Select } from '@/shared/components/Select'
 import { Spinner } from '@/shared/components/Spinner'
 import { UserAvatar } from '@/shared/components/UserAvatar'
 import { cn } from '@/shared/utils/cn'
-import { slideUp } from '@/shared/utils/motion'
 import { useT } from '@/shared/i18n'
 import { LevelCard } from '@/features/dashboard/components/LevelCard'
 import { InlineTip } from '@/features/tips'
@@ -25,9 +20,6 @@ import {
   useMyProfile,
   useUpdateAvatar,
   useUpdateProfile,
-  useLogBodyweight,
-  useBodyweightHistory,
-  useDeleteBodyweight,
 } from '../index'
 import type { AxiosError } from 'axios'
 import type { ApiError } from '@/shared/types/api'
@@ -43,7 +35,6 @@ type ProfileForm = {
   instagramUrl?: string
   zaloUrl?: string
 }
-type WeightForm  = { weight: number }
 
 function formatDisplayDate(value: string | null | undefined, pattern = 'dd/MM/yyyy') {
   if (!value) return '—'
@@ -61,11 +52,8 @@ export function ProfilePage() {
   const [editMode, setEditMode] = useState(false)
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const { data: profile, isLoading } = useMyProfile()
-  const { data: bwHistory } = useBodyweightHistory()
   const { mutate: updateProfile, isPending: saving, error: saveError } = useUpdateProfile()
   const { mutate: updateAvatar, isPending: avatarUploading } = useUpdateAvatar()
-  const { mutate: logWeight, isPending: logging } = useLogBodyweight()
-  const { mutate: deleteWeight } = useDeleteBodyweight()
   const t  = useT()
   const tp = t.profile
   const tc = t.common
@@ -81,10 +69,6 @@ export function ProfilePage() {
     facebookUrl:  z.string().url('Invalid URL').or(z.literal('')).optional(),
     instagramUrl: z.string().url('Invalid URL').or(z.literal('')).optional(),
     zaloUrl:      z.string().url('Invalid URL').or(z.literal('')).optional(),
-  })
-
-  const weightSchema = z.object({
-    weight: z.coerce.number().min(20, tp.minWeightError).max(500, tp.maxWeightError),
   })
 
   const {
@@ -107,15 +91,6 @@ export function ProfilePage() {
     },
   })
 
-  const {
-    register: regWeight,
-    handleSubmit: handleWeightSubmit,
-    reset: resetWeight,
-    formState: { errors: weightErrors },
-  } = useForm<z.input<typeof weightSchema>, unknown, WeightForm>({
-    resolver: zodResolver(weightSchema),
-  })
-
   function onSaveProfile(data: ProfileForm) {
     updateProfile({
       firstName: data.firstName.trim(),
@@ -130,10 +105,6 @@ export function ProfilePage() {
     }, { onSuccess: () => setEditMode(false) })
   }
 
-  function onLogWeight(data: WeightForm) {
-    logWeight(data, { onSuccess: () => resetWeight() })
-  }
-
   function onAvatarChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
     if (!file) return
@@ -146,14 +117,6 @@ export function ProfilePage() {
   }
 
   const apiError = (saveError as AxiosError<ApiError>)?.response?.data?.message
-
-  const bodyweightHistory = Array.isArray(bwHistory) ? bwHistory : []
-
-  const chartData = [...bodyweightHistory]
-    .reverse()
-    .slice(-30)
-    .map((b) => ({ date: formatDisplayDate(b.date, 'dd/MM'), weight: b.weight, id: b.id }))
-    .filter((b) => b.date !== '—')
 
   if (isLoading) {
     return (
@@ -326,67 +289,6 @@ export function ProfilePage() {
         </Card>
       </div>
 
-      {/* Bodyweight */}
-      <Card>
-        <h2 className="mb-4 text-lg font-semibold text-text">{tp.weightSection}</h2>
-
-        <form onSubmit={handleWeightSubmit(onLogWeight)} className="mb-4">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <input
-              placeholder="70.5"
-              type="number"
-              step="0.1"
-              className={cn('xn-input sm:max-w-32', weightErrors.weight && 'error')}
-              {...regWeight('weight')}
-            />
-            <Button type="submit" className="w-full sm:w-auto" loading={logging}>{tp.logToday}</Button>
-          </div>
-          {weightErrors.weight?.message && (
-            <span className="mt-1.5 block text-xs" style={{ color: 'var(--xn-danger)' }}>
-              {weightErrors.weight.message}
-            </span>
-          )}
-        </form>
-
-        {chartData.length > 0 ? (
-          <motion.div initial="hidden" animate="visible" variants={slideUp} className="h-48">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-1)" />
-                <XAxis dataKey="date" tick={{ fill: 'var(--fg-3)', fontSize: 11 }} />
-                <YAxis tick={{ fill: 'var(--fg-3)', fontSize: 11 }} domain={['auto', 'auto']} />
-                <Tooltip
-                  contentStyle={{ background: 'var(--bg-2)', border: '1px solid var(--border-1)', borderRadius: 8 }}
-                  labelStyle={{ color: 'var(--fg-1)' }}
-                  itemStyle={{ color: 'var(--xn-clay-700)' }}
-                />
-                <Line type="monotone" dataKey="weight" stroke="var(--xn-clay-700)" strokeWidth={2} dot={{ fill: 'var(--xn-clay-700)', r: 3 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </motion.div>
-        ) : (
-          <p className="text-sm text-muted">{tp.noWeightData}</p>
-        )}
-
-        {/* History list */}
-        {bodyweightHistory.length > 0 && (
-          <div className="mt-4 max-h-48 overflow-y-auto space-y-1">
-            {bodyweightHistory.slice(0, 10).map((b) => (
-              <div key={b.id} className="flex items-center justify-between gap-2 rounded-lg px-3 py-2 hover:bg-panel">
-                <span className="text-sm text-text">{formatDisplayDate(b.date)}</span>
-                <span className="text-sm font-medium text-text">{b.weight} kg</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => deleteWeight(b.id)}
-                >
-                  <Trash2 size={13} className="text-danger" />
-                </Button>
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
     </div>
   )
 }
@@ -422,3 +324,4 @@ function Stat({ label, value }: { label: string; value: string }) {
     </div>
   )
 }
+

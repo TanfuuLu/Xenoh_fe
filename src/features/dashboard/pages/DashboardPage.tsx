@@ -1,5 +1,8 @@
 import React, { useMemo, useState } from 'react'
 import { Link } from 'react-router'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import { motion, useReducedMotion } from 'framer-motion'
 import {
   Activity,
@@ -11,12 +14,22 @@ import {
   Flame,
   Sparkles,
   Target,
+  Trash2,
   TrendingUp,
   Utensils,
   Weight,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { enUS, vi as viLocale } from 'date-fns/locale'
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
 import { Badge } from '@/shared/components/Badge'
 import { Button } from '@/shared/components/Button'
 import { Card } from '@/shared/components/Card'
@@ -27,6 +40,11 @@ import { cn } from '@/shared/utils/cn'
 import { slideUp, staggerContainer } from '@/shared/utils/motion'
 import { useLangStore, useT } from '@/shared/i18n'
 import { DailyTipCard } from '@/features/tips'
+import {
+  useBodyweightHistory,
+  useDeleteBodyweight,
+  useLogBodyweight,
+} from '@/features/profile'
 import { usePersonalDashboard } from '../api/usePersonalDashboard'
 import type {
   PersonalDashboardAction,
@@ -116,30 +134,24 @@ export function DashboardPage() {
           variants={staggerContainer}
           className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
         >
+          <LevelCard
+            levelLabel={td.level.replace('{n}', String(profile.level))}
+            title={profile.title}
+            xpText={`${xpIntoLevel.toLocaleString()} / ${profile.xpToNextLevel.toLocaleString()} XP`}
+            progress={xpPct}
+          />
           <MetricCard icon={<Flame size={18} />}     label={td.streak}     value={td.streakValue.replace('{n}', String(profile.currentStreak))}    accent="#f97316" />
           <MetricCard icon={<TrendingUp size={18} />} label={td.bodyweight} value={profile.latestBodyweight ? `${profile.latestBodyweight} kg` : '-'} accent="#06b6d4" />
-          <MetricCard icon={<Activity size={18} />}   label="BMI"           value={profile.bmi ? profile.bmi.toFixed(1) : '-'} sub={profile.bmiCategory ?? undefined} accent="#22c55e" />
           <MetricCard icon={<Dumbbell size={18} />}   label="DOTS"          value={profile.dotsScore ? profile.dotsScore.toFixed(1) : '-'}               accent="#6366f1" />
         </motion.div>
 
-        <div className="mt-5 rounded-xl border border-border bg-panel p-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted">{td.level.replace('{n}', String(profile.level))}</p>
-              <p className="text-base font-bold text-text">{profile.title}</p>
-            </div>
-            <p className="text-sm font-semibold text-text">
-              {xpIntoLevel.toLocaleString()} / {profile.xpToNextLevel.toLocaleString()} XP
-            </p>
-          </div>
-          <ProgressBar value={xpPct} className="mt-3" />
+        <div className="mt-5 grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+          <TodayPanel workout={data.todayWorkout} />
+          <PlanPanel plan={data.activePlan} />
         </div>
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-        <TodayPanel workout={data.todayWorkout} />
-        <PlanPanel plan={data.activePlan} />
-      </div>
+      <BodyweightPanel latestBodyweight={profile.latestBodyweight} />
 
       <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
         <NutritionPanel nutrition={data.nutritionToday} />
@@ -166,6 +178,124 @@ export function DashboardPage() {
         />
       </Modal>
     </div>
+  )
+}
+
+type BodyweightForm = { weight: number }
+
+const bodyweightSchema = z.object({
+  weight: z.coerce.number().min(20, 'Weight must be at least 20 kg').max(500, 'Weight must be 500 kg or less'),
+})
+
+function BodyweightPanel({ latestBodyweight }: { latestBodyweight: number | null }) {
+  const { data: history = [] } = useBodyweightHistory()
+  const { mutate: logWeight, isPending: logging } = useLogBodyweight()
+  const { mutate: deleteWeight } = useDeleteBodyweight()
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<z.input<typeof bodyweightSchema>, unknown, BodyweightForm>({
+    resolver: zodResolver(bodyweightSchema),
+    defaultValues: { weight: latestBodyweight ?? undefined },
+  })
+
+  const chartData = [...history]
+    .reverse()
+    .slice(-14)
+    .map((entry) => ({
+      date: format(new Date(entry.date), 'dd/MM'),
+      weight: entry.weight,
+    }))
+
+  function onSubmit(data: BodyweightForm) {
+    logWeight(data, { onSuccess: () => reset({ weight: undefined }) })
+  }
+
+  return (
+    <Card className="space-y-4">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <PanelHeader
+          icon={<Weight size={18} />}
+          label="Bodyweight"
+          title={latestBodyweight ? `${latestBodyweight} kg` : 'Log your weight'}
+          subtitle="Keep BMI, DOTS, and nutrition targets up to date."
+          accent="#06b6d4"
+        />
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-2 sm:flex-row sm:items-start">
+          <div>
+            <input
+              type="number"
+              step="0.1"
+              placeholder="70.5"
+              className={cn('xn-input h-10 w-full sm:w-28', errors.weight && 'error')}
+              {...register('weight')}
+            />
+            {errors.weight?.message && (
+              <p className="mt-1 text-xs" style={{ color: 'var(--xn-danger)' }}>
+                {errors.weight.message}
+              </p>
+            )}
+          </div>
+          <Button type="submit" size="sm" loading={logging} className="h-10">
+            Log today
+          </Button>
+        </form>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="h-48 min-w-0 rounded-xl border border-border bg-panel p-3">
+          {chartData.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-1)" />
+                <XAxis dataKey="date" tick={{ fill: 'var(--fg-3)', fontSize: 11 }} />
+                <YAxis tick={{ fill: 'var(--fg-3)', fontSize: 11 }} domain={['auto', 'auto']} width={40} />
+                <Tooltip
+                  contentStyle={{ background: 'var(--bg-2)', border: '1px solid var(--border-1)', borderRadius: 8 }}
+                  formatter={(value) => [`${value} kg`, 'Weight']}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="weight"
+                  stroke="var(--xn-clay-700)"
+                  strokeWidth={2}
+                  dot={{ fill: 'var(--xn-clay-700)', r: 3 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex h-full items-center justify-center text-sm text-muted">
+              No bodyweight logs yet.
+            </div>
+          )}
+        </div>
+
+        <div className="max-h-48 overflow-y-auto rounded-xl border border-border bg-panel">
+          {history.length > 0 ? (
+            history.slice(0, 8).map((entry) => (
+              <div key={entry.id} className="flex items-center justify-between gap-3 border-b border-border px-3 py-2 last:border-b-0">
+                <div>
+                  <p className="text-sm font-medium text-text">{entry.weight} kg</p>
+                  <p className="text-xs text-muted">{format(new Date(entry.date), 'dd/MM/yyyy')}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => deleteWeight(entry.id)}
+                  className="rounded-md p-1.5 text-danger transition hover:bg-danger/10"
+                  aria-label="Delete bodyweight log"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            ))
+          ) : (
+            <p className="p-4 text-sm text-muted">Recent logs will appear here.</p>
+          )}
+        </div>
+      </div>
+    </Card>
   )
 }
 
@@ -424,11 +554,11 @@ function ProInsightsPanel({
       ) : insights.length === 0 ? (
         <p className="text-sm text-muted">{td.proEmpty}</p>
       ) : (
-        <div className="grid gap-3 lg:grid-cols-3">
+        <div className="flex gap-3 overflow-x-auto pb-2">
           {insights.map((insight) => (
             <div
               key={`${insight.type}-${insight.title}`}
-              className="rounded-xl border p-4"
+              className="min-w-[280px] flex-1 rounded-xl border p-4 sm:min-w-[340px] lg:min-w-[360px]"
               style={insightStyle(insight.severity)}
             >
               <p className="text-xs font-semibold uppercase tracking-wide text-muted">{insight.type}</p>
@@ -454,6 +584,33 @@ function MetricCard({ icon, label, value, sub, accent }: { icon: React.ReactNode
       <p className="text-xs text-muted">{label}</p>
       <p className="text-lg font-bold text-text">{value}</p>
       {sub && <p className="text-xs text-muted">{sub}</p>}
+    </motion.div>
+  )
+}
+
+function LevelCard({
+  levelLabel,
+  title,
+  xpText,
+  progress,
+}: {
+  levelLabel: string
+  title: string
+  xpText: string
+  progress: number
+}) {
+  return (
+    <motion.div variants={slideUp} className="rounded-xl border border-border bg-panel p-4">
+      <div className="flex h-full flex-col justify-between gap-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted">{levelLabel}</p>
+            <p className="mt-1 text-lg font-bold text-text">{title}</p>
+          </div>
+          <p className="text-sm font-semibold text-text">{xpText}</p>
+        </div>
+        <ProgressBar value={progress} />
+      </div>
     </motion.div>
   )
 }

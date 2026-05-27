@@ -12,6 +12,8 @@ interface Filters {
   muscleGroup?: MuscleGroup
 }
 
+const EXERCISE_TEMPLATE_STALE_TIME = 5 * 60 * 1000
+
 export function useExerciseTemplates(filters?: Filters) {
   return useQuery({
     queryKey: ['exercise-templates', filters?.muscleGroup ?? ''],
@@ -21,6 +23,7 @@ export function useExerciseTemplates(filters?: Filters) {
           params: { muscleGroup: filters?.muscleGroup },
         })
         .then((r) => r.data),
+    staleTime: EXERCISE_TEMPLATE_STALE_TIME,
   })
 }
 
@@ -34,6 +37,7 @@ export function useClientExerciseTemplates(clientId: string, filters?: Filters) 
           params: { muscleGroup: filters?.muscleGroup },
         })
         .then((r) => r.data),
+    staleTime: EXERCISE_TEMPLATE_STALE_TIME,
   })
 }
 

@@ -19,7 +19,7 @@ import { useAuthStore } from '@/features/auth'
 import { useT } from '@/shared/i18n'
 import { NotFoundPage } from '@/shared/components/NotFoundPage'
 import { usePlan } from '../index'
-import { useWeeklyWorkouts, useUpdateWeeklyWorkout } from '@/features/workouts'
+import { dayKeys, useWeeklyWorkouts, useUpdateWeeklyWorkout } from '@/features/workouts'
 import { InlineTip } from '@/features/tips'
 import type { DailyWorkoutResponse, WeeklyWorkoutResponse } from '@/features/workouts'
 import { CommentSection } from '@/features/comments/components/CommentSection'
@@ -51,7 +51,7 @@ export function PlanDetailPage() {
 
   const dayQueries = useQueries({
     queries: (weeks ?? []).map((week) => ({
-      queryKey: ['days', week.id] as const,
+      queryKey: dayKeys.byWeek(week.id),
       queryFn: () =>
         api.get<DailyWorkoutResponse[]>(ENDPOINTS.days.byWeek(week.id)).then((r) => r.data),
       enabled: !!week.id,

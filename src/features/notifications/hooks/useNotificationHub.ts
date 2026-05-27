@@ -2,7 +2,6 @@ import { useEffect } from 'react'
 import type { InfiniteData } from '@tanstack/react-query'
 import { useQueryClient } from '@tanstack/react-query'
 import * as signalR from '@microsoft/signalr'
-import { toast } from 'sonner'
 import { useAuthStore } from '@/features/auth/store/authStore'
 import { planCommentKeys } from '@/features/comments/api/usePlanComments'
 import { weekCommentKeys } from '@/features/comments/api/useWeekComments'
@@ -15,11 +14,6 @@ import type { NotificationResponse } from '../types'
 
 const HUB_URL = `${import.meta.env['VITE_API_URL'] as string}/hubs/notifications`
 
-const TYPE_LABELS: Record<string, string> = {
-  NewComment: 'Bình luận mới',
-  PlanAssigned: 'Kế hoạch mới',
-  ExerciseWarning: 'Cảnh báo bài tập',
-}
 
 type PlanCommentAddedPayload = {
   planId: string
@@ -65,9 +59,6 @@ export function useNotificationHub() {
 
     connection.on('ReceiveNotification', (payload: NotificationResponse) => {
       addNotification(payload)
-      toast.info(TYPE_LABELS[payload.type] ?? 'Thông báo', {
-        description: payload.message,
-      })
     })
 
     connection.on('ReceivePlanCommentAdded', (payload: PlanCommentAddedPayload) => {

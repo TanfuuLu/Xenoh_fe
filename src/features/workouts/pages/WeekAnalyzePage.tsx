@@ -15,7 +15,7 @@ import { NotFoundPage } from '@/shared/components/NotFoundPage'
 import { motionProps, staggerContainer, slideUp } from '@/shared/utils/motion'
 import { useT, useLangStore } from '@/shared/i18n'
 import { RequireTier } from '@/features/billing/components/RequireTier'
-import { useDailyWorkouts, useWeeklyWorkouts } from '../index'
+import { exerciseKeys, useDailyWorkouts, useWeeklyWorkouts } from '../index'
 import type { ExerciseResponse } from '../types'
 
 function calcActualVolume(exercises: ExerciseResponse[]): number {
@@ -156,10 +156,9 @@ export function WeekAnalyzePage() {
   const daysWithExercises = days?.filter((d) => d.totalExercises > 0) ?? []
   const exerciseQueries = useQueries({
     queries: daysWithExercises.map((day) => ({
-      queryKey: ['exercises', day.id],
+      queryKey: exerciseKeys.byDay(day.id),
       queryFn: () =>
         api.get<ExerciseResponse[]>(ENDPOINTS.exercises.byDay(day.id)).then((r) => r.data),
-      staleTime: 60_000,
     })),
   })
 

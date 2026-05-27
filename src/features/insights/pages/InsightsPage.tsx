@@ -64,7 +64,7 @@ export function InsightsPage() {
 
   return (
     <RequireTier feature="Analyze">
-      <div className="space-y-5">
+      <div className="mx-auto w-full max-w-[1240px] space-y-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
           <Link to="/dashboard" className="self-start">
             <Button variant="ghost" size="sm" aria-label="Back to dashboard">
@@ -128,7 +128,7 @@ export function InsightsPage() {
                 <EffortGapPanel metrics={data.metrics} labels={ti} />
               </div>
 
-              <div className="grid gap-4 xl:grid-cols-[0.85fr_1.15fr]">
+              <div className="grid gap-4">
                 <RecentPrPanel metrics={data.metrics} labels={ti} />
                 <AiNarrativePanel content={data.content} labels={ti} />
               </div>
@@ -326,9 +326,9 @@ function RecentPrPanel({ metrics, labels }: { metrics: AnalysisMetrics; labels: 
       {metrics.recentPrs.length === 0 ? (
         <EmptyState text={labels.noPrData} />
       ) : (
-        <div className="space-y-3">
+        <div className="flex gap-3 overflow-x-auto pb-2">
           {metrics.recentPrs.map((pr) => (
-            <div key={`${pr.exercise}-${pr.achievedAt}`} className="rounded-lg border p-3" style={{ borderColor: 'var(--border-1)', background: 'var(--bg-2)' }}>
+            <div key={`${pr.exercise}-${pr.achievedAt}`} className="min-w-[220px] rounded-lg border p-3" style={{ borderColor: 'var(--border-1)', background: 'var(--bg-2)' }}>
               <div className="flex items-start justify-between gap-3">
                 <p className="min-w-0 break-words text-sm font-semibold text-text">{pr.exercise}</p>
                 <p className="flex-shrink-0 text-sm font-bold text-text">{formatNumber(pr.weight)} kg × {pr.reps}</p>
@@ -352,12 +352,14 @@ function AiNarrativePanel({ content, labels }: { content: AnalysisContent; label
   ]
 
   return (
-    <Card animate={false} className="space-y-4">
+    <Card animate={false} className="min-w-0 space-y-4 overflow-hidden">
       <PanelTitle icon={<Sparkles size={17} />} title={labels.aiCoachNotes} />
-      <div className="grid auto-cols-[minmax(18rem,1fr)] grid-flow-col gap-3 overflow-x-auto pb-1">
-        {sections.map((item) => (
-          <SummaryBlock key={item.label} label={item.label} icon={item.icon} section={item.section} />
-        ))}
+      <div className="overflow-x-auto pb-2">
+        <div className="grid min-w-[1120px] grid-cols-5 gap-3">
+          {sections.map((item) => (
+            <SummaryBlock key={item.label} label={item.label} icon={item.icon} section={item.section} />
+          ))}
+        </div>
       </div>
       <RecommendationBlock eyebrow={labels.recommendationLabel} rec={content.recommendation} />
       {content.planReview && (

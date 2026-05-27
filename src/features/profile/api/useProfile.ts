@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/shared/api/axios'
 import { ENDPOINTS } from '@/shared/api/endpoints'
 import { useAuthStore } from '@/features/auth'
+import { dashboardKeys } from '@/features/dashboard/api/usePersonalDashboard'
 import type {
   BodyweightLogResponse,
   LogBodyweightRequest,
@@ -104,6 +105,7 @@ export function useLogBodyweight() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: profileKeys.bodyweight })
       void qc.invalidateQueries({ queryKey: profileKeys.me })
+      void qc.invalidateQueries({ queryKey: dashboardKeys.personal })
     },
   })
 }
@@ -112,7 +114,11 @@ export function useDeleteBodyweight() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => api.delete(ENDPOINTS.users.bodyweightById(id)),
-    onSuccess: () => qc.invalidateQueries({ queryKey: profileKeys.bodyweight }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: profileKeys.bodyweight })
+      void qc.invalidateQueries({ queryKey: profileKeys.me })
+      void qc.invalidateQueries({ queryKey: dashboardKeys.personal })
+    },
   })
 }
 

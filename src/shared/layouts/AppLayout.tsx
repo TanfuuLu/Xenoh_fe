@@ -55,6 +55,7 @@ export function AppLayout() {
   const changePasswordLabel = (tn as typeof tn & { changePassword?: string }).changePassword ?? 'Change password'
   const exerciseLibraryLabel = (tn as typeof tn & { exerciseLibrary?: string }).exerciseLibrary ?? 'Exercise Library'
   const isWeekDetailPage = /^\/plans\/[^/]+\/weeks\/[^/]+$/.test(location.pathname)
+  const isWidePage = isWeekDetailPage || location.pathname === '/insights'
 
   useNotificationHub()
   useChatUnreadSync()
@@ -352,7 +353,7 @@ export function AppLayout() {
           className="flex-1 overflow-y-auto"
           style={hasChatSidebar ? { paddingRight: 'calc(22rem + 16px)' } : undefined}
         >
-          <div className={cn('xn-page-container', isWeekDetailPage && 'wide')}>
+          <div className={cn('xn-page-container', isWidePage && 'wide')}>
             <Outlet />
           </div>
         </main>

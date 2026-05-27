@@ -1,5 +1,6 @@
 export { useWeeklyWorkouts, useUpdateWeeklyWorkout } from './api/useWeeklyWorkouts'
 export { useDailyWorkouts, useCopyDay, useMarkDayStatus, useDailyWorkoutGuidance } from './api/useDailyWorkouts'
+export { dayKeys, exerciseKeys, weekKeys, invalidateWorkoutQueries } from './api/workoutQueryCache'
 export {
   useExercises,
   useCreateExercise,

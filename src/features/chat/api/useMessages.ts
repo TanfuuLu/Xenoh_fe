@@ -60,6 +60,5 @@ export function useUnreadCounts() {
       api
         .get<Record<string, number>>(ENDPOINTS.messages.unreadCounts)
         .then((r) => r.data),
-    refetchInterval: 30_000,
   })
 }

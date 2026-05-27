@@ -1,6 +1,7 @@
 import { X } from 'lucide-react'
 import { cn } from '@/shared/utils/cn'
 import type { ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 
 interface Props {
   open: boolean
@@ -13,17 +14,23 @@ interface Props {
 export function Modal({ open, onClose, title, children, className }: Props) {
   if (!open) return null
 
-  return (
+  return createPortal(
     <>
       <div
         className="fixed inset-0 z-40"
         style={{ backgroundColor: 'rgba(58, 42, 30, 0.45)' }}
         onClick={onClose}
       />
-      <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-3 sm:p-4">
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-3 sm:p-4"
+        onClick={onClose}
+      >
         <div
           className={cn('xn-card max-h-[calc(100dvh-24px)] w-full max-w-md overflow-y-auto', className)}
           style={{ borderRadius: 20, boxShadow: 'var(--sh-lg)' }}
+          role="dialog"
+          aria-modal="true"
+          onClick={(event) => event.stopPropagation()}
         >
           {title && (
             <div className="mb-5 flex items-center justify-between">
@@ -47,6 +54,7 @@ export function Modal({ open, onClose, title, children, className }: Props) {
           {children}
         </div>
       </div>
-    </>
+    </>,
+    document.body,
   )
 }

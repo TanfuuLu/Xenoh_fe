@@ -49,10 +49,11 @@ const VALID_EXERCISE_DURATION_SECONDS = 60
 export function DayWorkoutPage() {
   const { dailyWorkoutId = '' } = useParams()
   const { state } = useLocation()
-  const locationState = state as { canEdit?: boolean; canComplete?: boolean; weeklyWorkoutId?: string } | null
+  const locationState = state as { canEdit?: boolean; canComplete?: boolean; weeklyWorkoutId?: string; planId?: string } | null
   const canEdit = locationState?.canEdit ?? false
   const canComplete = locationState?.canComplete ?? false
   const weeklyWorkoutId = locationState?.weeklyWorkoutId ?? ''
+  const planId = locationState?.planId
   const shouldReduce = useReducedMotion()
   const [showAdd, setShowAdd] = useState(false)
   const [showCopy, setShowCopy] = useState(false)
@@ -84,17 +85,17 @@ export function DayWorkoutPage() {
     muscleGroup: selectedMuscleGroup || undefined,
   })
 
-  const { mutate: createExercise, isPending: adding } = useCreateExercise(dailyWorkoutId)
-  const { mutate: deleteExercise } = useDeleteExercise(dailyWorkoutId)
-  const { mutate: completeSet } = useCompleteSet(dailyWorkoutId)
+  const { mutate: createExercise, isPending: adding } = useCreateExercise(dailyWorkoutId, weeklyWorkoutId, planId)
+  const { mutate: deleteExercise } = useDeleteExercise(dailyWorkoutId, weeklyWorkoutId, planId)
+  const { mutate: completeSet } = useCompleteSet(dailyWorkoutId, weeklyWorkoutId, planId)
   const { mutate: startTimer, isPending: startingTimer } = useStartExerciseTimer(dailyWorkoutId)
-  const { mutate: finishTimer, isPending: finishingTimer } = useFinishExerciseTimer(dailyWorkoutId)
-  const { mutate: setDuration } = useSetExerciseDuration(dailyWorkoutId)
-  const { mutate: reorderExercises } = useReorderExercises(dailyWorkoutId)
+  const { mutate: finishTimer, isPending: finishingTimer } = useFinishExerciseTimer(dailyWorkoutId, weeklyWorkoutId, planId)
+  const { mutate: setDuration } = useSetExerciseDuration(dailyWorkoutId, weeklyWorkoutId, planId)
+  const { mutate: reorderExercises } = useReorderExercises(dailyWorkoutId, weeklyWorkoutId, planId)
 
   const { data: siblingDays } = useDailyWorkouts(weeklyWorkoutId)
-  const { mutate: copyDay, isPending: copying } = useCopyDay(weeklyWorkoutId)
-  const { mutate: markDayStatus, isPending: markingStatus } = useMarkDayStatus(weeklyWorkoutId)
+  const { mutate: copyDay, isPending: copying } = useCopyDay(weeklyWorkoutId, planId)
+  const { mutate: markDayStatus, isPending: markingStatus } = useMarkDayStatus(weeklyWorkoutId, planId)
   const {
     data: aiGuidance,
     isLoading: aiGuidanceLoading,
@@ -1576,20 +1577,20 @@ function ExerciseTimerControls({
 
   return (
     <div
-      className="flex flex-col gap-2 rounded-lg border px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
+      className="flex items-center justify-between gap-2 rounded-lg border px-3 py-2"
       style={{ borderColor: 'var(--border-1)', background: exercise.exerciseKind === 'Cardio' ? 'rgba(20,184,166,0.08)' : 'var(--bg-1)' }}
     >
-      <div className="flex flex-wrap items-center gap-3 text-sm">
+      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1 text-sm">
         <span className="inline-flex items-center gap-1.5 font-medium text-text">
           <Timer size={15} /> {formatDuration(elapsedSeconds)}
         </span>
-        <span className="inline-flex items-center gap-1.5 text-muted">
+        <span className="inline-flex min-w-0 items-center gap-1.5 text-muted">
           <Flame size={14} /> {caloriesText}
         </span>
       </div>
 
       {canComplete && (
-        <div className="flex items-center gap-1.5">
+        <div className="flex shrink-0 items-center justify-end gap-1.5">
           {showManualInput ? (
             <>
               <div className="flex items-center gap-1 text-sm">
