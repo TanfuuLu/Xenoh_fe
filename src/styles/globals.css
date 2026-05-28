@@ -1,7 +1,6 @@
 /* Google Fonts (Be Vietnam Pro, Fraunces, Geist, JetBrains Mono) are loaded via <link> in index.html.
-   Fraunces is the display serif — chosen over Namdhinggo because it ships full
-   Vietnamese diacritics. Local Namdhinggo TTFs in /public/fonts are unused now
-   but kept on disk for reference; remove them when the brand decision is final. */
+   Fraunces is the display serif because it ships full Vietnamese diacritics.
+   Local Namdhinggo TTFs in /public/fonts are kept on disk for reference. */
 @import "tailwindcss";
 
 /* ── Design system CSS variables ──────────────────────────────────────── */
@@ -58,6 +57,7 @@
   --fg-on-clay: #ffffff;
 
   --bg-1: var(--xn-paper);
+  --bg-page: var(--bg-1);
   --bg-2: #fffaf3;
   --bg-3: #ead7bd;
   --bg-4: var(--xn-paper-alt);
@@ -96,6 +96,11 @@
   --dur-fast: 120ms;
   --dur-med:  220ms;
   --dur-slow: 420ms;
+  --interactive-y: -1px;
+  --interactive-scale: 1.025;
+  --interactive-press-scale: 0.985;
+  --interactive-icon-scale: 1.06;
+  --interactive-focus: 0 0 0 3px color-mix(in oklch, var(--accent) 24%, transparent);
 }
 
 html[data-theme="dark"] {
@@ -143,13 +148,14 @@ html[data-theme="dark"] {
   --xn-info: #c5d8e6;
   --xn-info-bg: #1d2931;
 
-  --fg-1: var(--xn-ink-900);
-  --fg-2: var(--xn-ink-700);
-  --fg-3: var(--xn-ink-600);
-  --fg-4: var(--xn-ink-500);
+  --fg-1: #ffffff;
+  --fg-2: #ffffff;
+  --fg-3: #ffffff;
+  --fg-4: #ffffff;
   --fg-on-clay: #15110f;
 
   --bg-1: #12100f;
+  --bg-page: #1f1915;
   --bg-2: #1c1714;
   --bg-3: #2a211c;
   --bg-4: #211a16;
@@ -189,6 +195,50 @@ html[lang="vi"] textarea,
 html[lang="vi"] select,
 html[lang="vi"] button {
   font-family: var(--font-sans);
+}
+
+:where(button, a[href], .xn-interactive, .xn-choice-card, .xn-nav-item) {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:where(button, a[href], .xn-interactive, .xn-choice-card, .xn-nav-item):focus-visible {
+  outline: none;
+  box-shadow: var(--interactive-focus);
+}
+
+button {
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out),
+    opacity var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+
+button:not(:disabled):hover {
+  transform: translateY(var(--interactive-y));
+}
+
+button:not(:disabled):active {
+  transform: scale(var(--interactive-press-scale));
+}
+
+:where(button, a[href], .xn-interactive, .xn-choice-card, .xn-nav-item) svg {
+  flex-shrink: 0;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    stroke var(--dur-fast) var(--ease-out),
+    fill var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+
+:where(button:not(:disabled), a[href], .xn-interactive, .xn-choice-card, .xn-nav-item):hover svg {
+  transform: translateY(var(--interactive-y)) scale(var(--interactive-icon-scale));
+}
+
+:where(button:not(:disabled), a[href], .xn-interactive, .xn-choice-card, .xn-nav-item):active svg {
+  transform: scale(0.96);
 }
 
 /* ── Tailwind theme mapping ────────────────────────────────────────────── */
@@ -282,7 +332,10 @@ body {
   max-width: 1040px;
   margin: 12px auto 20px;
   padding: 14px 16px 22px;
-  background: var(--bg-1);
+  background: var(--bg-page);
+  border: 1px solid var(--surface-border-soft);
+  border-radius: 16px;
+  box-shadow: var(--sh-xs);
 }
 .xn-page-container.wide { max-width: none; }
 
@@ -328,6 +381,7 @@ body {
   margin: 8px 8px 3px;
 }
 .xn-nav-item {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -339,18 +393,58 @@ body {
   text-decoration: none;
   font-weight: 500;
   cursor: pointer;
+  overflow: hidden;
   transition: all var(--dur-fast) var(--ease-out);
 }
-.xn-nav-item:hover { background: var(--bg-3); color: var(--fg-1); }
-.xn-nav-item.active { background: var(--xn-clay-200); color: var(--xn-clay-900); }
+.xn-nav-item:hover {
+  background: var(--bg-3);
+  color: var(--fg-1);
+  transform: translateX(2px);
+}
+.xn-nav-item.active {
+  background: transparent;
+  color: var(--xn-clay-900);
+}
+.xn-nav-item > svg,
+.xn-nav-item-label,
+.xn-nav-lock {
+  position: relative;
+  z-index: 1;
+}
+.xn-nav-active-indicator {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  background: var(--xn-clay-200);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.42);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where(button, a[href], .xn-interactive, .xn-choice-card, .xn-nav-item),
+  :where(button, a[href], .xn-interactive, .xn-choice-card, .xn-nav-item) svg {
+    transition: none;
+  }
+
+  :where(button:not(:disabled), a[href], .xn-interactive, .xn-choice-card, .xn-nav-item):hover,
+  :where(button:not(:disabled), a[href], .xn-interactive, .xn-choice-card, .xn-nav-item):active,
+  :where(button:not(:disabled), a[href], .xn-interactive, .xn-choice-card, .xn-nav-item):hover svg,
+  :where(button:not(:disabled), a[href], .xn-interactive, .xn-choice-card, .xn-nav-item):active svg {
+    transform: none;
+  }
+
+  .xn-nav-item:hover {
+    transform: none;
+  }
+}
 
 .xn-theme-toggle {
   width: 32px;
   height: 32px;
-  border: 1px solid var(--border-1);
+  border: 1px solid color-mix(in oklch, var(--accent) 72%, var(--xn-ink-900) 28%);
   border-radius: 999px;
-  background: var(--bg-2);
-  color: var(--fg-2);
+  background: var(--accent);
+  color: var(--fg-on-clay);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -359,11 +453,55 @@ body {
   transition:
     background-color var(--dur-fast) var(--ease-out),
     border-color var(--dur-fast) var(--ease-out),
-    color var(--dur-fast) var(--ease-out);
+    color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
 }
 .xn-theme-toggle:hover {
-  background: var(--bg-3);
-  color: var(--fg-1);
+  background: var(--accent-hover);
+  color: var(--fg-on-clay);
+  border-color: color-mix(in oklch, var(--accent-hover) 72%, var(--xn-ink-900) 28%);
+  box-shadow: var(--sh-md), var(--sh-inset);
+  transform: translateY(var(--interactive-y));
+}
+.xn-theme-toggle:active {
+  transform: scale(var(--interactive-press-scale));
+}
+
+.xn-icon-button,
+.xn-topbar-button,
+.xn-segment-button {
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out),
+    opacity var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+.xn-icon-button,
+.xn-topbar-button {
+  background: var(--accent);
+  color: var(--fg-on-clay);
+  border: 1px solid color-mix(in oklch, var(--accent) 72%, var(--xn-ink-900) 28%);
+  box-shadow: var(--sh-sm), var(--sh-inset);
+}
+.xn-icon-button:hover,
+.xn-topbar-button:hover,
+.xn-segment-button:hover {
+  transform: translateY(var(--interactive-y));
+}
+.xn-icon-button:hover,
+.xn-topbar-button:hover {
+  background: var(--accent-hover);
+  color: var(--fg-on-clay);
+  border-color: color-mix(in oklch, var(--accent-hover) 72%, var(--xn-ink-900) 28%);
+  box-shadow: var(--sh-md), var(--sh-inset);
+}
+.xn-icon-button:active,
+.xn-topbar-button:active,
+.xn-segment-button:active {
+  transform: scale(var(--interactive-press-scale));
 }
 
 /* Top bar */
@@ -396,41 +534,108 @@ body {
 .xn-card:hover {
   border-color: var(--surface-border);
   box-shadow: var(--sh-md);
+  transform: translateY(-1px);
 }
 .xn-card.sand { background: var(--xn-clay-200); border-color: var(--surface-border); }
+.xn-dashboard-card {
+  will-change: transform, opacity;
+}
+.xn-dashboard-hero {
+  border: 2px solid var(--surface-border-soft);
+  box-shadow: var(--sh-sm);
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+  will-change: transform, opacity;
+}
+.xn-dashboard-hero:hover {
+  border-color: var(--surface-border);
+  box-shadow: var(--sh-md);
+  transform: translateY(-1px);
+}
+.xn-mini-card {
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+  will-change: transform, opacity;
+}
+.xn-mini-card:hover {
+  box-shadow: var(--sh-xs);
+  transform: translateY(-1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xn-dashboard-hero:hover,
+  .xn-card:hover,
+  .xn-mini-card:hover {
+    transform: none;
+  }
+}
 
 /* Buttons */
 .xn-btn {
   font-family: var(--font-sans);
-  font-weight: 500;
+  font-weight: 650;
   font-size: 14px;
-  padding: 7px 14px;
+  padding: 7px 15px;
   border-radius: 999px;
-  border: 1px solid transparent;
+  border: 1px solid var(--surface-border-soft);
+  background: var(--accent);
+  color: var(--fg-on-clay);
+  border-color: color-mix(in oklch, var(--accent) 72%, var(--xn-ink-900) 28%);
+  box-shadow: var(--sh-sm), var(--sh-inset);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   line-height: 1;
-  transition: all var(--dur-fast) var(--ease-out);
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out),
+    opacity var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
   white-space: nowrap;
   text-decoration: none;
 }
-.xn-btn.primary {
+.xn-btn:hover:not(:disabled) {
+  transform: translateY(var(--interactive-y));
+}
+.xn-btn:active:not(:disabled) {
+  transform: scale(var(--interactive-press-scale));
+}
+.xn-btn:hover:not(:disabled),
+.xn-btn.primary:hover,
+.xn-btn.secondary:hover,
+.xn-btn.ghost:hover,
+.xn-btn.danger:hover {
+  background: var(--accent-hover);
+  color: var(--fg-on-clay);
+  border-color: color-mix(in oklch, var(--accent-hover) 72%, var(--xn-ink-900) 28%);
+  box-shadow: var(--sh-md), var(--sh-inset);
+}
+.xn-btn.primary,
+.xn-btn.secondary,
+.xn-btn.ghost,
+.xn-btn.danger {
   background: var(--accent);
   color: var(--fg-on-clay);
+  border-color: color-mix(in oklch, var(--accent) 72%, var(--xn-ink-900) 28%);
   box-shadow: var(--sh-sm), var(--sh-inset);
 }
-.xn-btn.primary:hover { background: var(--accent-hover); }
-.xn-btn.secondary {
-  background: var(--bg-2);
-  color: var(--fg-1);
-  border-color: var(--border-1);
+.xn-btn:hover:not(:disabled),
+.xn-btn.primary:hover,
+.xn-btn.secondary:hover,
+.xn-btn.ghost:hover,
+.xn-btn.danger:hover {
+  background: var(--accent-hover);
+  color: var(--fg-on-clay);
+  border-color: color-mix(in oklch, var(--accent-hover) 72%, var(--xn-ink-900) 28%);
+  box-shadow: var(--sh-md), var(--sh-inset);
 }
-.xn-btn.secondary:hover { background: var(--bg-3); }
-.xn-btn.ghost { background: transparent; color: var(--fg-1); }
-.xn-btn.ghost:hover { background: var(--bg-3); }
-.xn-btn.danger { background: var(--xn-danger); color: #fbf6ea; }
 .xn-btn.sm { font-size: 12px; padding: 5px 11px; }
 
 @media (max-width: 767px) {
@@ -761,11 +966,11 @@ body {
 .xn-choice-card:hover {
   border-color: var(--surface-border);
   box-shadow: var(--sh-md);
-  transform: translate3d(0, -2px, 0);
+  transform: translate3d(0, var(--interactive-y), 0);
 }
 .xn-choice-card:active {
   box-shadow: var(--sh-sm);
-  transform: translate3d(0, 0, 0) scale(0.99);
+  transform: translate3d(0, 0, 0) scale(var(--interactive-press-scale));
 }
 .xn-choice-card-icon,
 .xn-choice-card-arrow {
@@ -776,11 +981,11 @@ body {
 }
 .xn-choice-card:hover .xn-choice-card-icon {
   background: var(--accent-soft);
-  transform: scale(1.04);
+  transform: translateY(var(--interactive-y)) scale(var(--interactive-icon-scale));
 }
 .xn-choice-card:hover .xn-choice-card-arrow {
   color: var(--accent);
-  transform: translateX(4px);
+  transform: translateX(3px) scale(1.02);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -872,5 +1077,9 @@ body {
   font-size: 12px;
 }
 
-
+html[data-theme="dark"] .exercise-library-hero-badge,
+html[data-theme="dark"] .exercise-library-hero-stat-value,
+html[data-theme="dark"] .exercise-library-hero-stat-label {
+  color: #ffffff !important;
+}
 

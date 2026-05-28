@@ -93,14 +93,14 @@ export function useNotificationHub() {
       queryClient.setQueryData<InfiniteData<MessagePageResponse>>(
         messageKeys.byRelationship(payload.relationshipId),
         (old) => {
-          if (!old) return old
-          const lastPage = old.pages[old.pages.length - 1]
-          if (lastPage.items.some((m) => m.id === payload.id)) return old
+          if (!old || old.pages.length === 0) return old
+          const firstPage = old.pages[0]
+          if (firstPage.items.some((m) => m.id === payload.id)) return old
           return {
             ...old,
             pages: [
-              ...old.pages.slice(0, -1),
-              { ...lastPage, items: [...lastPage.items, payload] },
+              { ...firstPage, items: [...firstPage.items, payload] },
+              ...old.pages.slice(1),
             ],
           }
         },

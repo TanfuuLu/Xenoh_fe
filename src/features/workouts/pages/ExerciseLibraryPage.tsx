@@ -55,7 +55,13 @@ export function ExerciseLibraryPage() {
   const [editingTemplate, setEditingTemplate] = useState<ExerciseTemplateResponse | null>(null)
   const [prTemplate, setPrTemplate] = useState<ExerciseTemplateResponse | null>(null)
 
-  const { data: templates = [], isLoading } = useExerciseTemplates({
+  const {
+    data: templates = [],
+    isLoading,
+    hasNextPage: hasMoreTemplates,
+    fetchNextPage: fetchMoreTemplates,
+    isFetchingNextPage: loadingMoreTemplates,
+  } = useExerciseTemplates({
     muscleGroup: selectedMuscleGroup || undefined,
   })
   const { data: allTemplates = [] } = useExerciseTemplates()
@@ -182,7 +188,7 @@ export function ExerciseLibraryPage() {
         <div className="relative flex flex-col gap-6 p-7 md:flex-row md:items-center md:justify-between md:p-10">
           {/* Left — text */}
           <div className="max-w-xl">
-            <div className="mb-4 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold" style={{ background: 'rgba(255,250,243,0.75)', color: 'var(--xn-clay-800)', backdropFilter: 'blur(8px)', border: '1px solid var(--xn-clay-300)' }}>
+            <div className="exercise-library-hero-badge mb-4 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold" style={{ background: 'var(--bg-2)', color: 'var(--fg-1)', border: '1px solid var(--surface-border-soft)', boxShadow: 'var(--sh-xs)' }}>
               <BookOpen size={12} />
               {tx.badge}
             </div>
@@ -266,20 +272,34 @@ export function ExerciseLibraryPage() {
           <p className="text-center text-sm text-muted">{tx.noMatches}</p>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {filteredTemplates.map((template) => (
-            <ExerciseLibraryCard
-              key={template.id}
-              template={template}
-              onEdit={openEditModal}
-              onDelete={onDelete}
-              onSelect={setPrTemplate}
-              deleting={deletingCustom}
-              isActivePro={isActivePro}
-              lang={lang}
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {filteredTemplates.map((template) => (
+              <ExerciseLibraryCard
+                key={template.id}
+                template={template}
+                onEdit={openEditModal}
+                onDelete={onDelete}
+                onSelect={setPrTemplate}
+                deleting={deletingCustom}
+                isActivePro={isActivePro}
+                lang={lang}
+              />
+            ))}
+          </div>
+          {hasMoreTemplates && (
+            <div className="flex justify-center">
+              <Button
+                type="button"
+                variant="secondary"
+                loading={loadingMoreTemplates}
+                onClick={() => void fetchMoreTemplates()}
+              >
+                Load more exercises
+              </Button>
+            </div>
+          )}
+        </>
       )}
 
       <Modal
@@ -380,13 +400,13 @@ function HeroStat({ value, label, accent }: { value: number | string; label: str
     <div
       className="flex min-w-[72px] flex-col items-center rounded-2xl px-4 py-3"
       style={{
-        background: accent ? 'rgba(255,250,243,0.6)' : 'rgba(255,255,255,0.35)',
-        border: '1px solid var(--xn-clay-300)',
-        backdropFilter: 'blur(8px)',
+        background: accent ? 'var(--bg-2)' : 'var(--bg-3)',
+        border: '1px solid var(--surface-border-soft)',
+        boxShadow: 'var(--sh-xs)',
       }}
     >
-      <p className="font-display text-2xl font-black leading-none text-text">{value}</p>
-      <p className="mt-1 text-center text-[10px] font-medium leading-tight text-muted">{label}</p>
+      <p className="exercise-library-hero-stat-value font-display text-2xl font-black leading-none text-text">{value}</p>
+      <p className="exercise-library-hero-stat-label mt-1 text-center text-[10px] font-semibold leading-tight" style={{ color: 'var(--fg-2)' }}>{label}</p>
     </div>
   )
 }

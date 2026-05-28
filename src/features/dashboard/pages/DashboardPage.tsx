@@ -37,7 +37,7 @@ import { Input } from '@/shared/components/Input'
 import { Modal } from '@/shared/components/Modal'
 import { Spinner } from '@/shared/components/Spinner'
 import { cn } from '@/shared/utils/cn'
-import { slideUp, staggerContainer } from '@/shared/utils/motion'
+import { slideUp, softCardGroup, softCardItem, staggerContainer } from '@/shared/utils/motion'
 import { useLangStore, useT } from '@/shared/i18n'
 import { DailyTipCard } from '@/features/tips'
 import {
@@ -90,12 +90,18 @@ export function DashboardPage() {
     : 0
 
   return (
-    <div className="space-y-6">
-      <section
-        className="overflow-hidden rounded-2xl border border-border bg-surface p-5 sm:p-6"
+    <motion.div
+      initial={shouldReduce ? false : 'hidden'}
+      animate="visible"
+      variants={shouldReduce ? undefined : softCardGroup}
+      className="space-y-6"
+    >
+      <motion.section
+        variants={shouldReduce ? undefined : softCardItem}
+        className="xn-dashboard-hero overflow-hidden rounded-2xl bg-surface p-5 sm:p-6"
         style={{ background: 'linear-gradient(135deg, var(--bg-2), var(--bg-1))' }}
       >
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+        <motion.div variants={shouldReduce ? undefined : softCardItem} className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0">
             <p className="text-sm font-medium text-muted">
               {format(today, 'EEEE, d MMMM yyyy', { locale: dateLocale })}
@@ -126,12 +132,10 @@ export function DashboardPage() {
               <Calculator size={15} /> {td.plateCalculatorTitle}
             </Button>
           </div>
-        </div>
+        </motion.div>
 
         <motion.div
-          initial={shouldReduce ? false : 'hidden'}
-          animate="visible"
-          variants={staggerContainer}
+          variants={shouldReduce ? undefined : softCardGroup}
           className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
         >
           <LevelCard
@@ -145,18 +149,18 @@ export function DashboardPage() {
           <MetricCard icon={<Dumbbell size={18} />}   label="DOTS"          value={profile.dotsScore ? profile.dotsScore.toFixed(1) : '-'}               accent="#6366f1" />
         </motion.div>
 
-        <div className="mt-5 grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+        <motion.div variants={shouldReduce ? undefined : softCardGroup} className="mt-5 grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
           <TodayPanel workout={data.todayWorkout} />
           <PlanPanel plan={data.activePlan} />
-        </div>
-      </section>
+        </motion.div>
+      </motion.section>
 
       <BodyweightPanel latestBodyweight={profile.latestBodyweight} />
 
-      <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+      <motion.div variants={shouldReduce ? undefined : softCardGroup} className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
         <NutritionPanel nutrition={data.nutritionToday} />
         <NextActionsPanel actions={data.nextActions} />
-      </div>
+      </motion.div>
 
       <ProInsightsPanel
         unlocked={data.proInsights.isUnlocked}
@@ -177,7 +181,7 @@ export function DashboardPage() {
           calculator={plateCalculator}
         />
       </Modal>
-    </div>
+    </motion.div>
   )
 }
 
@@ -214,7 +218,7 @@ function BodyweightPanel({ latestBodyweight }: { latestBodyweight: number | null
   }
 
   return (
-    <Card className="space-y-4">
+    <Card className="xn-dashboard-card space-y-4" variants={softCardItem}>
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <PanelHeader
           icon={<Weight size={18} />}
@@ -303,7 +307,7 @@ function TodayPanel({ workout }: { workout: PersonalDashboardTodayWorkout | null
   const td = useT().dashboard
   if (!workout) {
     return (
-      <Card className="space-y-4">
+      <Card className="xn-dashboard-card space-y-4" variants={softCardItem}>
         <PanelHeader icon={<Calendar size={18} />} label={td.today} title={td.noWorkoutScheduled} accent="#f97316" />
         <p className="text-sm text-muted">{td.noWorkoutHint}</p>
         <Link to="/plans">
@@ -318,7 +322,7 @@ function TodayPanel({ workout }: { workout: PersonalDashboardTodayWorkout | null
   const ctaLabel = workout.isCompleted ? td.workoutComplete : workout.completedSets > 0 ? td.continueWorkout : td.startWorkout
 
   return (
-    <Card className="space-y-4">
+    <Card className="xn-dashboard-card space-y-4" variants={softCardItem}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <PanelHeader
           icon={<Dumbbell size={18} />}
@@ -387,7 +391,7 @@ function PlanPanel({
   const tc = t.common
   if (!plan) {
     return (
-      <Card className="space-y-4">
+      <Card className="xn-dashboard-card space-y-4" variants={softCardItem}>
         <PanelHeader icon={<ClipboardList size={18} />} label={td.activePlanLabel} title={td.noActivePlan} accent="#6366f1" />
         <p className="text-sm text-muted">{td.createPlanHint}</p>
         <Link to="/plans"><Button size="sm">{td.createPlan}</Button></Link>
@@ -396,7 +400,7 @@ function PlanPanel({
   }
 
   return (
-    <Card className="space-y-4">
+    <Card className="xn-dashboard-card space-y-4" variants={softCardItem}>
       <div className="flex items-start justify-between gap-3">
         <PanelHeader
           icon={<ClipboardList size={18} />}
@@ -441,7 +445,7 @@ function NutritionPanel({ nutrition }: { nutrition: PersonalDashboardNutrition }
     : 0
 
   return (
-    <Card className="space-y-4">
+    <Card className="xn-dashboard-card space-y-4" variants={softCardItem}>
       <PanelHeader icon={<Utensils size={18} />} label={td.nutrition} title={td.todaysIntake} accent="#ec4899" />
 
       {!hasTargets ? (
@@ -481,7 +485,7 @@ function NextActionsPanel({ actions }: { actions: PersonalDashboardAction[] }) {
   const lang = useLangStore((s) => s.lang)
   const shouldReduce = useReducedMotion()
   return (
-    <Card className="space-y-4">
+    <Card className="xn-dashboard-card space-y-4" variants={softCardItem}>
       <PanelHeader icon={<Target size={18} />} label={td.nextActions} title={td.whatToDoNext} accent="#f59e0b" />
       <motion.div
         className="space-y-2"
@@ -539,7 +543,7 @@ function ProInsightsPanel({
 }) {
   const td = useT().dashboard
   return (
-    <Card className="space-y-4">
+    <Card className="xn-dashboard-card space-y-4" variants={softCardItem}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <PanelHeader icon={<Sparkles size={18} />} label={td.proInsights} title={unlocked ? td.personalRecommendations : td.unlockDeeperGuidance} accent="#8b5cf6" />
         {!unlocked && ctaRoute && (
@@ -574,7 +578,7 @@ function ProInsightsPanel({
 
 function MetricCard({ icon, label, value, sub, accent }: { icon: React.ReactNode; label: string; value: string; sub?: string; accent?: string }) {
   return (
-    <motion.div variants={slideUp} className="rounded-xl border bg-panel p-4" style={{ borderColor: accent ? `${accent}30` : 'var(--border-1)' }}>
+    <motion.div variants={softCardItem} className="xn-mini-card rounded-xl border bg-panel p-4" style={{ borderColor: accent ? `${accent}30` : 'var(--border-1)' }}>
       <div
         className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg"
         style={{ background: accent ? `${accent}20` : 'var(--bg-surface)', color: accent ?? 'var(--color-primary)' }}
@@ -600,7 +604,7 @@ function LevelCard({
   progress: number
 }) {
   return (
-    <motion.div variants={slideUp} className="rounded-xl border border-border bg-panel p-4">
+    <motion.div variants={softCardItem} className="xn-mini-card rounded-xl border border-border bg-panel p-4">
       <div className="flex h-full flex-col justify-between gap-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -617,19 +621,19 @@ function LevelCard({
 
 function SmallStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-border bg-panel p-3">
+    <motion.div variants={softCardItem} className="xn-mini-card rounded-xl border border-border bg-panel p-3">
       <p className="text-xs text-muted">{label}</p>
       <p className="mt-1 font-semibold text-text">{value}</p>
-    </div>
+    </motion.div>
   )
 }
 
 function Macro({ label, logged, target }: { label: string; logged: number; target: number | null }) {
   return (
-    <div className="rounded-lg border border-border p-3">
+    <motion.div variants={softCardItem} className="xn-mini-card rounded-lg border border-border p-3">
       <p className="text-xs text-muted">{label}</p>
       <p className="font-semibold text-text">{Math.round(logged)} / {target == null ? '-' : Math.round(target)}g</p>
-    </div>
+    </motion.div>
   )
 }
 

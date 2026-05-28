@@ -47,8 +47,20 @@ export function PlansPage() {
   const [showCreateClientPlan, setShowCreateClientPlan] = useState(false)
   const [duplicatingPlan, setDuplicatingPlan] = useState<PlanResponse | null>(null)
 
-  const { data: plans, isLoading } = usePlans()
-  const { data: clientPlans, isLoading: clientPlansLoading } = useCoachPlanOverview(isCoach)
+  const {
+    data: plans,
+    isLoading,
+    hasNextPage: hasMorePlans,
+    fetchNextPage: fetchMorePlans,
+    isFetchingNextPage: loadingMorePlans,
+  } = usePlans()
+  const {
+    data: clientPlans,
+    isLoading: clientPlansLoading,
+    hasNextPage: hasMoreClientPlans,
+    fetchNextPage: fetchMoreClientPlans,
+    isFetchingNextPage: loadingMoreClientPlans,
+  } = useCoachPlanOverview(isCoach)
   const { data: clients, isLoading: clientsLoading } = useMyClients(isCoach)
   const { mutate: createPlan, isPending: creating, error: createError } = useCreatePlan()
   const { mutate: createStarterPlan, isPending: creatingStarterPlan, error: starterPlanError } = useCreateAiStarterPlan()
@@ -353,6 +365,17 @@ export function PlansPage() {
                 No coach plans yet.
               </Card>
             )}
+            {hasMorePlans && (
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                loading={loadingMorePlans}
+                onClick={() => void fetchMorePlans()}
+              >
+                Load more plans
+              </Button>
+            )}
           </motion.div>
         </section>
       </div>
@@ -391,6 +414,19 @@ export function PlansPage() {
               <Card className="py-10 text-center text-muted">
                 {tcp.empty}
               </Card>
+            )}
+            {hasMoreClientPlans && (
+              <div className="flex justify-center">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  loading={loadingMoreClientPlans}
+                  onClick={() => void fetchMoreClientPlans()}
+                >
+                  Load more client plans
+                </Button>
+              </div>
             )}
           </motion.div>
         </section>

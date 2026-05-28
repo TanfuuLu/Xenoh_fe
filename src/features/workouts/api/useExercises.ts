@@ -1,7 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import type { InfiniteData } from '@tanstack/react-query'
 import { api } from '@/shared/api/axios'
 import { ENDPOINTS } from '@/shared/api/endpoints'
 import { exerciseKeys, invalidateWorkoutQueries } from './workoutQueryCache'
+import type { PagedResponse } from '@/shared/types/api'
 import type {
   CompleteSetRequest,
   CreateExerciseRequest,
@@ -10,19 +12,73 @@ import type {
   UpdateExerciseRequest,
 } from '../types'
 
+const EXERCISE_PAGE_SIZE = 12
+type ExercisePages = InfiniteData<PagedResponse<ExerciseResponse>>
+
+function mapExercisePages(
+  data: ExercisePages | undefined,
+  mapper: (exercise: ExerciseResponse) => ExerciseResponse,
+) {
+  if (!data) return data
+
+  return {
+    ...data,
+    pages: data.pages.map((page) => ({
+      ...page,
+      items: page.items.map(mapper),
+    })),
+  }
+}
+
+function reorderLoadedExercisePages(
+  data: ExercisePages | undefined,
+  exerciseIds: string[],
+) {
+  if (!data) return data
+
+  const loaded = data.pages.flatMap((page) => page.items)
+  const byId = new Map(loaded.map((exercise) => [exercise.id, exercise]))
+  const orderedLoaded = exerciseIds
+    .map((id, index) => {
+      const exercise = byId.get(id)
+      return exercise ? { ...exercise, sortOrder: index } : null
+    })
+    .filter((exercise): exercise is ExerciseResponse => exercise != null)
+  let offset = 0
+
+  return {
+    ...data,
+    pages: data.pages.map((page) => {
+      const items = orderedLoaded.slice(offset, offset + page.items.length)
+      offset += page.items.length
+      return { ...page, items: items.length > 0 ? items : page.items }
+    }),
+  }
+}
+
 export function useExercises(dailyWorkoutId: string) {
-  return useQuery({
+  const query = useInfiniteQuery({
     queryKey: exerciseKeys.byDay(dailyWorkoutId),
-    queryFn: () =>
+    initialPageParam: 1,
+    queryFn: ({ pageParam }) =>
       api
-        .get<ExerciseResponse[]>(ENDPOINTS.exercises.byDay(dailyWorkoutId))
+        .get<PagedResponse<ExerciseResponse>>(ENDPOINTS.exercises.byDay(dailyWorkoutId), {
+          params: { pageNumber: pageParam, pageSize: EXERCISE_PAGE_SIZE },
+        })
         .then((r) => r.data),
+    getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.pageNumber + 1 : undefined),
     enabled: !!dailyWorkoutId,
     retry: (count, error) => {
       const status = (error as { response?: { status?: number } })?.response?.status
       return status !== 404 && count < 3
     },
   })
+
+  return {
+    ...query,
+    data: query.data?.pages.flatMap((page) => page.items),
+    totalCount: query.data?.pages[0]?.totalCount ?? 0,
+  }
 }
 
 export function useCreateExercise(dailyWorkoutId: string, weeklyWorkoutId?: string, planId?: string) {
@@ -66,25 +122,15 @@ export function useReorderExercises(dailyWorkoutId: string, weeklyWorkoutId?: st
         .then((r) => r.data),
     onMutate: async (data) => {
       await qc.cancelQueries({ queryKey: key })
-      const previous = qc.getQueryData<ExerciseResponse[]>(key)
+      const previous = qc.getQueryData<ExercisePages>(key)
 
-      qc.setQueryData<ExerciseResponse[]>(key, (old) => {
-        if (!old) return old
-        const byId = new Map(old.map((exercise) => [exercise.id, exercise]))
-        return data.exerciseIds
-          .map((id, index) => {
-            const exercise = byId.get(id)
-            return exercise ? { ...exercise, sortOrder: index } : null
-          })
-          .filter((exercise): exercise is ExerciseResponse => exercise != null)
-      })
+      qc.setQueryData<ExercisePages>(key, (old) => reorderLoadedExercisePages(old, data.exerciseIds))
 
       return { previous }
     },
     onError: (_err, _vars, ctx) => {
       if (ctx?.previous) qc.setQueryData(key, ctx.previous)
     },
-    onSuccess: (data) => qc.setQueryData(key, data),
     onSettled: () => invalidateWorkoutQueries(qc, { dailyWorkoutId, weeklyWorkoutId, planId }),
   })
 }
@@ -102,10 +148,10 @@ export function useCompleteSet(dailyWorkoutId: string, weeklyWorkoutId?: string,
     // Optimistic update — UI responds instantly, no waiting for server
     onMutate: async ({ setId, data }) => {
       await qc.cancelQueries({ queryKey: key })
-      const previous = qc.getQueryData<ExerciseResponse[]>(key)
+      const previous = qc.getQueryData<ExercisePages>(key)
 
-      qc.setQueryData<ExerciseResponse[]>(key, (old) =>
-        old?.map((exercise) => {
+      qc.setQueryData<ExercisePages>(key, (old) =>
+        mapExercisePages(old, (exercise) => {
           const setInThisExercise = exercise.sets.some((s) => s.id === setId)
           if (!setInThisExercise) return exercise
 
@@ -167,8 +213,8 @@ export function useSetExerciseDuration(dailyWorkoutId: string, weeklyWorkoutId?:
         })
         .then((r) => r.data),
     onSuccess: (updated) => {
-      qc.setQueryData<ExerciseResponse[]>(key, (old) =>
-        old?.map((exercise) => (exercise.id === updated.id ? updated : exercise)),
+      qc.setQueryData<ExercisePages>(key, (old) =>
+        mapExercisePages(old, (exercise) => (exercise.id === updated.id ? updated : exercise)),
       )
       invalidateWorkoutQueries(qc, { dailyWorkoutId, weeklyWorkoutId, planId, includeUserProgress: true })
     },
@@ -184,8 +230,8 @@ export function useStartExerciseTimer(dailyWorkoutId: string) {
     mutationFn: (exerciseId: string) =>
       api.patch<ExerciseResponse>(ENDPOINTS.exercises.startTimer(exerciseId)).then((r) => r.data),
     onSuccess: (updated) => {
-      qc.setQueryData<ExerciseResponse[]>(key, (old) =>
-        old?.map((exercise) => (exercise.id === updated.id ? updated : exercise)),
+      qc.setQueryData<ExercisePages>(key, (old) =>
+        mapExercisePages(old, (exercise) => (exercise.id === updated.id ? updated : exercise)),
       )
     },
     onSettled: () => qc.invalidateQueries({ queryKey: key }),
@@ -200,8 +246,8 @@ export function useFinishExerciseTimer(dailyWorkoutId: string, weeklyWorkoutId?:
     mutationFn: (exerciseId: string) =>
       api.patch<ExerciseResponse>(ENDPOINTS.exercises.finishTimer(exerciseId)).then((r) => r.data),
     onSuccess: (updated) => {
-      qc.setQueryData<ExerciseResponse[]>(key, (old) =>
-        old?.map((exercise) => (exercise.id === updated.id ? updated : exercise)),
+      qc.setQueryData<ExercisePages>(key, (old) =>
+        mapExercisePages(old, (exercise) => (exercise.id === updated.id ? updated : exercise)),
       )
       invalidateWorkoutQueries(qc, { dailyWorkoutId, weeklyWorkoutId, planId, includeUserProgress: true })
     },

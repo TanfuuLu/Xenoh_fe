@@ -33,6 +33,7 @@ export function LanguageSwitcher({ variant = 'text', onChange }: Props) {
         {LANGS.map(({ value, label }) => (
           <button
             key={value}
+            className="xn-segment-button"
             onClick={() => selectLang(value)}
             style={{
               padding: '4px 10px',
@@ -65,6 +66,7 @@ export function LanguageSwitcher({ variant = 'text', onChange }: Props) {
             <span style={{ color: 'var(--fg-4)', fontSize: 11, userSelect: 'none' }}>·</span>
           )}
           <button
+            className="xn-segment-button"
             onClick={() => selectLang(value)}
             style={{
               padding: '2px 5px',

@@ -1,20 +1,35 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/shared/api/axios'
 import { ENDPOINTS } from '@/shared/api/endpoints'
 import { weekKeys } from './workoutQueryCache'
+import type { PagedResponse } from '@/shared/types/api'
 import type { UpdateWeeklyWorkoutRequest, WeeklyWorkoutResponse } from '../types'
 
+const WEEK_PAGE_SIZE = 8
+
 export function useWeeklyWorkouts(planId: string) {
-  return useQuery({
+  const query = useInfiniteQuery({
     queryKey: weekKeys.byPlan(planId),
-    queryFn: () =>
-      api.get<WeeklyWorkoutResponse[]>(ENDPOINTS.weeks.byPlan(planId)).then((r) => r.data),
+    initialPageParam: 1,
+    queryFn: ({ pageParam }) =>
+      api
+        .get<PagedResponse<WeeklyWorkoutResponse>>(ENDPOINTS.weeks.byPlan(planId), {
+          params: { pageNumber: pageParam, pageSize: WEEK_PAGE_SIZE },
+        })
+        .then((r) => r.data),
+    getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.pageNumber + 1 : undefined),
     enabled: !!planId,
     retry: (count, error) => {
       const status = (error as { response?: { status?: number } })?.response?.status
       return status !== 404 && count < 3
     },
   })
+
+  return {
+    ...query,
+    data: query.data?.pages.flatMap((page) => page.items),
+    totalCount: query.data?.pages[0]?.totalCount ?? 0,
+  }
 }
 
 export function useUpdateWeeklyWorkout(planId: string) {

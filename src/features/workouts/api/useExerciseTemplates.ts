@@ -1,7 +1,7 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/shared/api/axios'
 import { ENDPOINTS } from '@/shared/api/endpoints'
-import type { MuscleGroup } from '@/shared/types/api'
+import type { MuscleGroup, PagedResponse } from '@/shared/types/api'
 import type {
   CustomExerciseTemplateRequest,
   ExerciseTemplateResponse,
@@ -13,32 +13,57 @@ interface Filters {
 }
 
 const EXERCISE_TEMPLATE_STALE_TIME = 5 * 60 * 1000
+const EXERCISE_TEMPLATE_PAGE_SIZE = 24
 
 export function useExerciseTemplates(filters?: Filters) {
-  return useQuery({
+  const query = useInfiniteQuery({
     queryKey: ['exercise-templates', filters?.muscleGroup ?? ''],
-    queryFn: () =>
+    initialPageParam: 1,
+    queryFn: ({ pageParam }) =>
       api
-        .get<ExerciseTemplateResponse[]>(ENDPOINTS.exerciseTemplates.list, {
-          params: { muscleGroup: filters?.muscleGroup },
+        .get<PagedResponse<ExerciseTemplateResponse>>(ENDPOINTS.exerciseTemplates.list, {
+          params: {
+            muscleGroup: filters?.muscleGroup,
+            pageNumber: pageParam,
+            pageSize: EXERCISE_TEMPLATE_PAGE_SIZE,
+          },
         })
         .then((r) => r.data),
+    getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.pageNumber + 1 : undefined),
     staleTime: EXERCISE_TEMPLATE_STALE_TIME,
   })
+
+  return {
+    ...query,
+    data: query.data?.pages.flatMap((page) => page.items),
+    totalCount: query.data?.pages[0]?.totalCount ?? 0,
+  }
 }
 
 export function useClientExerciseTemplates(clientId: string, filters?: Filters) {
-  return useQuery({
+  const query = useInfiniteQuery({
     queryKey: ['exercise-templates', 'client', clientId, filters?.muscleGroup ?? ''],
     enabled: Boolean(clientId),
-    queryFn: () =>
+    initialPageParam: 1,
+    queryFn: ({ pageParam }) =>
       api
-        .get<ExerciseTemplateResponse[]>(ENDPOINTS.exerciseTemplates.forClient(clientId), {
-          params: { muscleGroup: filters?.muscleGroup },
+        .get<PagedResponse<ExerciseTemplateResponse>>(ENDPOINTS.exerciseTemplates.forClient(clientId), {
+          params: {
+            muscleGroup: filters?.muscleGroup,
+            pageNumber: pageParam,
+            pageSize: EXERCISE_TEMPLATE_PAGE_SIZE,
+          },
         })
         .then((r) => r.data),
+    getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.pageNumber + 1 : undefined),
     staleTime: EXERCISE_TEMPLATE_STALE_TIME,
   })
+
+  return {
+    ...query,
+    data: query.data?.pages.flatMap((page) => page.items),
+    totalCount: query.data?.pages[0]?.totalCount ?? 0,
+  }
 }
 
 export function useLastExercisePerformance(

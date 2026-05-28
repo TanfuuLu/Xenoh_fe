@@ -36,3 +36,11 @@ export type MuscleGroup = (typeof MuscleGroup)[keyof typeof MuscleGroup]
 export interface ApiError {
   message: string
 }
+
+export interface PagedResponse<T> {
+  items: T[]
+  pageNumber: number
+  pageSize: number
+  totalCount: number
+  hasMore: boolean
+}

@@ -1,24 +1,37 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/shared/api/axios'
 import { ENDPOINTS } from '@/shared/api/endpoints'
 import { useLangStore } from '@/shared/i18n'
 import { dayKeys, invalidateWorkoutQueries } from './workoutQueryCache'
 import type { DayStatus } from '@/shared/types/api'
+import type { PagedResponse } from '@/shared/types/api'
 import type { CopyDayRequest, CopyDayResponse, DailyWorkoutResponse, WorkoutGuidanceResponse } from '../types'
 
+const DAY_PAGE_SIZE = 7
+
 export function useDailyWorkouts(weeklyWorkoutId: string) {
-  return useQuery({
+  const query = useInfiniteQuery({
     queryKey: dayKeys.byWeek(weeklyWorkoutId),
-    queryFn: () =>
+    initialPageParam: 1,
+    queryFn: ({ pageParam }) =>
       api
-        .get<DailyWorkoutResponse[]>(ENDPOINTS.days.byWeek(weeklyWorkoutId))
+        .get<PagedResponse<DailyWorkoutResponse>>(ENDPOINTS.days.byWeek(weeklyWorkoutId), {
+          params: { pageNumber: pageParam, pageSize: DAY_PAGE_SIZE },
+        })
         .then((r) => r.data),
+    getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.pageNumber + 1 : undefined),
     enabled: !!weeklyWorkoutId,
     retry: (count, error) => {
       const status = (error as { response?: { status?: number } })?.response?.status
       return status !== 404 && count < 3
     },
   })
+
+  return {
+    ...query,
+    data: query.data?.pages.flatMap((page) => page.items),
+    totalCount: query.data?.pages[0]?.totalCount ?? 0,
+  }
 }
 
 export function useMarkDayStatus(weeklyWorkoutId: string, planId?: string) {

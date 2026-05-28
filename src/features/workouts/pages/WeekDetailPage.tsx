@@ -3,9 +3,6 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { ChevronLeft, ChevronRight, CheckCircle2, AlertTriangle, BarChart2, BedDouble, XCircle } from 'lucide-react'
 import { format } from 'date-fns'
 import { vi as viLocale, enUS } from 'date-fns/locale'
-import { useQueries } from '@tanstack/react-query'
-import { api } from '@/shared/api/axios'
-import { ENDPOINTS } from '@/shared/api/endpoints'
 import { Badge } from '@/shared/components/Badge'
 import { Button } from '@/shared/components/Button'
 import { Spinner } from '@/shared/components/Spinner'
@@ -13,22 +10,10 @@ import { cn } from '@/shared/utils/cn'
 import { staggerContainer, slideUp } from '@/shared/utils/motion'
 import { useT, useLangStore } from '@/shared/i18n'
 import { NotFoundPage } from '@/shared/components/NotFoundPage'
-import { exerciseKeys, useDailyWorkouts, useWeeklyWorkouts } from '../index'
+import { useDailyWorkouts, useWeeklyWorkouts } from '../index'
 import { InlineTip } from '@/features/tips'
-import type { ExerciseResponse } from '../types'
 import { CommentSection } from '@/features/comments/components/CommentSection'
 import { useWeekComments, useAddWeekComment, useDeleteWeekComment } from '@/features/comments/api/useWeekComments'
-
-function hasExerciseWarning(exercises: ExerciseResponse[]): boolean {
-  return exercises.some((ex) =>
-    ex.sets.some(
-      (s) =>
-        s.isCompleted &&
-        ((s.actualReps != null && s.actualReps < s.plannedReps) ||
-          (s.actualWeight != null && s.plannedWeight != null && s.actualWeight < s.plannedWeight)),
-    ),
-  )
-}
 
 export function WeekDetailPage() {
   const { planId = '', weekId = '' } = useParams()
@@ -39,8 +24,21 @@ export function WeekDetailPage() {
   const canComplete = locationState?.canComplete ?? false
   const shouldReduce = useReducedMotion()
 
-  const { data: allWeeks, isError: weeksError } = useWeeklyWorkouts(planId)
-  const { data: days, isLoading, isError: daysError } = useDailyWorkouts(weekId)
+  const {
+    data: allWeeks,
+    isError: weeksError,
+    hasNextPage: hasMoreWeeks,
+    fetchNextPage: fetchMoreWeeks,
+    isFetchingNextPage: loadingMoreWeeks,
+  } = useWeeklyWorkouts(planId)
+  const {
+    data: days,
+    isLoading,
+    isError: daysError,
+    hasNextPage: hasMoreDays,
+    fetchNextPage: fetchMoreDays,
+    isFetchingNextPage: loadingMoreDays,
+  } = useDailyWorkouts(weekId)
   const { data: comments = [], isLoading: commentsLoading } = useWeekComments(weekId)
   const { mutateAsync: addComment, isPending: addingComment } = useAddWeekComment(weekId)
   const { mutate: deleteComment, isPending: deletingComment } = useDeleteWeekComment(weekId)
@@ -62,24 +60,7 @@ export function WeekDetailPage() {
   const orderedDays = [...(days ?? [])].sort(
     (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
   )
-
-  // Fetch exercises for each day that has exercises to detect warnings
-  const daysWithExercises = days?.filter((d) => d.totalExercises > 0) ?? []
-  const exerciseQueries = useQueries({
-    queries: daysWithExercises.map((day) => ({
-      queryKey: exerciseKeys.byDay(day.id),
-      queryFn: () =>
-        api.get<ExerciseResponse[]>(ENDPOINTS.exercises.byDay(day.id)).then((r) => r.data),
-    })),
-  })
-
-  // Map dayId → has warning
-  const warnedDayIds = new Set<string>()
-  exerciseQueries.forEach((q, i) => {
-    if (q.data && hasExerciseWarning(q.data)) {
-      warnedDayIds.add(daysWithExercises[i].id)
-    }
-  })
+  const warnedDayIds = new Set(orderedDays.filter((day) => day.hasWarning).map((day) => day.id))
   const weekHasWarning = warnedDayIds.size > 0
 
   if (weeksError || daysError) return <NotFoundPage />
@@ -150,18 +131,19 @@ export function WeekDetailPage() {
               </span>
 
               <button
-                disabled={!nextWeek}
+                disabled={!nextWeek && !hasMoreWeeks}
                 onClick={() =>
-                  nextWeek &&
-                  navigate(`/plans/${planId}/weeks/${nextWeek.id}`, { state: { canEdit, canComplete } })
+                  nextWeek
+                    ? navigate(`/plans/${planId}/weeks/${nextWeek.id}`, { state: { canEdit, canComplete } })
+                    : void fetchMoreWeeks()
                 }
                 className={cn(
                   'flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors',
-                  nextWeek ? 'cursor-pointer hover:opacity-80' : 'cursor-not-allowed opacity-30',
+                  nextWeek || hasMoreWeeks ? 'cursor-pointer hover:opacity-80' : 'cursor-not-allowed opacity-30',
                 )}
                 style={{ background: 'var(--bg-3)', color: 'var(--fg-2)' }}
               >
-                {nextWeek ? `W${nextWeek.weekNumber}` : ''}
+                {nextWeek ? `W${nextWeek.weekNumber}` : loadingMoreWeeks ? '...' : hasMoreWeeks ? 'More' : ''}
                 <ChevronRight size={14} />
               </button>
             </div>
@@ -280,6 +262,19 @@ export function WeekDetailPage() {
           )
         })}
       </motion.div>
+      {hasMoreDays && (
+        <div className="flex justify-center sm:hidden">
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            loading={loadingMoreDays}
+            onClick={() => void fetchMoreDays()}
+          >
+            Load more days
+          </Button>
+        </div>
+      )}
 
       {/* Calendar grid */}
       <motion.div
@@ -427,6 +422,19 @@ export function WeekDetailPage() {
           })}
         </div>
       </motion.div>
+      {hasMoreDays && (
+        <div className="hidden justify-center sm:flex">
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            loading={loadingMoreDays}
+            onClick={() => void fetchMoreDays()}
+          >
+            Load more days
+          </Button>
+        </div>
+      )}
 
         </div>
 

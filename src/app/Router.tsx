@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react'
 import type { ReactNode } from 'react'
 import { createBrowserRouter, Navigate, Outlet } from 'react-router'
+import { motion, useReducedMotion } from 'framer-motion'
 import { Spinner } from '@/shared/components/Spinner'
 import { AppLayout } from '@/shared/layouts/AppLayout'
 import { useAuthStore } from '@/features/auth'
@@ -39,9 +40,17 @@ const BlocklistPage = lazy(() => import('@/features/blocks/pages/BlocklistPage')
 const EnterCoachCodePage = lazy(() => import('@/features/coach-client/pages/EnterCoachCodePage').then((m) => ({ default: m.EnterCoachCodePage })))
 
 function SuspenseFallback() {
+  const shouldReduce = useReducedMotion()
+
   return (
     <div className="flex h-screen items-center justify-center" style={{ background: 'var(--xn-paper)' }}>
-      <Spinner size="lg" />
+      <motion.div
+        initial={shouldReduce ? false : { opacity: 0, scale: 0.94 }}
+        animate={shouldReduce ? { opacity: 1 } : { opacity: 1, scale: 1 }}
+        transition={{ duration: 0.22, ease: 'easeOut' }}
+      >
+        <Spinner size="lg" />
+      </motion.div>
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/shared/api/axios'
 import { ENDPOINTS } from '@/shared/api/endpoints'
 import { exportPlanCsv } from '../utils/exportPlanCsv'
@@ -15,6 +15,9 @@ import type {
   UpdatePlanRequest,
 } from '../types'
 import { useLangStore } from '@/shared/i18n'
+import type { PagedResponse } from '@/shared/types/api'
+
+const PLAN_PAGE_SIZE = 12
 
 export const planKeys = {
   all: ['plans'] as const,
@@ -25,10 +28,23 @@ export const planKeys = {
 }
 
 export function usePlans() {
-  return useQuery({
+  const query = useInfiniteQuery({
     queryKey: planKeys.all,
-    queryFn: () => api.get<PlanResponse[]>(ENDPOINTS.plans.list).then((r) => r.data),
+    initialPageParam: 1,
+    queryFn: ({ pageParam }) =>
+      api
+        .get<PagedResponse<PlanResponse>>(ENDPOINTS.plans.list, {
+          params: { pageNumber: pageParam, pageSize: PLAN_PAGE_SIZE },
+        })
+        .then((r) => r.data),
+    getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.pageNumber + 1 : undefined),
   })
+
+  return {
+    ...query,
+    data: query.data?.pages.flatMap((page) => page.items),
+    totalCount: query.data?.pages[0]?.totalCount ?? 0,
+  }
 }
 
 export function usePlan(id: string) {
@@ -103,12 +119,24 @@ export function useDeactivatePlan() {
 }
 
 export function useCoachPlanOverview(enabled = true) {
-  return useQuery({
+  const query = useInfiniteQuery({
     queryKey: planKeys.coachOverview,
-    queryFn: () =>
-      api.get<CoachPlanResponse[]>(ENDPOINTS.plans.coachOverview).then((r) => r.data),
+    initialPageParam: 1,
+    queryFn: ({ pageParam }) =>
+      api
+        .get<PagedResponse<CoachPlanResponse>>(ENDPOINTS.plans.coachOverview, {
+          params: { pageNumber: pageParam, pageSize: PLAN_PAGE_SIZE },
+        })
+        .then((r) => r.data),
+    getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.pageNumber + 1 : undefined),
     enabled,
   })
+
+  return {
+    ...query,
+    data: query.data?.pages.flatMap((page) => page.items),
+    totalCount: query.data?.pages[0]?.totalCount ?? 0,
+  }
 }
 
 export function useCreatePlanForUser() {

@@ -15,7 +15,7 @@ export function ThemeToggle({ onChange }: Props) {
   return (
     <button
       type="button"
-      className="xn-theme-toggle"
+      className="xn-theme-toggle xn-icon-button"
       onClick={() => {
         setTheme(nextTheme)
         onChange?.(nextTheme)

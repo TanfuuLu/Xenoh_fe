@@ -27,14 +27,11 @@ export function NotificationBell() {
     <div className="relative" ref={containerRef}>
       <button
         onClick={() => setOpen((v) => !v)}
-        className="relative flex items-center justify-center rounded-lg transition-colors"
+        className="xn-icon-button relative flex items-center justify-center rounded-lg"
         style={{
           width: 36, height: 36,
-          background: 'none', border: '1px solid var(--border-1)',
-          cursor: 'pointer', color: 'var(--fg-2)',
+          cursor: 'pointer',
         }}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--bg-3)' }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'none' }}
       >
         <Bell size={17} />
         {unreadCount > 0 && (

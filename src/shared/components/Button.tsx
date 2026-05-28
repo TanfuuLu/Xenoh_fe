@@ -9,7 +9,7 @@ interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 export function Button({ variant = 'primary', size = 'md', loading, children, className, disabled, ...props }: Props) {
-  const base = 'xn-btn'
+  const base = 'xn-btn xn-interactive'
   const v = variant === 'primary' ? 'primary'
     : variant === 'secondary' ? 'secondary'
     : variant === 'danger' ? 'danger'

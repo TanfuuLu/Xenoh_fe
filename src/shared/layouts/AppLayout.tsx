@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { NavLink, Link, Outlet, useLocation, useNavigate } from 'react-router'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import {
   LayoutDashboard, ClipboardList, User, Users,
   UserCheck, Menu, X, LogOut, ChevronDown,
@@ -42,6 +42,7 @@ export function AppLayout() {
   const queryClient = useQueryClient()
   const navigate  = useNavigate()
   const location  = useLocation()
+  const shouldReduce = useReducedMotion()
   const t         = useT()
   const tn        = t.nav
   const lang = useLangStore((s) => s.lang)
@@ -230,16 +231,14 @@ export function AppLayout() {
             <div className="relative">
               <button
                 onClick={() => setUserMenuOpen((v) => !v)}
-                className="flex items-center gap-2 rounded-full px-2 py-1 transition-colors"
-                style={{ background: 'none', border: '1px solid var(--border-1)', cursor: 'pointer' }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--bg-3)' }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'none' }}
+                className="xn-topbar-button flex items-center gap-2 rounded-full px-2 py-1"
+                style={{ cursor: 'pointer' }}
               >
                 <UserAvatar name={user?.fullName} email={user?.email} imageUrl={user?.avatarUrl} size={28} />
-                <span className="hidden md:block text-sm font-medium max-w-[120px] truncate" style={{ color: 'var(--fg-1)' }}>
+                <span className="hidden md:block text-sm font-medium max-w-[120px] truncate" style={{ color: 'var(--fg-on-clay)' }}>
                   {user?.fullName ?? user?.email}
                 </span>
-                <ChevronDown size={13} style={{ color: 'var(--fg-3)', transform: userMenuOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
+                <ChevronDown size={13} style={{ color: 'var(--fg-on-clay)', transform: userMenuOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
               </button>
 
               <AnimatePresence>
@@ -354,7 +353,17 @@ export function AppLayout() {
           style={hasChatSidebar ? { paddingRight: 'calc(22rem + 16px)' } : undefined}
         >
           <div className={cn('xn-page-container', isWidePage && 'wide')}>
-            <Outlet />
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={location.pathname}
+                initial={shouldReduce ? false : { opacity: 0, y: 10, filter: 'blur(2px)' }}
+                animate={shouldReduce ? { opacity: 1 } : { opacity: 1, y: 0, filter: 'blur(0px)' }}
+                exit={shouldReduce ? { opacity: 1 } : { opacity: 0, y: -6, filter: 'blur(2px)' }}
+                transition={{ duration: 0.18, ease: 'easeOut' }}
+              >
+                <Outlet />
+              </motion.div>
+            </AnimatePresence>
           </div>
         </main>
       </div>
@@ -511,8 +520,19 @@ function SidebarInner({
             className={({ isActive }) => cn('xn-nav-item', isActive && 'active')}
             style={mini ? { justifyContent: 'center', padding: '10px 0' } : undefined}
           >
-            <Icon size={17} style={color ? { color } : undefined} />
-            {!mini && label}
+            {({ isActive }) => (
+              <>
+                {isActive && (
+                  <motion.span
+                    layoutId="sidebar-active-route"
+                    className="xn-nav-active-indicator"
+                    transition={{ type: 'spring', stiffness: 420, damping: 34, mass: 0.7 }}
+                  />
+                )}
+                <Icon size={17} style={color ? { color } : undefined} />
+                {!mini && <span className="xn-nav-item-label">{label}</span>}
+              </>
+            )}
           </NavLink>
         ))}
         {lockedNavItems.map(({ icon: Icon, label, to = '/subscription' }) => (
@@ -531,8 +551,8 @@ function SidebarInner({
             <Icon size={17} />
             {!mini && (
               <>
-                <span style={{ flex: 1 }}>{label}</span>
-                <Lock size={12} style={{ color: 'var(--fg-4)', flexShrink: 0 }} />
+                <span className="xn-nav-item-label" style={{ flex: 1 }}>{label}</span>
+                <Lock className="xn-nav-lock" size={12} style={{ color: 'var(--fg-4)', flexShrink: 0 }} />
               </>
             )}
           </RouterLink>

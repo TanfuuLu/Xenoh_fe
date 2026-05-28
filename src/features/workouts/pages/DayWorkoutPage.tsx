@@ -2,7 +2,7 @@ import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useSta
 import type { DragEvent, ReactNode } from 'react'
 import { useParams, Link, useLocation } from 'react-router'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
-import { ChevronLeft, Plus, Trash2, CheckCircle2, Circle, Trophy, Dumbbell, Search, X, Copy, AlertTriangle, TriangleAlert, Activity, GripVertical, BedDouble, XCircle, Play, Square, Timer, Flame, Check, Sparkles, RefreshCw, MessageSquareText } from 'lucide-react'
+import { ChevronLeft, Plus, Trash2, CheckCircle2, Circle, Trophy, Dumbbell, Search, X, Copy, AlertTriangle, TriangleAlert, Activity, GripVertical, BedDouble, XCircle, Play, Square, Timer, Flame, Check, MessageSquareText } from 'lucide-react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -36,7 +36,7 @@ import {
   useCopyDay,
   useMarkDayStatus,
 } from '../index'
-import type { ExerciseResponse, ExerciseSetResponse, ExerciseTemplateResponse, WorkoutGuidanceResponse } from '../types'
+import type { ExerciseResponse, ExerciseSetResponse, ExerciseTemplateResponse } from '../types'
 import { useMyProfile } from '@/features/profile'
 import { useLocalizedExerciseName } from '../exerciseNames'
 import { InlineTip } from '@/features/tips'
@@ -76,7 +76,14 @@ export function DayWorkoutPage() {
   const lang = useLangStore((s) => s.lang)
   const dateLocale = lang === 'vi' ? viLocale : enUS
 
-  const { data: exercises, isLoading, isError: exercisesError } = useExercises(dailyWorkoutId)
+  const {
+    data: exercises,
+    isLoading,
+    isError: exercisesError,
+    hasNextPage: hasMoreExercises,
+    fetchNextPage: fetchMoreExercises,
+    isFetchingNextPage: loadingMoreExercises,
+  } = useExercises(dailyWorkoutId)
 
   // ── Prefetch ALL templates on mount — no filter, data ready before modal opens
   const { data: templates = [], isLoading: templatesLoading } = useExerciseTemplates({
@@ -466,6 +473,19 @@ export function DayWorkoutPage() {
           <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-surface py-14 text-center">
             <Dumbbell size={36} className="text-muted/40" />
             <p className="text-muted">{tdw.empty}</p>
+          </div>
+        )}
+        {hasMoreExercises && (
+          <div className="flex justify-center pt-1">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              loading={loadingMoreExercises}
+              onClick={() => void fetchMoreExercises()}
+            >
+              Load more exercises
+            </Button>
           </div>
         )}
       </motion.div>
@@ -1140,129 +1160,6 @@ const ExerciseTemplateOption = memo(function ExerciseTemplateOption({
 
 function formatMuscleGroup(group: MuscleGroupValue) {
   return group.replace(/([a-z])([A-Z])/g, '$1 $2')
-}
-
-function WorkoutGuidancePanel({
-  guidance,
-  loading,
-  fetching,
-  error,
-  requested,
-  onRequest,
-  onRefresh,
-}: {
-  guidance: WorkoutGuidanceResponse | undefined
-  loading: boolean
-  fetching: boolean
-  error: boolean
-  requested: boolean
-  onRequest: () => void
-  onRefresh: () => void
-}) {
-  const lang = useLangStore((s) => s.lang)
-  const tdw = useT().dayWorkout
-  const labels = lang === 'vi'
-    ? {
-        title: 'Gợi ý AI cho buổi tập',
-        loading: 'Đang phân tích buổi tập...',
-        error: 'Chưa thể tạo gợi ý AI.',
-        refresh: 'Làm mới',
-        adjustments: 'Điều chỉnh nên cân nhắc',
-        cautions: 'Điểm cần chú ý',
-        actions: 'Bước tiếp theo',
-        cached: 'Đã lưu',
-      }
-    : {
-        title: tdw.aiWorkoutGuidance,
-        loading: 'Analyzing this workout...',
-        error: tdw.aiGuidanceUnavailable,
-        refresh: tdw.refresh,
-        adjustments: 'Recommended adjustments',
-        cautions: 'Caution flags',
-        actions: 'Next best actions',
-        cached: tdw.cached,
-      }
-
-  const showLabel = tdw.showAiGuidance
-  const idleLabel = tdw.aiGuidanceIdle
-
-  const readinessVariant =
-    guidance?.readiness === 'High' ? 'success' :
-    guidance?.readiness === 'Low' ? 'warning' :
-    'primary'
-
-  return (
-    <div className="space-y-3">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex min-w-0 items-start gap-3">
-          <div
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
-            style={{ background: 'var(--xn-clay-100)', color: 'var(--xn-clay-700)' }}
-          >
-            <Sparkles size={17} />
-          </div>
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <p className="font-semibold text-text">{labels.title}</p>
-              {guidance && <Badge variant={readinessVariant}>{guidance.readiness}</Badge>}
-              {guidance?.cached && <Badge>{labels.cached}</Badge>}
-            </div>
-            {loading ? (
-              <p className="mt-1 text-sm text-muted">{labels.loading}</p>
-            ) : error ? (
-              <p className="mt-1 text-sm text-warning">{labels.error}</p>
-            ) : guidance ? (
-              <p className="mt-1 text-sm text-muted">{guidance.headline}</p>
-            ) : (
-              <p className="mt-1 text-sm text-muted">{idleLabel}</p>
-            )}
-          </div>
-        </div>
-        {requested ? (
-          <Button size="sm" variant="secondary" onClick={onRefresh} disabled={fetching} className="self-start">
-            <RefreshCw size={14} className={fetching ? 'animate-spin' : ''} />
-            {labels.refresh}
-          </Button>
-        ) : (
-          <Button size="sm" variant="secondary" onClick={onRequest} className="self-start">
-            <Sparkles size={14} />
-            {showLabel}
-          </Button>
-        )}
-      </div>
-
-      {loading && (
-        <div className="flex items-center gap-2 text-sm text-muted">
-          <Spinner size="sm" /> {labels.loading}
-        </div>
-      )}
-
-      {guidance && !loading && (
-        <div className="grid gap-3 md:grid-cols-3">
-          <GuidanceList title={labels.adjustments} items={guidance.recommendedAdjustments} />
-          <GuidanceList title={labels.cautions} items={guidance.cautionFlags} />
-          <GuidanceList title={labels.actions} items={guidance.nextBestActions} />
-        </div>
-      )}
-    </div>
-  )
-}
-
-function GuidanceList({ title, items }: { title: string; items: string[] }) {
-  return (
-    <div className="rounded-lg border p-3" style={{ borderColor: 'var(--border-1)', background: 'var(--bg-2)' }}>
-      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">{title}</p>
-      {items.length > 0 ? (
-        <ul className="space-y-1.5 text-sm text-text">
-          {items.map((item, index) => (
-            <li key={`${title}-${index}`} className="leading-relaxed">{item}</li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-sm text-muted">-</p>
-      )}
-    </div>
-  )
 }
 
 interface ExerciseCardProps {

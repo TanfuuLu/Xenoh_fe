@@ -20,9 +20,30 @@ export const staggerContainer: Variants = {
   visible: { transition: { staggerChildren: 0.07 } },
 }
 
+export const softCardGroup: Variants = {
+  hidden: {},
+  visible: {
+    transition: {
+      delayChildren: 0.03,
+      staggerChildren: 0.045,
+    },
+  },
+}
+
+export const softCardItem: Variants = {
+  hidden: { opacity: 0, y: 8, scale: 0.992 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: 0.22, ease: 'easeOut' },
+  },
+}
+
 export const motionProps = {
   fadeIn: { initial: 'hidden', animate: 'visible', variants: fadeIn },
   slideUp: { initial: 'hidden', animate: 'visible', variants: slideUp },
   scaleIn: { initial: 'hidden', animate: 'visible', variants: scaleIn },
   staggerContainer: { initial: 'hidden', animate: 'visible', variants: staggerContainer },
+  softCardGroup: { initial: 'hidden', animate: 'visible', variants: softCardGroup },
 } as const

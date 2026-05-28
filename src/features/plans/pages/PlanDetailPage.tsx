@@ -3,12 +3,9 @@ import { useParams, Link, useNavigate } from 'react-router'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { ChevronRight, ChevronLeft, Pencil, CheckCircle2, AlertTriangle } from 'lucide-react'
 import { format } from 'date-fns'
-import { useQueries } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { api } from '@/shared/api/axios'
-import { ENDPOINTS } from '@/shared/api/endpoints'
 import { Button } from '@/shared/components/Button'
 import { Badge } from '@/shared/components/Badge'
 import { Spinner } from '@/shared/components/Spinner'
@@ -19,9 +16,9 @@ import { useAuthStore } from '@/features/auth'
 import { useT } from '@/shared/i18n'
 import { NotFoundPage } from '@/shared/components/NotFoundPage'
 import { usePlan } from '../index'
-import { dayKeys, useWeeklyWorkouts, useUpdateWeeklyWorkout } from '@/features/workouts'
+import { useWeeklyWorkouts, useUpdateWeeklyWorkout } from '@/features/workouts'
 import { InlineTip } from '@/features/tips'
-import type { DailyWorkoutResponse, WeeklyWorkoutResponse } from '@/features/workouts'
+import type { WeeklyWorkoutResponse } from '@/features/workouts'
 import { CommentSection } from '@/features/comments/components/CommentSection'
 import { usePlanComments, useAddPlanComment, useDeletePlanComment } from '@/features/comments/api/usePlanComments'
 
@@ -35,7 +32,13 @@ export function PlanDetailPage() {
   const isCoach = useAuthStore((s) => s.user?.roles?.includes('Coach') ?? false)
   const currentUserId = useAuthStore((s) => s.user?.id)
   const { data: plan, isLoading: planLoading, isError: planError } = usePlan(planId)
-  const { data: weeks, isLoading: weeksLoading } = useWeeklyWorkouts(planId)
+  const {
+    data: weeks,
+    isLoading: weeksLoading,
+    hasNextPage: hasMoreWeeks,
+    fetchNextPage: fetchMoreWeeks,
+    isFetchingNextPage: loadingMoreWeeks,
+  } = useWeeklyWorkouts(planId)
   const { mutate: updateWeek } = useUpdateWeeklyWorkout(planId)
   const { data: comments = [], isLoading: commentsLoading } = usePlanComments(planId)
   const { mutateAsync: addComment, isPending: addingComment } = useAddPlanComment(planId)
@@ -48,17 +51,6 @@ export function PlanDetailPage() {
   const canEdit = isCoach || plan?.planType === 'Self'
   // Only the plan owner can mark sets as done
   const canComplete = !!currentUserId && plan?.ownerId === currentUserId
-
-  const dayQueries = useQueries({
-    queries: (weeks ?? []).map((week) => ({
-      queryKey: dayKeys.byWeek(week.id),
-      queryFn: () =>
-        api.get<DailyWorkoutResponse[]>(ENDPOINTS.days.byWeek(week.id)).then((r) => r.data),
-      enabled: !!week.id,
-    })),
-  })
-
-  const planDays = dayQueries.flatMap((query) => query.data ?? [])
 
   const [editingWeek, setEditingWeek] = useState<WeeklyWorkoutResponse | null>(null)
   const weeksScrollerRef = useRef<HTMLDivElement>(null)
@@ -88,12 +80,6 @@ export function PlanDetailPage() {
 
   if (planError || !plan) return <NotFoundPage />
 
-  const warningDays = planDays.filter((day) => day.hasWarning)
-  const warningDaysByWeek = warningDays.reduce<Record<string, DailyWorkoutResponse[]>>((acc, day) => {
-    acc[day.weeklyWorkoutId] ??= []
-    acc[day.weeklyWorkoutId].push(day)
-    return acc
-  }, {})
   const today = new Date()
   const currentCalendarWeek = weeks?.find((week) => isDateInWeekRange(today, week.startDate, week.endDate))
   const displayedWeeks = currentCalendarWeek
@@ -180,8 +166,7 @@ export function PlanDetailPage() {
           {displayedWeeks.map((week) => {
             const pct      = week.totalDays > 0 ? Math.round((week.completedDays / week.totalDays) * 100) : 0
             const weekDone = week.isCompleted
-            const warningDaysInWeek = warningDaysByWeek[week.id]?.length ?? 0
-            const hasWarning = week.hasWarning || warningDaysInWeek > 0
+            const hasWarning = week.hasWarning
             const isCurrentWeek = currentCalendarWeek?.id === week.id
             return (
               <motion.div
@@ -246,7 +231,7 @@ export function PlanDetailPage() {
                   style={{ color: hasWarning ? 'var(--xn-warning)' : weekDone ? 'var(--xn-success)' : 'var(--color-primary)' }}
                 >
                   {hasWarning ? (
-                    <><AlertTriangle size={14} /> {warningDaysInWeek || 'Some'} day{warningDaysInWeek === 1 ? '' : 's'} below target</>
+                    <><AlertTriangle size={14} /> Some days below target</>
                   ) : weekDone ? (
                     <><CheckCircle2 size={14} /> {tpd.weekCompleted}</>
                   ) : (
@@ -258,6 +243,19 @@ export function PlanDetailPage() {
           })}
         </AnimatePresence>
         </motion.div>
+        {hasMoreWeeks && (
+          <div className="flex justify-center pt-1">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              loading={loadingMoreWeeks}
+              onClick={() => void fetchMoreWeeks()}
+            >
+              Load more weeks
+            </Button>
+          </div>
+        )}
       </div>
 
       <CommentSection
