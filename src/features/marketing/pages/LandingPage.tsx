@@ -188,8 +188,8 @@ const landingCopy = {
       primary: 'Tạo tài khoản miễn phí',
       secondary: 'Xem cách hoạt động ->',
       today: 'Hôm nay - đẩy',
-      workout: 'Bench - vai - fly',
-      sets: '3 trên 5 hiệp - bench press',
+      workout: 'Đẩy ngực - đẩy vai - bay ngực',
+      sets: '3 trên 5 hiệp - đẩy ngực',
       overhead: 'Đẩy vai',
     },
     stats: [
@@ -232,9 +232,9 @@ const landingCopy = {
       days: ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'],
       labels: ['Đẩy', 'Kéo', 'Chân', 'Đẩy', 'Kéo', 'Chân', 'Nghỉ'],
       exercises: [
-        { name: 'Bench press', sets: 5, reps: 5, weight: 80 },
+        { name: 'Đẩy ngực', sets: 5, reps: 5, weight: 80 },
         { name: 'Đẩy vai', sets: 4, reps: 8, weight: 45 },
-        { name: 'Cable fly', sets: 3, reps: 12, weight: 15 },
+        { name: 'Bay ngực cáp', sets: 3, reps: 12, weight: 15 },
       ],
       bullets: [
         'Mẫu bài tập có nhóm cơ chính và phụ',
@@ -355,8 +355,8 @@ const polishedLandingCopyVi = {
     primary: 'Tạo tài khoản miễn phí',
     secondary: 'Xem cách Xenoh hoạt động ->',
     today: 'Hôm nay - ngày đẩy',
-    workout: 'Bench - vai - fly',
-    sets: 'Đã hoàn thành 3/5 hiệp - bench press',
+    workout: 'Đẩy ngực - đẩy vai - bay ngực',
+    sets: 'Đã hoàn thành 3/5 hiệp - đẩy ngực',
     overhead: 'Đẩy vai',
   },
   stats: [
@@ -402,9 +402,9 @@ const polishedLandingCopyVi = {
     days: ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'],
     labels: ['Đẩy', 'Kéo', 'Chân', 'Đẩy', 'Kéo', 'Chân', 'Nghỉ'],
     exercises: [
-      { name: 'Bench press', sets: 5, reps: 5, weight: 80 },
+      { name: 'Đẩy ngực', sets: 5, reps: 5, weight: 80 },
       { name: 'Đẩy vai', sets: 4, reps: 8, weight: 45 },
-      { name: 'Cable fly', sets: 3, reps: 12, weight: 15 },
+      { name: 'Bay ngực cáp', sets: 3, reps: 12, weight: 15 },
     ],
     bullets: [
       'Thư viện bài tập có nhóm cơ chính, nhóm cơ phụ và thông tin để lọc nhanh',

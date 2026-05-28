@@ -9,13 +9,20 @@ interface ThemeState {
   toggleTheme: () => void
 }
 
+type PersistedThemeState = Pick<ThemeState, 'theme'>
+
 export const useThemeStore = create<ThemeState>()(
-  persist(
+  persist<ThemeState, [], [], PersistedThemeState>(
     (set, get) => ({
       theme: 'light',
       setTheme: (theme) => set({ theme }),
       toggleTheme: () => set({ theme: get().theme === 'light' ? 'dark' : 'light' }),
     }),
-    { name: 'xenoh-theme' },
+    {
+      name: 'xenoh-theme',
+      partialize: ({ theme }) => ({ theme }),
+      version: 1,
+      migrate: () => ({ theme: 'light' }),
+    },
   ),
 )

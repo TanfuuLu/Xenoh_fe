@@ -7,12 +7,19 @@ interface LangStore {
   setLang: (lang: Lang) => void
 }
 
+type PersistedLangStore = Pick<LangStore, 'lang'>
+
 export const useLangStore = create<LangStore>()(
-  persist(
+  persist<LangStore, [], [], PersistedLangStore>(
     (set) => ({
-      lang: 'vi',
+      lang: 'en',
       setLang: (lang) => set({ lang }),
     }),
-    { name: 'xn-lang' },
+    {
+      name: 'xn-lang',
+      partialize: ({ lang }) => ({ lang }),
+      version: 1,
+      migrate: () => ({ lang: 'en' }),
+    },
   ),
 )
