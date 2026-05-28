@@ -10,6 +10,7 @@ import type {
   ExternalLoginProvider,
   LoginRequest,
   RegisterRequest,
+  RegisterResponse,
   ResetPasswordRequest,
   SendForgotPasswordCodeRequest,
 } from '../types'
@@ -37,22 +38,9 @@ export function useLogin() {
 }
 
 export function useRegister() {
-  const setAuth = useAuthStore((s) => s.setAuth)
-  const qc = useQueryClient()
-
   return useMutation({
     mutationFn: (data: RegisterRequest) =>
-      api.post<AuthResponse>(ENDPOINTS.auth.register, data).then((r) => r.data),
-    onSuccess: (data) => {
-      qc.clear()
-      setAuth(data.accessToken, {
-        id: data.userId,
-        email: data.email,
-        fullName: data.fullName,
-        avatarUrl: data.avatarUrl,
-        roles: data.roles,
-      })
-    },
+      api.post<RegisterResponse>(ENDPOINTS.auth.register, data).then((r) => r.data),
   })
 }
 

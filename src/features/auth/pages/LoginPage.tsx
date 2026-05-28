@@ -35,6 +35,7 @@ export function LoginPage() {
 
   const apiError = (error as AxiosError<ApiError>)?.response?.data?.message
   const externalError = searchParams.get('externalError')
+  const registered = searchParams.get('registered') === '1'
 
   return (
     <div className="flex min-h-screen" style={{ background: 'var(--xn-paper)' }}>
@@ -106,6 +107,11 @@ export function LoginPage() {
                   {(tl as typeof tl & { forgotPasswordLink?: string }).forgotPasswordLink ?? 'Forgot password?'}
                 </Link>
               </div>
+              {registered && (
+                <p style={{ fontSize: 13, color: 'var(--color-success)', margin: 0 }}>
+                  Registration successful. Please sign in.
+                </p>
+              )}
               {(apiError || externalError) && (
                 <p style={{ fontSize: 13, color: 'var(--xn-danger)', margin: 0 }}>{apiError ?? externalError}</p>
               )}

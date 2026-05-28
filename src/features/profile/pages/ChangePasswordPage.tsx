@@ -37,8 +37,8 @@ export function ChangePasswordPage() {
 
   const passwordSchema = z.object({
     oldPassword: z.string().min(6),
-    newPassword: z.string().min(6),
-    confirmPassword: z.string().min(6),
+    newPassword: z.string().min(8),
+    confirmPassword: z.string().min(8),
   }).refine((data) => data.newPassword === data.confirmPassword, {
     message: copy.mismatch,
     path: ['confirmPassword'],

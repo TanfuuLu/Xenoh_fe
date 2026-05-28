@@ -35,7 +35,7 @@ const emailSchema = z.object({
 })
 
 const PASSWORD_RULES = [
-  { label: 'At least 10 characters',       test: (v: string) => v.length >= 10 },
+  { label: 'At least 8 characters',        test: (v: string) => v.length >= 8 },
   { label: 'One uppercase letter (A–Z)',    test: (v: string) => /[A-Z]/.test(v) },
   { label: 'One lowercase letter (a–z)',    test: (v: string) => /[a-z]/.test(v) },
   { label: 'One digit (0–9)',               test: (v: string) => /[0-9]/.test(v) },
@@ -45,7 +45,7 @@ const PASSWORD_RULES = [
 const resetSchema = z.object({
   code: z.string().regex(/^\d{6}$/, copy.codeLength),
   newPassword: z.string()
-    .min(10, 'At least 10 characters')
+    .min(8, 'At least 8 characters')
     .regex(/[A-Z]/, 'One uppercase letter')
     .regex(/[a-z]/, 'One lowercase letter')
     .regex(/[0-9]/, 'One digit')

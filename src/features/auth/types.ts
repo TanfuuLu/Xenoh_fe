@@ -15,7 +15,15 @@ export interface RegisterRequest {
   firstName: string
   lastName: string
   role: UserRole
-  gender?: Extract<Gender, 'Male' | 'Female'>
+  gender: Extract<Gender, 'Male' | 'Female'>
+  dateOfBirth: string
+  height?: number
+  bodyweight?: number
+}
+
+export interface RegisterResponse {
+  userId: string
+  email: string
 }
 
 export interface LoginRequest {

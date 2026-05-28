@@ -1,15 +1,14 @@
 import { useForm, Controller } from 'react-hook-form'
 import type { Resolver } from 'react-hook-form'
-import { useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Link, useNavigate } from 'react-router'
 import { Mail, Lock, User, Check, CheckCircle2, XCircle } from 'lucide-react'
 import { Input } from '@/shared/components/Input'
+import { DatePicker } from '@/shared/components/DatePicker'
 import { LanguageSwitcher } from '@/shared/components/LanguageSwitcher'
+import { Select } from '@/shared/components/Select'
 import { useT } from '@/shared/i18n'
-import { api } from '@/shared/api/axios'
-import { ENDPOINTS } from '@/shared/api/endpoints'
 import { useRegister } from '../index'
 import { AuthDivider, SocialLoginButtons } from '../components/SocialLoginButtons'
 import type { AxiosError } from 'axios'
@@ -25,13 +24,16 @@ const schema = z.object({
   lastName: z.string().min(1),
   email: z.string().email(),
   password: z.string()
-    .min(10, 'At least 10 characters')
+    .min(8, 'At least 8 characters')
     .regex(/[A-Z]/, 'One uppercase letter')
     .regex(/[a-z]/, 'One lowercase letter')
     .regex(/[0-9]/, 'One digit')
     .regex(/[^A-Za-z0-9]/, 'One special character'),
-  gender: z.enum(['Male', 'Female']).optional(),
-  dateOfBirth: z.string().optional(),
+  gender: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z.enum(['Male', 'Female'], { message: 'Gender is required' }),
+  ),
+  dateOfBirth: z.string().min(1, 'Date of birth is required'),
   height: optionalNumber,
   bodyweight: optionalNumber,
 })
@@ -68,26 +70,13 @@ export function RegisterPage() {
         email: data.email,
         password: data.password,
         role: 'Individual',
-        ...(data.gender && { gender: data.gender }),
+        gender: data.gender,
+        dateOfBirth: data.dateOfBirth,
+        ...(data.height && { height: data.height }),
+        ...(data.bodyweight && { bodyweight: data.bodyweight }),
       },
       {
-        onSuccess: async () => {
-          try {
-            if (data.gender || data.height || data.dateOfBirth) {
-              await api.put(ENDPOINTS.users.me, {
-                ...(data.gender && { gender: data.gender }),
-                ...(data.height && { height: data.height }),
-                ...(data.dateOfBirth && { dateOfBirth: data.dateOfBirth }),
-              })
-            }
-            if (data.bodyweight) {
-              await api.post(ENDPOINTS.users.bodyweight, { weight: data.bodyweight })
-            }
-          } catch {
-            // non-critical — profile data can be set later in settings
-          }
-          navigate('/dashboard')
-        },
+        onSuccess: () => navigate('/login?registered=1', { replace: true }),
       },
     )
   }
@@ -156,6 +145,38 @@ export function RegisterPage() {
                 />
               </div>
 
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <Controller
+                  name="gender"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      label="Gender"
+                      options={[
+                        { value: 'Male', label: 'Male' },
+                        { value: 'Female', label: 'Female' },
+                      ]}
+                      placeholder="Select gender"
+                      value={field.value ?? ''}
+                      onChange={(value) => field.onChange(value || undefined)}
+                      error={errors.gender?.message}
+                    />
+                  )}
+                />
+                <Controller
+                  name="dateOfBirth"
+                  control={control}
+                  render={({ field }) => (
+                    <DatePicker
+                      label="Date of birth"
+                      value={field.value ?? ''}
+                      onChange={(value) => field.onChange(value)}
+                      error={errors.dateOfBirth?.message}
+                    />
+                  )}
+                />
+              </div>
+
               <Input
                 label={tr.emailLabel}
                 type="email"
@@ -181,45 +202,6 @@ export function RegisterPage() {
                 <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: 'var(--fg-4)', textTransform: 'uppercase', margin: 0 }}>
                   Body info <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(optional — helps personalize your plan)</span>
                 </p>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 10 }}>
-                  {/* Gender */}
-                  <div>
-                    <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: 'var(--fg-2)', marginBottom: 4 }}>
-                      Gender
-                    </label>
-                    <select
-                      {...register('gender')}
-                      style={{
-                        width: '100%',
-                        padding: '8px 10px',
-                        background: 'var(--bg-3)',
-                        border: '1px solid var(--border-1)',
-                        borderRadius: 8,
-                        color: 'var(--fg-1)',
-                        fontSize: 13,
-                        fontFamily: 'var(--font-sans)',
-                        outline: 'none',
-                        cursor: 'pointer',
-                        appearance: 'none',
-                      }}
-                    >
-                      <option value="">Not specified</option>
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                    </select>
-                  </div>
-
-                  {/* Date of birth */}
-                  <Controller
-                    name="dateOfBirth"
-                    control={control}
-                    render={({ field }) => (
-                      <DateOfBirthPicker value={field.value} onChange={field.onChange} />
-                    )}
-                  />
-                </div>
-
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                   <Input
                     label="Height (cm)"
@@ -367,7 +349,7 @@ export function RegisterPage() {
 // ─── Password requirements checklist ─────────────────────────────────────────
 
 const PASSWORD_RULES = [
-  { label: 'At least 10 characters',      test: (v: string) => v.length >= 10 },
+  { label: 'At least 8 characters',       test: (v: string) => v.length >= 8 },
   { label: 'One uppercase letter (A–Z)',   test: (v: string) => /[A-Z]/.test(v) },
   { label: 'One lowercase letter (a–z)',   test: (v: string) => /[a-z]/.test(v) },
   { label: 'One digit (0–9)',              test: (v: string) => /[0-9]/.test(v) },
@@ -406,77 +388,6 @@ function PasswordRules({ value, submitted }: { value: string; submitted: boolean
           </div>
         )
       })}
-    </div>
-  )
-}
-
-// ─── Date of birth picker ─────────────────────────────────────────────────────
-const MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-]
-
-const SELECT_STYLE: React.CSSProperties = {
-  width: '100%',
-  padding: '8px 10px',
-  background: 'var(--bg-3)',
-  border: '1px solid var(--border-1)',
-  borderRadius: 8,
-  color: 'var(--fg-1)',
-  fontSize: 13,
-  fontFamily: 'var(--font-sans)',
-  outline: 'none',
-  cursor: 'pointer',
-  appearance: 'none',
-}
-
-interface DateOfBirthPickerProps {
-  value?: string
-  onChange: (v: string | undefined) => void
-}
-
-function DateOfBirthPicker({ value, onChange }: DateOfBirthPickerProps) {
-  const initial = value ? value.split('-') : []
-  const [selYear,  setSelYear]  = useState(initial[0] ? Number(initial[0]) : 0)
-  const [selMonth, setSelMonth] = useState(initial[1] ? Number(initial[1]) : 0)
-  const [selDay,   setSelDay]   = useState(initial[2] ? Number(initial[2]) : 0)
-
-  const currentYear = new Date().getFullYear()
-  const years = Array.from({ length: 91 }, (_, i) => currentYear - 10 - i)
-  const daysInMonth = selMonth && selYear ? new Date(selYear, selMonth, 0).getDate() : 31
-  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1)
-
-  function notify(y: number, m: number, d: number) {
-    if (y && m && d) {
-      onChange(`${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`)
-    } else {
-      onChange(undefined)
-    }
-  }
-
-  function onMonth(m: number) { setSelMonth(m); notify(selYear, m, selDay) }
-  function onDay(d: number)   { setSelDay(d);   notify(selYear, selMonth, d) }
-  function onYear(y: number)  { setSelYear(y);  notify(y, selMonth, selDay) }
-
-  return (
-    <div>
-      <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: 'var(--fg-2)', marginBottom: 4 }}>
-        Date of birth
-      </label>
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.2fr 1.5fr', gap: 5 }}>
-        <select value={selMonth || ''} onChange={(e) => onMonth(Number(e.target.value))} style={SELECT_STYLE}>
-          <option value="">Month</option>
-          {MONTHS.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
-        </select>
-        <select value={selDay || ''} onChange={(e) => onDay(Number(e.target.value))} style={SELECT_STYLE}>
-          <option value="">Day</option>
-          {days.map((d) => <option key={d} value={d}>{d}</option>)}
-        </select>
-        <select value={selYear || ''} onChange={(e) => onYear(Number(e.target.value))} style={SELECT_STYLE}>
-          <option value="">Year</option>
-          {years.map((y) => <option key={y} value={y}>{y}</option>)}
-        </select>
-      </div>
     </div>
   )
 }
