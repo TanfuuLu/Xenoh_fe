@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { AnimatePresence, motion } from 'framer-motion'
-import { Plus, PlusCircle } from 'lucide-react'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { CheckCircle, Plus, PlusCircle, X } from 'lucide-react'
 import { format } from 'date-fns'
 import { useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/shared/components/Button'
@@ -20,6 +20,12 @@ interface QuantityValue {
   grams?: number
   servingLabel?: string
   servingCount?: number
+}
+
+interface PendingItem {
+  localId: string
+  food: FoodItemResponse
+  quantity: QuantityValue
 }
 
 interface Props {
@@ -44,10 +50,13 @@ export function FoodLogPanel({ date }: Props) {
 
   const [selectedFood, setSelectedFood] = useState<FoodItemResponse | null>(null)
   const [quantity, setQuantity] = useState<QuantityValue>({ grams: 100 })
+  const [pendingItems, setPendingItems] = useState<PendingItem[]>([])
+  const [isConfirming, setIsConfirming] = useState(false)
   const [showCustomDialog, setShowCustomDialog] = useState(false)
 
   const t = useT()
   const lang = useLangStore((s) => s.lang)
+  const shouldReduceMotion = useReducedMotion()
   const searchWrapperRef = useRef<HTMLDivElement>(null)
   const [panelPos, setPanelPos] = useState<{ top: number; left: number; width: number } | null>(null)
 
@@ -72,16 +81,34 @@ export function FoodLogPanel({ date }: Props) {
     setQuantity({ grams: 100 })
   }
 
-  const handleAdd = async () => {
+  const handleAdd = () => {
     if (!selectedFood) return
-
-    await createFoodLog.mutateAsync({
-      foodItemId: selectedFood.id,
-      ...quantity,
-    })
-
+    setPendingItems((prev) => [
+      ...prev,
+      { localId: crypto.randomUUID(), food: selectedFood, quantity: { ...quantity } },
+    ])
     setSelectedFood(null)
     setQuantity({ grams: 100 })
+  }
+
+  const handleRemovePending = (localId: string) => {
+    setPendingItems((prev) => prev.filter((item) => item.localId !== localId))
+  }
+
+  const handleConfirm = async () => {
+    if (pendingItems.length === 0 || isConfirming) return
+    setIsConfirming(true)
+    try {
+      for (const item of pendingItems) {
+        await createFoodLog.mutateAsync({
+          foodItemId: item.food.id,
+          ...item.quantity,
+        })
+      }
+      setPendingItems([])
+    } finally {
+      setIsConfirming(false)
+    }
   }
 
   const handleCustomFoodCreated = (food: FoodItemResponse) => {
@@ -141,7 +168,6 @@ export function FoodLogPanel({ date }: Props) {
                 <Button
                   size="sm"
                   onClick={handleAdd}
-                  loading={createFoodLog.isPending}
                   disabled={!quantity.grams && !quantity.servingLabel}
                   className="flex-1 justify-center"
                 >
@@ -156,6 +182,68 @@ export function FoodLogPanel({ date }: Props) {
       )}
 
       <div className="h-px" style={{ background: 'var(--border)' }} />
+
+      {/* Pending items staging area */}
+      <AnimatePresence>
+        {pendingItems.length > 0 && (
+          <motion.div
+            initial={shouldReduceMotion ? false : { opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={shouldReduceMotion ? false : { opacity: 0, y: -6 }}
+            className="flex flex-col gap-2"
+          >
+            <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--fg-3)' }}>
+              {t.nutrition.foodLogPending} ({pendingItems.length})
+            </p>
+
+            <AnimatePresence initial={false}>
+              {pendingItems.map((item) => (
+                <motion.div
+                  key={item.localId}
+                  layout
+                  initial={shouldReduceMotion ? false : { opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={shouldReduceMotion ? false : { opacity: 0, x: -8, transition: { duration: 0.12 } }}
+                  className="flex items-center justify-between gap-3 rounded-lg px-3 py-2.5"
+                  style={{
+                    background: 'var(--surface-2, var(--surface))',
+                    border: '1.5px dashed var(--xn-primary)',
+                  }}
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate" style={{ color: 'var(--fg-1)' }}>
+                      {lang === 'vi' ? item.food.nameVi : item.food.nameEn}
+                    </p>
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--fg-3)' }}>
+                      {item.quantity.servingLabel
+                        ? `${item.quantity.servingCount ?? 1} × ${item.quantity.servingLabel}`
+                        : `${item.quantity.grams}g`}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemovePending(item.localId)}
+                    className="shrink-0 p-1.5 rounded-md transition-opacity hover:opacity-70"
+                    style={{ color: 'var(--fg-3)' }}
+                    aria-label={`Remove ${lang === 'vi' ? item.food.nameVi : item.food.nameEn}`}
+                  >
+                    <X size={14} />
+                  </button>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+
+            <Button
+              onClick={() => { void handleConfirm() }}
+              loading={isConfirming}
+              className="w-full justify-center mt-1"
+            >
+              <CheckCircle size={15} />
+              {t.nutrition.foodLogConfirm} ({pendingItems.length})
+            </Button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {isLoading && (
         <div className="flex justify-center py-4">

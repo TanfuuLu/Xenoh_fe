@@ -27,6 +27,7 @@ import {
   useNutritionSummary,
   useUpdateNutritionProfile,
 } from '../api/useNutrition'
+import { useDayFoodLogs } from '../api/useFoodLog'
 import { FoodLogPanel } from '../components/FoodLog/FoodLogPanel'
 import { NutritionHistoryCards } from '../components/NutritionHistoryCards'
 import type {
@@ -43,6 +44,8 @@ export function NutritionPage() {
   const isClientView = Boolean(clientId)
   const { data: summary, isLoading } = useNutritionSummary(clientId)
   const updateProfile = useUpdateNutritionProfile(clientId)
+  const todayStr = format(new Date(), 'yyyy-MM-dd')
+  const { data: todayFoodData } = useDayFoodLogs(todayStr, !isClientView)
 
   const activityOptions: { value: ActivityLevel; label: string }[] = [
     { value: 'Sedentary', label: tn.activitySedentary },
@@ -170,7 +173,14 @@ export function NutritionPage() {
       </div>
 
       {hasCalculation && (
-        <NutritionValueDiagrams summary={summary} logForm={logForm} tn={tn} />
+        <NutritionValueDiagrams
+          summary={summary}
+          caloriesActual={!isClientView && todayFoodData ? todayFoodData.totals.totalCalories : readNumber(logForm.calories)}
+          proteinActual={!isClientView && todayFoodData ? todayFoodData.totals.totalProteinG : readNumber(logForm.proteinG)}
+          carbsActual={!isClientView && todayFoodData ? todayFoodData.totals.totalCarbsG : readNumber(logForm.carbsG)}
+          fatActual={!isClientView && todayFoodData ? todayFoodData.totals.totalFatG : readNumber(logForm.fatG)}
+          tn={tn}
+        />
       )}
 
       {showNutritionInsight && (
@@ -644,11 +654,17 @@ function formatWeightAction(weightDiff: number, tn: Record<string, string>) {
 
 function NutritionValueDiagrams({
   summary,
-  logForm,
+  caloriesActual,
+  proteinActual,
+  carbsActual,
+  fatActual,
   tn,
 }: {
   summary: NutritionSummaryResponse
-  logForm: LogForm
+  caloriesActual: number
+  proteinActual: number
+  carbsActual: number
+  fatActual: number
   tn: Record<string, string>
 }) {
   const calc = summary.calculation
@@ -668,7 +684,7 @@ function NutritionValueDiagrams({
         </div>
 
         <CaloriesBar
-          actual={readNumber(logForm.calories)}
+          actual={caloriesActual}
           target={calc.calorieTarget}
           unit={tn.kcal}
           missingLabel={tn.missing}
@@ -676,9 +692,9 @@ function NutritionValueDiagrams({
 
         <div className="mt-5">
           <MacroDonut
-            proteinG={readNumber(logForm.proteinG)}
-            carbsG={readNumber(logForm.carbsG)}
-            fatG={readNumber(logForm.fatG)}
+            proteinG={proteinActual}
+            carbsG={carbsActual}
+            fatG={fatActual}
             proteinLabel={tn.proteinShort}
             carbsLabel={tn.carbsShort}
             fatLabel={tn.fatShort}

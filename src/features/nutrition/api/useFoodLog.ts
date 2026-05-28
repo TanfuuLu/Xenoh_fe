@@ -64,6 +64,7 @@ export function useCreateFoodLog(date: string) {
       void qc.invalidateQueries({ queryKey: foodLogKeys.dayLogs(date) })
       void qc.invalidateQueries({ queryKey: nutritionKeys.summary() })
       void qc.invalidateQueries({ queryKey: nutritionKeys.log(date) })
+      void qc.invalidateQueries({ queryKey: ['nutrition', 'history'] })
     },
   })
 }
@@ -77,6 +78,7 @@ export function useDeleteFoodLog(date: string) {
       void qc.invalidateQueries({ queryKey: foodLogKeys.dayLogs(date) })
       void qc.invalidateQueries({ queryKey: nutritionKeys.summary() })
       void qc.invalidateQueries({ queryKey: nutritionKeys.log(date) })
+      void qc.invalidateQueries({ queryKey: ['nutrition', 'history'] })
     },
   })
 }
