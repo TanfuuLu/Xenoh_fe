@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Copy, Download, Image, Share2 } from 'lucide-react'
 import { Modal } from '@/shared/components/Modal'
+import { api } from '@/shared/api/axios'
 import { ENDPOINTS } from '@/shared/api/endpoints'
 import { cn } from '@/shared/utils/cn'
 
@@ -40,8 +41,7 @@ export function SharePrButton({ userId, exerciseTemplateId, exerciseName }: Prop
   async function handleNativeShare() {
     setShare('loading')
     try {
-      const res  = await fetch(imageUrl, { cache: 'no-store' })
-      const blob = await res.blob()
+      const { data: blob } = await api.get<Blob>(imageUrl, { responseType: 'blob' })
       const file = new File([blob], `xenoh-pr-${exerciseName}.png`, { type: 'image/png' })
 
       const shareData: ShareData = {
@@ -53,12 +53,10 @@ export function SharePrButton({ userId, exerciseTemplateId, exerciseName }: Prop
       if (navigator.canShare?.(shareData)) {
         await navigator.share(shareData)
       } else {
-        // Files not supported — share link only
         await navigator.share({ title: shareData.title, text: shareData.text, url: sharePageUrl })
       }
       setShare('idle')
     } catch (err) {
-      // AbortError = user dismissed — not a real error
       if (err instanceof Error && err.name !== 'AbortError') setShare('error')
       else setShare('idle')
     }
@@ -71,8 +69,7 @@ export function SharePrButton({ userId, exerciseTemplateId, exerciseName }: Prop
 
   async function handleCopyImage() {
     try {
-      const res  = await fetch(imageUrl, { cache: 'no-store' })
-      const blob = await res.blob()
+      const { data: blob } = await api.get<Blob>(imageUrl, { responseType: 'blob' })
       await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
       flashCopy('img-copied')
     } catch {
@@ -81,8 +78,7 @@ export function SharePrButton({ userId, exerciseTemplateId, exerciseName }: Prop
   }
 
   async function handleDownload() {
-    const res  = await fetch(imageUrl, { cache: 'no-store' })
-    const blob = await res.blob()
+    const { data: blob } = await api.get<Blob>(imageUrl, { responseType: 'blob' })
     const url  = URL.createObjectURL(blob)
     const a    = document.createElement('a')
     a.href     = url
@@ -96,10 +92,7 @@ export function SharePrButton({ userId, exerciseTemplateId, exerciseName }: Prop
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className={cn('flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors')}
-        style={{ background: 'var(--bg-3)', color: 'var(--fg-2)' }}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--fg-1)' }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--fg-2)' }}
+        className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors bg-[var(--bg-3)] text-[var(--fg-2)] hover:text-[var(--fg-1)]"
       >
         <Share2 size={14} />
         Share PR
@@ -108,23 +101,21 @@ export function SharePrButton({ userId, exerciseTemplateId, exerciseName }: Prop
       <Modal open={open} onClose={() => setOpen(false)} title="Share Achievement">
         <div className="space-y-3">
           {/* Card preview */}
-          <div className="overflow-hidden rounded-xl border" style={{ borderColor: 'var(--border-1)' }}>
+          <div className="overflow-hidden rounded-xl border border-[var(--border-1)]">
             <img
               src={imageUrl}
               alt={`PR card for ${exerciseName}`}
-              className="w-full object-cover"
-              style={{ aspectRatio: '1200/630' }}
+              className="w-full object-cover aspect-[1200/630]"
             />
           </div>
 
-          {/* Primary: native share (mobile-first — opens Facebook with image attached) */}
+          {/* Primary: native share (mobile-first) */}
           {canNativeShare && (
             <button
               type="button"
               onClick={handleNativeShare}
               disabled={shareState === 'loading'}
-              className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
-              style={{ background: 'linear-gradient(135deg, var(--xn-clay-600), var(--xn-clay-800))' }}
+              className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60 bg-[linear-gradient(135deg,var(--xn-clay-600),var(--xn-clay-800))]"
             >
               <Share2 size={16} />
               {shareState === 'loading' ? 'Preparing…' : shareState === 'error' ? 'Share failed — try again' : 'Share to Facebook / other apps'}
@@ -133,9 +124,9 @@ export function SharePrButton({ userId, exerciseTemplateId, exerciseName }: Prop
 
           {/* Divider */}
           <div className="flex items-center gap-2">
-            <div className="h-px flex-1" style={{ background: 'var(--border-1)' }} />
-            <span className="text-xs" style={{ color: 'var(--fg-4)' }}>or share via link</span>
-            <div className="h-px flex-1" style={{ background: 'var(--border-1)' }} />
+            <div className="h-px flex-1 bg-[var(--border-1)]" />
+            <span className="text-xs text-[var(--fg-4)]">or share via link</span>
+            <div className="h-px flex-1 bg-[var(--border-1)]" />
           </div>
 
           {/* Social link buttons */}
@@ -144,8 +135,7 @@ export function SharePrButton({ userId, exerciseTemplateId, exerciseName }: Prop
               href={facebookShareUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90"
-              style={{ background: '#1877f2' }}
+              className="flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 bg-[#1877f2]"
             >
               <FacebookIcon />
               Facebook
@@ -154,8 +144,7 @@ export function SharePrButton({ userId, exerciseTemplateId, exerciseName }: Prop
               href={twitterShareUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90"
-              style={{ background: '#000' }}
+              className="flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 bg-black"
             >
               <XIcon />
               X / Twitter
@@ -167,13 +156,12 @@ export function SharePrButton({ userId, exerciseTemplateId, exerciseName }: Prop
             <button
               type="button"
               onClick={handleCopyImage}
-              className="flex items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors"
-              style={{
-                background: 'var(--bg-3)',
-                color: copyState === 'img-copied' ? 'var(--xn-clay-700)'
-                     : copyState === 'img-error'  ? '#ef4444'
-                     : 'var(--fg-2)',
-              }}
+              className={cn(
+                'flex items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors bg-[var(--bg-3)]',
+                copyState === 'img-copied' && 'text-[var(--xn-clay-700)]',
+                copyState === 'img-error'  && 'text-[#ef4444]',
+                copyState !== 'img-copied' && copyState !== 'img-error' && 'text-[var(--fg-2)]',
+              )}
             >
               <Image size={14} />
               {copyState === 'img-copied' ? 'Copied!' : copyState === 'img-error' ? 'Failed' : 'Copy image'}
@@ -182,8 +170,10 @@ export function SharePrButton({ userId, exerciseTemplateId, exerciseName }: Prop
             <button
               type="button"
               onClick={handleCopyLink}
-              className="flex items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors"
-              style={{ background: 'var(--bg-3)', color: copyState === 'link-copied' ? 'var(--xn-clay-700)' : 'var(--fg-2)' }}
+              className={cn(
+                'flex items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors bg-[var(--bg-3)]',
+                copyState === 'link-copied' ? 'text-[var(--xn-clay-700)]' : 'text-[var(--fg-2)]',
+              )}
             >
               <Copy size={14} />
               {copyState === 'link-copied' ? 'Copied!' : 'Copy link'}
@@ -192,8 +182,7 @@ export function SharePrButton({ userId, exerciseTemplateId, exerciseName }: Prop
             <button
               type="button"
               onClick={handleDownload}
-              className="flex items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors"
-              style={{ background: 'var(--bg-3)', color: 'var(--fg-2)' }}
+              className="flex items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors bg-[var(--bg-3)] text-[var(--fg-2)]"
             >
               <Download size={14} />
               Download
