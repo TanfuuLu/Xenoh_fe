@@ -187,9 +187,9 @@ export function FoodLogPanel({ date }: Props) {
       <AnimatePresence>
         {pendingItems.length > 0 && (
           <motion.div
-            initial={shouldReduceMotion ? false : { opacity: 0, y: -6 }}
+            initial={shouldReduceMotion ? undefined : { opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={shouldReduceMotion ? false : { opacity: 0, y: -6 }}
+            exit={shouldReduceMotion ? undefined : { opacity: 0, y: -6 }}
             className="flex flex-col gap-2"
           >
             <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--fg-3)' }}>
@@ -201,9 +201,9 @@ export function FoodLogPanel({ date }: Props) {
                 <motion.div
                   key={item.localId}
                   layout
-                  initial={shouldReduceMotion ? false : { opacity: 0, x: -8 }}
+                  initial={shouldReduceMotion ? undefined : { opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={shouldReduceMotion ? false : { opacity: 0, x: -8, transition: { duration: 0.12 } }}
+                  exit={shouldReduceMotion ? undefined : { opacity: 0, x: -8, transition: { duration: 0.12 } }}
                   className="flex items-center justify-between gap-3 rounded-lg px-3 py-2.5"
                   style={{
                     background: 'var(--surface-2, var(--surface))',
