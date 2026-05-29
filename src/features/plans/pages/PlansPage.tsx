@@ -4,18 +4,16 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useNavigate } from 'react-router'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
-import { Plus, ChevronRight, Zap, ZapOff, Trash2, BarChart2, Sparkles, Lock, Download, Copy } from 'lucide-react'
-import { addDays, differenceInCalendarDays, format } from 'date-fns'
+import { Plus, Sparkles, Lock } from 'lucide-react'
 import { Card } from '@/shared/components/Card'
 import { Button } from '@/shared/components/Button'
 import { Input } from '@/shared/components/Input'
 import { DateRangePicker } from '@/shared/components/DateRangePicker'
 import { Modal } from '@/shared/components/Modal'
-import { Badge } from '@/shared/components/Badge'
 import { Spinner } from '@/shared/components/Spinner'
 import { Select } from '@/shared/components/Select'
 import { useConfirm } from '@/shared/components/ConfirmModal'
-import { staggerContainer, slideUp } from '@/shared/utils/motion'
+import { staggerContainer } from '@/shared/utils/motion'
 import { useT } from '@/shared/i18n'
 import { useAuthStore } from '@/features/auth'
 import { useSubscription } from '@/features/billing/api/useSubscription'
@@ -31,12 +29,14 @@ import {
   useDeletePlan,
   useCoachPlanOverview,
   useCreatePlanForUser,
-  useExportPlanCsv,
   useDuplicatePlan,
 } from '../index'
 import type { AxiosError } from 'axios'
 import type { ApiError } from '@/shared/types/api'
-import type { CoachPlanResponse, PlanResponse } from '../types'
+import type { PlanResponse } from '../types'
+import { PlanRow } from '../components/PlanRow'
+import { ClientPlanRow } from '../components/ClientPlanRow'
+import { buildDuplicateDefaults } from '../components/planRowHelpers'
 
 export function PlansPage() {
   const shouldReduce = useReducedMotion()
@@ -775,160 +775,5 @@ export function PlansPage() {
       </Modal>
     </div>
     </>
-  )
-}
-
-function buildDuplicateDefaults(plan: PlanResponse) {
-  const originalStart = parseDateOnly(plan.startDate)
-  const originalEnd = parseDateOnly(plan.endDate)
-  const durationOffset = Math.max(0, differenceInCalendarDays(originalEnd, originalStart))
-  const startDate = addDays(originalEnd, 1)
-  const endDate = addDays(startDate, durationOffset)
-
-  return {
-    name: `${plan.name.slice(0, 95)} Copy`,
-    startDate: format(startDate, 'yyyy-MM-dd'),
-    endDate: format(endDate, 'yyyy-MM-dd'),
-  }
-}
-
-function parseDateOnly(value: string) {
-  const [year, month, day] = value.slice(0, 10).split('-').map(Number)
-  return new Date(year, month - 1, day)
-}
-
-interface PlanRowProps {
-  plan: PlanResponse
-  onOpen: () => void
-  onOverview: () => void
-  onActivate: () => void
-  onDeactivate: () => void
-  onDuplicate: () => void
-  onDelete: () => void
-}
-
-function PlanRow({ plan, onOpen, onOverview, onActivate, onDeactivate, onDuplicate, onDelete }: PlanRowProps) {
-  const t = useT()
-  const tc = t.common
-  const { mutate: exportCsv, isPending: exporting } = useExportPlanCsv()
-
-  return (
-    <motion.div
-      variants={slideUp}
-      layout
-      exit={{ opacity: 0, height: 0 }}
-      onClick={onOpen}
-      className="rounded-xl border border-border bg-surface p-4 cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-md"
-      style={{ borderColor: 'var(--border-1)', background: 'var(--bg-2)' }}
-    >
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="font-semibold text-text truncate">{plan.name}</h3>
-            {plan.isActive && <Badge variant="success">Active</Badge>}
-            {plan.planType === 'Coach' && <Badge variant="primary">Coach</Badge>}
-          </div>
-          <p className="mt-1 text-sm text-muted">
-            {format(new Date(plan.startDate), 'dd/MM/yyyy')} - {format(new Date(plan.endDate), 'dd/MM/yyyy')}
-          </p>
-          <p className="text-xs text-muted mt-0.5">
-            {plan.completedWeeks}/{plan.totalWeeks} {tc.weeks} · {plan.completedDays}/{plan.totalDays} {tc.days}
-          </p>
-        </div>
-
-        <div className="flex flex-shrink-0 items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-          <Button variant="ghost" size="sm" onClick={onOverview} title="Plan overview">
-            <BarChart2 size={15} />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            title="Export CSV"
-            loading={exporting}
-            onClick={() => exportCsv(plan.id)}
-          >
-            {!exporting && <Download size={15} />}
-          </Button>
-          {plan.isActive ? (
-            <Button variant="ghost" size="sm" onClick={onDeactivate}>
-              <ZapOff size={15} />
-            </Button>
-          ) : (
-            <Button variant="ghost" size="sm" onClick={onActivate}>
-              <Zap size={15} />
-            </Button>
-          )}
-          {plan.totalWeeks > 0 && plan.completedWeeks === plan.totalWeeks && (
-            <Button variant="ghost" size="sm" onClick={onDuplicate} title="Duplicate plan" className="text-primary">
-              <Copy size={15} />
-            </Button>
-          )}
-          <Button variant="ghost" size="sm" onClick={onDelete}>
-            <Trash2 size={15} className="text-danger" />
-          </Button>
-          <ChevronRight size={15} style={{ color: 'var(--fg-3)', marginLeft: 2 }} />
-        </div>
-      </div>
-    </motion.div>
-  )
-}
-
-interface ClientPlanRowProps {
-  plan: CoachPlanResponse
-  onOpen: () => void
-  onOverview: () => void
-  onDelete: () => void
-}
-
-function ClientPlanRow({ plan, onOpen, onOverview, onDelete }: ClientPlanRowProps) {
-  const t = useT()
-  const tcp = t.coachPlans
-  const { mutate: exportCsv, isPending: exporting } = useExportPlanCsv()
-
-  return (
-    <motion.div
-      variants={slideUp}
-      onClick={onOpen}
-      className="group cursor-pointer rounded-xl border border-border bg-surface transition-colors hover:border-primary/40"
-    >
-      <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
-        <div className="min-w-0 flex-1">
-          <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <h3 className="min-w-0 truncate font-semibold text-text transition-colors group-hover:text-primary">
-              {plan.name}
-            </h3>
-            <Badge variant="primary">Coach</Badge>
-          </div>
-          <p className="text-sm text-muted">
-            {tcp.clientRowLabel}: <span className="text-text">{plan.ownerName}</span> ({plan.ownerEmail})
-          </p>
-          <p className="text-sm text-muted">
-            {format(new Date(plan.startDate), 'dd/MM/yyyy')} - {format(new Date(plan.endDate), 'dd/MM/yyyy')}
-            &nbsp;-&nbsp;{plan.totalWeeks} {tcp.weeksLabel}
-          </p>
-        </div>
-
-        <div className="flex flex-shrink-0 items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-          <Button variant="ghost" size="sm" onClick={onOverview} title="Plan overview">
-            <BarChart2 size={15} />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            title="Export CSV"
-            loading={exporting}
-            onClick={() => exportCsv(plan.id)}
-          >
-            {!exporting && <Download size={15} />}
-          </Button>
-          <Button variant="ghost" size="sm" onClick={onOpen}>
-            <ChevronRight size={18} />
-          </Button>
-          <Button variant="ghost" size="sm" onClick={onDelete}>
-            <Trash2 size={16} className="text-danger" />
-          </Button>
-        </div>
-      </div>
-    </motion.div>
   )
 }
