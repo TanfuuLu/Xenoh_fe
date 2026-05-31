@@ -54,7 +54,7 @@ export function OverviewSection({
           >
             <ScoreCard score={analytics.trainingScore} shouldReduce={shouldReduce} tp={tp} />
             <StatCard icon={<Dumbbell size={18} />} label={tp.totalWorkouts} value={String(analytics.totalWorkoutsCompleted)} shouldReduce={shouldReduce} />
-            <StatCard icon={<Weight size={18} />}   label={tp.totalVolume}   value={`${(analytics.totalVolume / 1000).toFixed(1)}${tp.tonneUnit}`} shouldReduce={shouldReduce} />
+            <StatCard icon={<Weight size={18} />}   label={tp.totalVolume}   value={formatKg(analytics.totalVolume, tp)} shouldReduce={shouldReduce} />
             <StatCard icon={<Target size={18} />}   label={tp.consistency}   value={`${analytics.consistencyPercent}%`} shouldReduce={shouldReduce} />
           </motion.div>
 
@@ -128,7 +128,7 @@ export function OverviewSection({
                     <LineChart data={analytics.weeklyVolume}>
                       <CartesianGrid strokeDasharray="3 3" stroke="var(--border-1)" vertical={false} />
                       <XAxis dataKey="weekName" tick={TICK_STYLE} interval="preserveStartEnd" tickLine={false} axisLine={false} tickFormatter={(value) => translateWeekName(String(value), tp)} />
-                      <YAxis tick={TICK_STYLE} tickLine={false} axisLine={false} width={44} tickFormatter={(v: number) => `${(v / 1000).toFixed(1)}t`} />
+                      <YAxis tick={TICK_STYLE} tickLine={false} axisLine={false} width={72} tickFormatter={(v: number) => formatKg(v, tp)} />
                       <Tooltip
                         contentStyle={CHART_TOOLTIP_STYLE}
                         labelStyle={{ color: 'var(--fg-1)' }}
@@ -173,8 +173,8 @@ export function OverviewSection({
                         tickLine={false}
                         axisLine={false}
                         allowDecimals={false}
-                        tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(1)}t` : `${v}`}
-                        width={44}
+                        tickFormatter={(v: number) => formatKg(v, tp)}
+                        width={72}
                       />
                       <Tooltip
                         contentStyle={CHART_TOOLTIP_STYLE}

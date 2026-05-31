@@ -9,6 +9,7 @@ import {
 } from 'recharts'
 import { api } from '@/shared/api/axios'
 import { ENDPOINTS } from '@/shared/api/endpoints'
+import type { PagedResponse } from '@/shared/types/api'
 import { Button } from '@/shared/components/Button'
 import { Spinner } from '@/shared/components/Spinner'
 import { NotFoundPage } from '@/shared/components/NotFoundPage'
@@ -31,6 +32,28 @@ import {
   buildWeekInsights,
 } from '../components/weekAnalyzeHelpers'
 
+const WEEK_ANALYZE_EXERCISE_PAGE_SIZE = 100
+
+async function fetchExercisesForWeekAnalyze(dayId: string) {
+  const allExercises: ExerciseResponse[] = []
+  let pageNumber = 1
+  let hasMore = true
+
+  while (hasMore) {
+    const page = await api
+      .get<PagedResponse<ExerciseResponse>>(ENDPOINTS.exercises.byDay(dayId), {
+        params: { pageNumber, pageSize: WEEK_ANALYZE_EXERCISE_PAGE_SIZE },
+      })
+      .then((r) => r.data)
+
+    allExercises.push(...page.items)
+    hasMore = page.hasMore
+    pageNumber += 1
+  }
+
+  return allExercises
+}
+
 export function WeekAnalyzePage() {
   const { planId = '', weekId = '' } = useParams()
   const shouldReduce = useReducedMotion()
@@ -50,9 +73,8 @@ export function WeekAnalyzePage() {
   const daysWithExercises = days?.filter((d) => d.totalExercises > 0) ?? []
   const exerciseQueries = useQueries({
     queries: daysWithExercises.map((day) => ({
-      queryKey: exerciseKeys.byDay(day.id),
-      queryFn: () =>
-        api.get<ExerciseResponse[]>(ENDPOINTS.exercises.byDay(day.id)).then((r) => r.data),
+      queryKey: [...exerciseKeys.byDay(day.id), 'week-analyze'],
+      queryFn: () => fetchExercisesForWeekAnalyze(day.id),
     })),
   })
 
@@ -356,7 +378,7 @@ export function WeekAnalyzePage() {
                 axisLine={false}
                 tickLine={false}
                 width={48}
-                tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v)}
+                tickFormatter={(v: number) => Math.round(v).toLocaleString()}
               />
               <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
               <Legend

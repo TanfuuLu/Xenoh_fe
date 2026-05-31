@@ -1,8 +1,8 @@
-import { useRef, useState, type ChangeEvent, type TextareaHTMLAttributes } from 'react'
+import { useRef, useState, type ChangeEvent, type ReactNode, type TextareaHTMLAttributes } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Camera } from 'lucide-react'
+import { CalendarDays, Camera, ChevronLeft, ChevronRight, Clock3, Dumbbell } from 'lucide-react'
 import { format, isValid } from 'date-fns'
 import { Card } from '@/shared/components/Card'
 import { Button } from '@/shared/components/Button'
@@ -18,6 +18,7 @@ import { LevelCard } from '@/features/dashboard/components/LevelCard'
 import { InlineTip } from '@/features/tips'
 import {
   useMyProfile,
+  useMyTrainingActivity,
   useUpdateAvatar,
   useUpdateProfile,
 } from '../index'
@@ -48,10 +49,42 @@ function toDateInputValue(value: string | null | undefined) {
   return isValid(date) ? format(date, 'yyyy-MM-dd') : undefined
 }
 
+function getInitialCalendarMonth() {
+  const now = new Date()
+  return { year: now.getFullYear(), month: now.getMonth() + 1 }
+}
+
+function shiftCalendarMonth(value: { year: number; month: number }, offset: number) {
+  const date = new Date(value.year, value.month - 1 + offset, 1)
+  return { year: date.getFullYear(), month: date.getMonth() + 1 }
+}
+
+function formatTrainingDuration(seconds: number | null | undefined) {
+  const totalSeconds = Math.max(0, Math.floor(seconds ?? 0))
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const remainingSeconds = totalSeconds % 60
+  const pad = (value: number) => String(value).padStart(2, '0')
+
+  return `${pad(hours)}:${pad(minutes)}:${pad(remainingSeconds)}`
+}
+
+function formatTrainingWeightKg(weightKg: number | null | undefined) {
+  const totalKg = Math.max(0, Math.round(Number(weightKg ?? 0)))
+  return `${totalKg.toLocaleString()} kg`
+}
+
+function toIsoDate(year: number, month: number, day: number) {
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+}
+
 export function ProfilePage() {
   const [editMode, setEditMode] = useState(false)
+  const [activityMonth, setActivityMonth] = useState(getInitialCalendarMonth)
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const { data: profile, isLoading } = useMyProfile()
+  const { data: trainingActivity, isLoading: activityLoading } =
+    useMyTrainingActivity(activityMonth.year, activityMonth.month)
   const { mutate: updateProfile, isPending: saving, error: saveError } = useUpdateProfile()
   const { mutate: updateAvatar, isPending: avatarUploading } = useUpdateAvatar()
   const t  = useT()
@@ -289,7 +322,177 @@ export function ProfilePage() {
         </Card>
       </div>
 
+      <div className="grid items-start gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+        <div className="grid gap-3">
+          <TrainingMetricCard
+            icon={<Clock3 size={15} />}
+            label={tp.totalTrainedTime}
+            value={formatTrainingDuration(trainingActivity?.totalDurationSeconds)}
+            loading={activityLoading}
+          />
+          <TrainingMetricCard
+            icon={<Dumbbell size={15} />}
+            label={tp.totalWeightTrained}
+            value={formatTrainingWeightKg(trainingActivity?.totalWeightTrainedKg)}
+            loading={activityLoading}
+          />
+        </div>
+        <TrainingCalendar
+          year={activityMonth.year}
+          month={activityMonth.month}
+          trainedDates={trainingActivity?.trainedDates ?? []}
+          loading={activityLoading}
+          labels={{
+            title: tp.trainingCalendar,
+            previous: tp.previousMonth,
+            next: tp.nextMonth,
+            empty: tp.noTrainingDays,
+            weekdays: tp.weekdays,
+          }}
+          onPrevious={() => setActivityMonth((current) => shiftCalendarMonth(current, -1))}
+          onNext={() => setActivityMonth((current) => shiftCalendarMonth(current, 1))}
+        />
+      </div>
+
     </div>
+  )
+}
+
+function TrainingMetricCard({
+  icon,
+  label,
+  value,
+  loading,
+}: {
+  icon: ReactNode
+  label: string
+  value: string
+  loading: boolean
+}) {
+  return (
+    <Card
+      className="flex h-28 w-full flex-col justify-between"
+      style={{ boxShadow: 'none' }}
+    >
+      <div className="flex items-center gap-2 text-muted">
+        {icon}
+        <p className="text-xs font-semibold uppercase">{label}</p>
+      </div>
+      {loading ? (
+        <Spinner size="sm" />
+      ) : (
+        <p className="font-mono text-2xl font-semibold leading-none text-text tabular-nums">{value}</p>
+      )}
+    </Card>
+  )
+}
+
+function TrainingCalendar({
+  year,
+  month,
+  trainedDates,
+  loading,
+  labels,
+  onPrevious,
+  onNext,
+}: {
+  year: number
+  month: number
+  trainedDates: string[]
+  loading: boolean
+  labels: {
+    title: string
+    previous: string
+    next: string
+    empty: string
+    weekdays: readonly string[]
+  }
+  onPrevious: () => void
+  onNext: () => void
+}) {
+  const trainedSet = new Set(trainedDates)
+  const firstDay = new Date(year, month - 1, 1)
+  const monthLabel = format(firstDay, 'MMMM yyyy')
+  const daysInMonth = new Date(year, month, 0).getDate()
+  const leadingBlanks = (firstDay.getDay() + 6) % 7
+  const cells = [
+    ...Array.from({ length: leadingBlanks }, (_, index) => ({ key: `blank-${index}`, day: null })),
+    ...Array.from({ length: daysInMonth }, (_, index) => ({ key: `day-${index + 1}`, day: index + 1 })),
+  ]
+  const hasTraining = trainedSet.size > 0
+
+  return (
+    <Card className="w-full max-w-[480px] justify-self-center">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <CalendarDays size={16} className="shrink-0 text-primary" />
+          <div className="min-w-0">
+            <h2 className="truncate text-xs font-semibold uppercase tracking-wide text-muted">{labels.title}</h2>
+            <p className="text-sm font-semibold text-text">{monthLabel}</p>
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-1">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="!h-8 !min-h-0 !w-8 justify-center !p-0"
+            title={labels.previous}
+            aria-label={labels.previous}
+            onClick={onPrevious}
+          >
+            <ChevronLeft size={16} />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="!h-8 !min-h-0 !w-8 justify-center !p-0"
+            title={labels.next}
+            aria-label={labels.next}
+            onClick={onNext}
+          >
+            <ChevronRight size={16} />
+          </Button>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="flex h-36 items-center justify-center">
+          <Spinner size="sm" />
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-7 gap-1">
+            {labels.weekdays.map((day) => (
+              <div key={day} className="flex h-5 items-center justify-center text-[11px] font-semibold text-muted">
+                {day}
+              </div>
+            ))}
+            {cells.map((cell) => {
+              const active = cell.day !== null && trainedSet.has(toIsoDate(year, month, cell.day))
+              return (
+                <div
+                  key={cell.key}
+                  className={cn(
+                    'flex h-9 items-center justify-center rounded-md text-xs font-semibold',
+                    cell.day === null && 'invisible',
+                    active ? 'text-white shadow-sm' : 'text-text',
+                  )}
+                  style={{
+                    background: active ? 'var(--color-primary)' : 'var(--bg-2)',
+                    border: active ? '1px solid var(--color-primary)' : '1px solid var(--border-1)',
+                  }}
+                >
+                  {cell.day}
+                </div>
+              )
+            })}
+          </div>
+          {!hasTraining && <p className="mt-4 text-sm text-muted">{labels.empty}</p>}
+        </>
+      )}
+    </Card>
   )
 }
 

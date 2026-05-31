@@ -401,9 +401,9 @@ function AuthSubmitButton({ loading, label }: { loading: boolean; label: string 
       style={{
         marginTop: 6,
         padding: '10px 0',
-        background: 'var(--xn-clay-700)',
-        color: 'var(--fg-on-clay)',
-        border: 'none',
+        background: 'var(--button-bg)',
+        color: 'var(--button-text)',
+        border: '1px solid var(--button-border)',
         borderRadius: 10,
         fontFamily: 'var(--font-sans)',
         fontWeight: 600,
@@ -418,8 +418,8 @@ function AuthSubmitButton({ loading, label }: { loading: boolean; label: string 
         width: '100%',
         letterSpacing: '0.01em',
       }}
-      onMouseEnter={(e) => { if (!loading) (e.currentTarget as HTMLElement).style.background = 'var(--xn-clay-800)' }}
-      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--xn-clay-700)' }}
+      onMouseEnter={(e) => { if (!loading) (e.currentTarget as HTMLElement).style.background = 'var(--button-hover)' }}
+      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--button-bg)' }}
     >
       {loading && (
         <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />

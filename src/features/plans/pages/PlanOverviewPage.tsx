@@ -391,8 +391,7 @@ function formatNumber(value: number) {
 
 function formatKg(value: number) {
   if (value <= 0) return '-'
-  if (value >= 1000) return `${(value / 1000).toFixed(1)}t`
-  return `${Math.round(value)}kg`
+  return `${Math.round(value).toLocaleString()} kg`
 }
 
 export function PlanOverviewPage() {

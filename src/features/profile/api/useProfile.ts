@@ -7,6 +7,7 @@ import type {
   BodyweightLogResponse,
   LogBodyweightRequest,
   PublicUserProfileResponse,
+  TrainingActivityResponse,
   UpdatePreferencesRequest,
   UpdateProfileRequest,
   UserPreferencesResponse,
@@ -17,6 +18,7 @@ export const profileKeys = {
   me: ['profile', 'me'] as const,
   preferences: ['profile', 'preferences'] as const,
   bodyweight: ['profile', 'bodyweight'] as const,
+  trainingActivity: (year: number, month: number) => ['profile', 'training-activity', year, month] as const,
 }
 
 export function useMyProfile() {
@@ -94,6 +96,14 @@ export function useBodyweightHistory() {
   return useQuery({
     queryKey: profileKeys.bodyweight,
     queryFn: () => api.get<BodyweightLogResponse[]>(ENDPOINTS.users.bodyweight).then((r) => r.data),
+  })
+}
+
+export function useMyTrainingActivity(year: number, month: number) {
+  return useQuery({
+    queryKey: profileKeys.trainingActivity(year, month),
+    queryFn: () =>
+      api.get<TrainingActivityResponse>(ENDPOINTS.users.trainingActivity(year, month)).then((r) => r.data),
   })
 }
 

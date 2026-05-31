@@ -20,8 +20,7 @@ export function formatKg(value: number, tp: Record<string, string>) {
 }
 
 export function formatCompactKg(value: number, tp: Record<string, string>) {
-  if (value >= 1000) return `${(value / 1000).toFixed(1)}${tp.tonneUnit}`
-  return `${Math.round(value)}${tp.kgUnit}`
+  return `${Math.round(value).toLocaleString()} ${tp.kgUnit}`
 }
 
 export function translateMuscleGroup(name: string, tp: Record<string, string>) {

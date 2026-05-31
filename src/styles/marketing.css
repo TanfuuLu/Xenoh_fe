@@ -37,14 +37,14 @@
   transition: all var(--dur-fast) var(--ease-out); white-space: nowrap;
   text-decoration: none;
 }
-.mk-btn.primary { background: var(--xn-ink-900); color: var(--fg-on-clay); }
-.mk-btn.primary:hover { background: var(--xn-ink-800); }
-.mk-btn.secondary { background: transparent; color: var(--fg-1); border: 1px solid var(--border-2); }
-.mk-btn.secondary:hover { background: var(--bg-2); }
-.mk-btn.on-dark { background: var(--xn-paper); color: var(--fg-1); }
-.mk-btn.on-dark:hover { background: var(--xn-clay-100); }
-.mk-btn.clay { background: var(--xn-clay-700); color: var(--fg-on-clay); box-shadow: var(--sh-sm), var(--sh-inset); }
-.mk-btn.clay:hover { background: var(--xn-clay-800); }
+.mk-btn.primary { background: var(--button-bg); color: var(--button-text); border: 1px solid var(--button-border); }
+.mk-btn.primary:hover { background: var(--button-hover); }
+.mk-btn.secondary { background: var(--button-bg); color: var(--button-text); border: 1px solid var(--button-border); }
+.mk-btn.secondary:hover { background: var(--button-hover); }
+.mk-btn.on-dark { background: var(--button-bg); color: var(--button-text); border: 1px solid var(--button-border); }
+.mk-btn.on-dark:hover { background: var(--button-hover); }
+.mk-btn.clay { background: var(--button-bg); color: var(--button-text); border: 1px solid var(--button-border); }
+.mk-btn.clay:hover { background: var(--button-hover); }
 .mk-btn.lg { font-size: 15px; padding: 13px 26px; }
 
 .mk-card-link {

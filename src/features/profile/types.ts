@@ -39,6 +39,15 @@ export interface UserProfileResponse {
   zaloUrl: string | null
 }
 
+export interface TrainingActivityResponse {
+  totalDurationSeconds: number
+  totalWeightTrainedKg: number
+  accountCreatedAt: string
+  year: number
+  month: number
+  trainedDates: string[]
+}
+
 export interface PublicUserProfileResponse {
   id: string
   fullName: string

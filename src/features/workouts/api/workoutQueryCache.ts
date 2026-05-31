@@ -5,7 +5,7 @@ import { profileKeys } from '@/features/profile/api/useProfile'
 
 export const exerciseKeys = {
   all: ['exercises'] as const,
-  byDay: (dayId: string) => ['exercises', dayId] as const,
+  byDay: (dayId: string) => ['exercises', 'by-day', dayId] as const,
 }
 
 export const dayKeys = {
