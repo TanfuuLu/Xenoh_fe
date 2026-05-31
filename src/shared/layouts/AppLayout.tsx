@@ -56,7 +56,8 @@ export function AppLayout() {
   const changePasswordLabel = (tn as typeof tn & { changePassword?: string }).changePassword ?? 'Change password'
   const exerciseLibraryLabel = (tn as typeof tn & { exerciseLibrary?: string }).exerciseLibrary ?? 'Exercise Library'
   const isWeekDetailPage = /^\/plans\/[^/]+\/weeks\/[^/]+$/.test(location.pathname)
-  const isWidePage = isWeekDetailPage || location.pathname === '/insights'
+  const isInsightsPage = location.pathname === '/insights'
+  const isWidePage = isWeekDetailPage || isInsightsPage
 
   useNotificationHub()
   useChatUnreadSync()
@@ -235,10 +236,10 @@ export function AppLayout() {
                 style={{ cursor: 'pointer' }}
               >
                 <UserAvatar name={user?.fullName} email={user?.email} imageUrl={user?.avatarUrl} size={28} />
-                <span className="hidden md:block text-sm font-medium max-w-[120px] truncate" style={{ color: 'var(--fg-on-clay)' }}>
+                <span className="hidden md:block text-sm font-medium max-w-[120px] truncate" style={{ color: 'var(--button-text)' }}>
                   {user?.fullName ?? user?.email}
                 </span>
-                <ChevronDown size={13} style={{ color: 'var(--fg-on-clay)', transform: userMenuOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
+                <ChevronDown size={13} style={{ color: 'var(--button-text)', transform: userMenuOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
               </button>
 
               <AnimatePresence>
@@ -352,7 +353,7 @@ export function AppLayout() {
           className="flex-1 overflow-y-auto"
           style={hasChatSidebar ? { paddingRight: 'calc(22rem + 16px)' } : undefined}
         >
-          <div className={cn('xn-page-container', isWidePage && 'wide')}>
+          <div className={cn('xn-page-container', isWidePage && 'wide', isInsightsPage && 'insights-page')}>
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={location.pathname}

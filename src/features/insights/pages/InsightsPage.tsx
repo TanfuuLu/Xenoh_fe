@@ -64,7 +64,7 @@ export function InsightsPage() {
 
   return (
     <RequireTier feature="Analyze">
-      <div className="mx-auto w-full max-w-[1240px] space-y-5">
+      <div className="mx-auto w-full max-w-[1320px] space-y-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
           <Link to="/dashboard" className="self-start">
             <Button variant="ghost" size="sm" aria-label="Back to dashboard">
@@ -174,7 +174,7 @@ function OverviewStrip({
       </div>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <MetricTile icon={<Activity size={17} />} label={labels.planCompletion} value={`${metrics.adherence.planCompletionPercent}%`} />
-        <MetricTile icon={<BarChart3 size={17} />} label={labels.recentVolume} value={formatCompact(metrics.volume.recentTotalVolume)} sub={labels.kgReps} />
+        <MetricTile icon={<BarChart3 size={17} />} label={labels.recentVolume} value={formatKg(metrics.volume.recentTotalVolume)} sub={labels.kgReps} />
         <MetricTile icon={<Dumbbell size={17} />} label={labels.totalSets} value={metrics.volume.recentSetCount} />
         <MetricTile icon={<Scale size={17} />} label={labels.bodyTrend} value={latestWeight} sub={bodyDelta} />
       </div>
@@ -236,11 +236,11 @@ function AdherenceVolumeChart({ metrics, labels }: { metrics: AnalysisMetrics; l
         <CartesianGrid strokeDasharray="3 3" stroke="var(--border-1)" vertical={false} />
         <XAxis dataKey="label" tick={TICK_STYLE} tickLine={false} axisLine={false} />
         <YAxis yAxisId="left" tick={TICK_STYLE} tickLine={false} axisLine={false} width={38} />
-        <YAxis yAxisId="right" orientation="right" tick={TICK_STYLE} tickLine={false} axisLine={false} width={48} />
+        <YAxis yAxisId="right" orientation="right" tick={TICK_STYLE} tickLine={false} axisLine={false} width={72} tickFormatter={(value: number) => formatKg(value)} />
         <Tooltip
           contentStyle={TOOLTIP_STYLE}
           formatter={(value, name) => name === 'volume'
-            ? [`${formatCompact(Number(value))} ${labels.kgReps}`, labels.volumeLabel]
+            ? [formatKg(Number(value)), labels.volumeLabel]
             : [`${Number(value)}%`, labels.adherenceLabel]}
         />
         <Bar yAxisId="left" dataKey="adherence" fill="var(--accent)" radius={[4, 4, 0, 0]} maxBarSize={34} />
@@ -262,7 +262,7 @@ function MuscleBalanceChart({ metrics, labels }: { metrics: AnalysisMetrics; lab
             <div key={item.muscle} className="space-y-1">
               <div className="flex items-center justify-between gap-3 text-xs">
                 <span className="min-w-0 truncate font-semibold text-text">{item.muscle}</span>
-                <span className="text-muted">{item.sharePercent}% · {formatCompact(item.volume)}</span>
+                <span className="text-muted">{item.sharePercent}% · {formatKg(item.volume)}</span>
               </div>
               <div className="h-2 overflow-hidden rounded-full" style={{ background: 'var(--bg-3)' }}>
                 <div
@@ -350,18 +350,42 @@ function AiNarrativePanel({ content, labels }: { content: AnalysisContent; label
     { label: labels.muscleBalanceLabel, icon: <Scale size={16} />, section: content.muscleBalance },
     { label: labels.effortGapLabel, icon: <Gauge size={16} />, section: content.effortGap },
   ]
+  const primarySections = sections.slice(0, 2)
+  const supportingSections = sections.slice(2)
 
   return (
-    <Card animate={false} className="min-w-0 space-y-4 overflow-hidden">
-      <PanelTitle icon={<Sparkles size={17} />} title={labels.aiCoachNotes} />
-      <div className="overflow-x-auto pb-2">
-        <div className="grid min-w-[1120px] grid-cols-5 gap-3">
-          {sections.map((item) => (
-            <SummaryBlock key={item.label} label={item.label} icon={item.icon} section={item.section} />
+    <Card animate={false} className="min-w-0 space-y-5 overflow-hidden">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <PanelTitle icon={<Sparkles size={17} />} title={labels.aiCoachNotes} />
+          <p className="mt-1 max-w-2xl text-sm text-muted">
+            {labels.aiCoachNotesSubtitle}
+          </p>
+        </div>
+        <span
+          className="rounded-full px-3 py-1 text-xs font-semibold"
+          style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
+        >
+          {labels.coachReviewBadge}
+        </span>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
+        <RecommendationBlock eyebrow={labels.recommendationLabel} rec={content.recommendation} />
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          {primarySections.map((item) => (
+            <SummaryBlock key={item.label} label={item.label} icon={item.icon} section={item.section} emphasis />
           ))}
         </div>
       </div>
-      <RecommendationBlock eyebrow={labels.recommendationLabel} rec={content.recommendation} />
+
+      <div className="grid gap-3 lg:grid-cols-3">
+        {supportingSections.map((item) => (
+          <SummaryBlock key={item.label} label={item.label} icon={item.icon} section={item.section} />
+        ))}
+      </div>
+
       {content.planReview && (
         <PlanReviewBlock
           eyebrow={labels.planReviewLabel}
@@ -373,32 +397,60 @@ function AiNarrativePanel({ content, labels }: { content: AnalysisContent; label
   )
 }
 
-function SummaryBlock({ label, icon, section }: { label: string; icon: ReactNode; section: AnalysisSection }) {
+function SummaryBlock({
+  label,
+  icon,
+  section,
+  emphasis = false,
+}: {
+  label: string
+  icon: ReactNode
+  section: AnalysisSection
+  emphasis?: boolean
+}) {
   return (
-    <div className="rounded-lg border p-3" style={{ borderColor: 'var(--border-1)', background: 'var(--bg-2)' }}>
-      <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase text-muted">
-        <span style={{ color: 'var(--accent)' }}>{icon}</span>
-        {label}
+    <div
+      className="rounded-lg border p-4"
+      style={{
+        borderColor: emphasis ? 'var(--surface-border)' : 'var(--border-1)',
+        background: emphasis ? 'color-mix(in oklch, var(--bg-2) 78%, var(--accent-soft) 22%)' : 'var(--bg-2)',
+      }}
+    >
+      <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase text-muted">
+        <span className="flex h-7 w-7 items-center justify-center rounded-md" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>
+          {icon}
+        </span>
+        <span>{label}</span>
       </div>
-      <h3 className="text-sm font-semibold leading-snug text-text">{section.headline}</h3>
-      <p className="mt-1 text-sm leading-relaxed text-muted">{section.detail}</p>
+      <h3 className="text-base font-semibold leading-snug text-text">{section.headline}</h3>
+      <p className="mt-2 text-sm leading-relaxed text-muted">{section.detail}</p>
     </div>
   )
 }
 
 function RecommendationBlock({ eyebrow, rec }: { eyebrow: string; rec: AnalysisRecommendation }) {
   return (
-    <div className="rounded-lg border p-4" style={{ background: 'var(--accent-soft)', borderColor: 'var(--accent)' }}>
-      <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase" style={{ color: 'var(--accent)' }}>
-        <Target size={16} />
-        {eyebrow}
+    <div
+      className="rounded-lg border p-5"
+      style={{
+        background: 'linear-gradient(180deg, color-mix(in oklch, var(--accent-soft) 76%, var(--bg-2) 24%), var(--accent-soft))',
+        borderColor: 'var(--accent)',
+      }}
+    >
+      <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase" style={{ color: 'var(--accent)' }}>
+        <span className="flex h-8 w-8 items-center justify-center rounded-md" style={{ background: 'var(--bg-2)' }}>
+          <Target size={17} />
+        </span>
+        <span>{eyebrow}</span>
       </div>
-      <h3 className="text-base font-semibold leading-snug text-text">{rec.headline}</h3>
+      <h3 className="text-lg font-semibold leading-snug text-text">{rec.headline}</h3>
       {rec.actions.length > 0 && (
         <ul className="mt-3 space-y-2">
-          {rec.actions.map((action) => (
+          {rec.actions.map((action, index) => (
             <li key={action} className="flex items-start gap-2 text-sm text-text">
-              <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: 'var(--accent)' }} />
+              <span className="mt-1 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-[11px] font-bold" style={{ background: 'var(--bg-2)', color: 'var(--accent)' }}>
+                {index + 1}
+              </span>
               <span className="leading-relaxed">{action}</span>
             </li>
           ))}
@@ -423,15 +475,17 @@ function PlanReviewBlock({
   if (!hasMistakes && !hasSuggestions) return null
 
   return (
-    <div className="rounded-lg border p-4" style={{ background: 'var(--bg-2)', borderColor: 'var(--border-1)' }}>
+    <div className="rounded-lg border p-5" style={{ background: 'var(--bg-2)', borderColor: 'var(--border-1)' }}>
       <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase text-muted">
-        <AlertTriangle size={16} style={{ color: 'var(--xn-warning)' }} />
-        {eyebrow}
+        <span className="flex h-8 w-8 items-center justify-center rounded-md" style={{ background: 'var(--xn-warning-bg)', color: 'var(--xn-warning)' }}>
+          <AlertTriangle size={17} />
+        </span>
+        <span>{eyebrow}</span>
       </div>
       <h3 className="text-base font-semibold leading-snug text-text">{review.headline}</h3>
       <div className="mt-3 grid gap-3 md:grid-cols-2">
         {hasMistakes && (
-          <div>
+          <div className="rounded-lg border p-3" style={{ borderColor: 'var(--border-1)' }}>
             <p className="text-xs font-semibold uppercase tracking-wide text-muted">{eyebrow}</p>
             <ul className="mt-2 space-y-2">
               {review.mistakes.map((mistake) => (
@@ -444,7 +498,7 @@ function PlanReviewBlock({
           </div>
         )}
         {hasSuggestions && (
-          <div>
+          <div className="rounded-lg border p-3" style={{ borderColor: 'var(--border-1)' }}>
             <p className="text-xs font-semibold uppercase tracking-wide text-muted">{suggestionsLabel}</p>
             <ul className="mt-2 space-y-2">
               {review.suggestions.map((suggestion) => (
@@ -507,6 +561,6 @@ function formatNumber(value: number) {
   return new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(value)
 }
 
-function formatCompact(value: number) {
-  return new Intl.NumberFormat(undefined, { maximumFractionDigits: 1, notation: 'compact' }).format(value)
+function formatKg(value: number) {
+  return `${Math.round(value).toLocaleString()} kg`
 }

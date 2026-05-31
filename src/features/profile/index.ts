@@ -8,12 +8,14 @@ export {
   useClientProfile,
   useClientBodyweightHistory,
   usePublicUserProfile,
+  useMyTrainingActivity,
   useMyPreferences,
   useUpdatePreferences,
 } from './api/useProfile'
 export type {
   UserProfileResponse,
   PublicUserProfileResponse,
+  TrainingActivityResponse,
   UserPreferencesResponse,
   UpdateProfileRequest,
   UpdatePreferencesRequest,

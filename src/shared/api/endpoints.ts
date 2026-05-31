@@ -20,6 +20,7 @@ export const ENDPOINTS = {
     avatar: '/api/users/me/avatar',
     bodyweight: '/api/users/me/bodyweight',
     bodyweightById: (id: string) => `/api/users/me/bodyweight/${id}`,
+    trainingActivity: (year: number, month: number) => `/api/users/me/training-activity?year=${year}&month=${month}`,
     exercisePrs: '/api/users/me/exercise-prs',
     exercisePrHistory: (exerciseTemplateId: string) =>
       `/api/users/me/exercise-prs/${exerciseTemplateId}/history`,
