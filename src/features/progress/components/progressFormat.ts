@@ -55,8 +55,13 @@ export function translateWeekName(name: string, tp: Record<string, string>) {
 
 export function heatmapColor(value: number, max: number) {
   if (value <= 0 || max <= 0) return 'var(--bg-3)'
-  const intensity = Math.max(16, Math.round((value / max) * 88))
-  return `color-mix(in srgb, var(--color-primary) ${intensity}%, var(--bg-3))`
+  const ratio = Math.max(0, Math.min(1, value / max))
+  if (ratio >= 0.86) return '#0f766e'
+  if (ratio >= 0.72) return '#14b8a6'
+  if (ratio >= 0.56) return '#38bdf8'
+  if (ratio >= 0.40) return '#93c5fd'
+  if (ratio >= 0.24) return '#bfdbfe'
+  return '#dbeafe'
 }
 
 export function translateMetricLabel(label: string, tp: Record<string, string>) {
@@ -193,10 +198,39 @@ export function localizeInsight(insight: TrainingInsightResponse, tp: Record<str
   const message = isPlateau
     ? tp.insightPlateauMsg.replace('{lift}', dynamicLift)
     : messages[insight.title] ?? insight.message
+  const actions: Record<string, string> = {
+    'No training days planned': tp.insightNoTrainingDaysAction,
+    'Consistency needs attention': tp.insightConsistencyAttentionAction,
+    'Consistency is uneven': tp.insightConsistencyUnevenAction,
+    'Strong consistency': tp.insightStrongConsistencyAction,
+    'More volume history needed': tp.insightMoreVolumeAction,
+    'Volume dropped sharply': tp.insightVolumeDroppedAction,
+    'Volume is trending down': tp.insightVolumeDownAction,
+    'Large overload jump': tp.insightLargeOverloadAction,
+    'Progressive overload is moving': tp.insightOverloadMovingAction,
+    'Volume is stable': tp.insightVolumeStableAction,
+    'Fatigue risk is elevated': tp.insightFatigueElevatedAction,
+    'Some sets missed target': tp.insightSetsMissedAction,
+    'Training is heavily concentrated': tp.insightConcentratedAction,
+    'Muscle focus is unbalanced': tp.insightFocusUnbalancedAction,
+    'Major muscle gaps detected': tp.insightMajorGapsAction,
+    'Muscle distribution looks balanced': tp.insightBalancedAction,
+    'Repeat or simplify the week': tp.insightRepeatWeekAction,
+    'Prioritize recovery': tp.insightPrioritizeRecoveryAction,
+    'Progress gradually': tp.insightProgressGraduallyAction,
+    'Hold the plan steady': tp.insightHoldSteadyAction,
+    'Bench is lagging your squat': tp.insightBenchLagAction,
+    'Deadlift is below your squat': tp.insightDeadliftLowAction,
+    'Long stretch of high-RPE work': tp.insightHighRpeStretchAction,
+  }
+  const action = isPlateau
+    ? (tp.insightPlateauAction ?? 'Hold {lift} load stable, add cleaner back-off work, and retest after the next training block.').replace('{lift}', dynamicLift)
+    : actions[insight.title] ?? tp.insightDefaultAction ?? 'Use the metric above to decide the next week before changing load.'
 
   return {
     title,
     message,
+    action,
     metricLabel: translateMetricLabel(insight.metricLabel, tp),
     metricValue: insight.metricValue.replace(/\bkg\b/g, tp.kgUnit),
   }

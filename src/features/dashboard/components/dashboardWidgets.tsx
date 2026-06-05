@@ -4,9 +4,11 @@ import { Activity, ClipboardList, Dumbbell, Sparkles, Utensils, Weight } from 'l
 import { softCardItem } from '@/shared/utils/motion'
 import { cn } from '@/shared/utils/cn'
 
+const LIGHT_CARD_BORDER = 'var(--surface-border-soft)'
+
 export function MetricCard({ icon, label, value, sub, accent }: { icon: ReactNode; label: string; value: string; sub?: string; accent?: string }) {
   return (
-    <motion.div variants={softCardItem} className="xn-mini-card rounded-xl border bg-panel p-4" style={{ borderColor: accent ? `${accent}30` : 'var(--border-1)' }}>
+    <motion.div variants={softCardItem} className="xn-mini-card rounded-xl border bg-panel p-4" style={{ borderColor: LIGHT_CARD_BORDER }}>
       <div
         className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg"
         style={{ background: accent ? `${accent}20` : 'var(--bg-surface)', color: accent ?? 'var(--color-primary)' }}
@@ -32,7 +34,7 @@ export function LevelCard({
   progress: number
 }) {
   return (
-    <motion.div variants={softCardItem} className="xn-mini-card rounded-xl border border-border bg-panel p-4">
+    <motion.div variants={softCardItem} className="xn-mini-card rounded-xl border bg-panel p-4" style={{ borderColor: LIGHT_CARD_BORDER }}>
       <div className="flex h-full flex-col justify-between gap-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -49,7 +51,7 @@ export function LevelCard({
 
 export function SmallStat({ label, value }: { label: string; value: string }) {
   return (
-    <motion.div variants={softCardItem} className="xn-mini-card rounded-xl border border-border bg-panel p-3">
+    <motion.div variants={softCardItem} className="xn-mini-card rounded-xl border bg-panel p-3" style={{ borderColor: LIGHT_CARD_BORDER }}>
       <p className="text-xs text-muted">{label}</p>
       <p className="mt-1 font-semibold text-text">{value}</p>
     </motion.div>
@@ -58,7 +60,7 @@ export function SmallStat({ label, value }: { label: string; value: string }) {
 
 export function Macro({ label, logged, target }: { label: string; logged: number; target: number | null }) {
   return (
-    <motion.div variants={softCardItem} className="xn-mini-card rounded-lg border border-border p-3">
+    <motion.div variants={softCardItem} className="xn-mini-card rounded-lg border p-3" style={{ borderColor: LIGHT_CARD_BORDER }}>
       <p className="text-xs text-muted">{label}</p>
       <p className="font-semibold text-text">{Math.round(logged)} / {target == null ? '-' : Math.round(target)}g</p>
     </motion.div>

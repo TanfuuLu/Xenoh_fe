@@ -8,7 +8,9 @@ import {
   Award,
   BarChart3,
   ChevronLeft,
+  CheckCircle2,
   Dumbbell,
+  Eye,
   Gauge,
   RefreshCw,
   Scale,
@@ -32,7 +34,8 @@ import { Card } from '@/shared/components/Card'
 import { Spinner } from '@/shared/components/Spinner'
 import { RequireTier } from '@/features/billing/components/RequireTier'
 import { useT } from '@/shared/i18n'
-import { useUserAnalysis } from '../api/useUserAnalysis'
+import { useTrainingCoachTip, useUserAnalysis } from '../api/useUserAnalysis'
+import { TrainingCoachTipCard } from '../components/TrainingCoachTipCard'
 import type {
   AnalysisContent,
   AnalysisEffortGapPoint,
@@ -56,6 +59,13 @@ export function InsightsPage() {
   const t = useT()
   const ti = t.insights
   const { data, isLoading, isFetching, isError, error, refetch } = useUserAnalysis()
+  const {
+    data: coachTip,
+    isLoading: isCoachTipLoading,
+    isFetching: isCoachTipFetching,
+    isError: isCoachTipError,
+    refetch: refetchCoachTip,
+  } = useTrainingCoachTip()
 
   const errorMessage = (() => {
     const e = error as { response?: { data?: { message?: string } }; message?: string } | null | undefined
@@ -81,11 +91,14 @@ export function InsightsPage() {
           <Button
             variant="secondary"
             size="md"
-            onClick={() => refetch()}
-            disabled={isFetching}
+            onClick={() => {
+              void refetch()
+              void refetchCoachTip()
+            }}
+            disabled={isFetching || isCoachTipFetching}
             className="gap-1.5 self-start sm:self-auto"
           >
-            <RefreshCw size={15} className={isFetching ? 'animate-spin' : ''} />
+            <RefreshCw size={15} className={isFetching || isCoachTipFetching ? 'animate-spin' : ''} />
             {ti.refresh}
           </Button>
         </div>
@@ -116,6 +129,14 @@ export function InsightsPage() {
                 cached={data.cached}
                 metrics={data.metrics}
                 labels={ti}
+              />
+
+              <TrainingCoachTipCard
+                tip={coachTip}
+                isLoading={isCoachTipLoading}
+                isError={isCoachTipError}
+                isFetching={isCoachTipFetching}
+                onRefresh={() => void refetchCoachTip()}
               />
 
               <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
@@ -375,14 +396,20 @@ function AiNarrativePanel({ content, labels }: { content: AnalysisContent; label
 
         <div className="grid gap-3 sm:grid-cols-2">
           {primarySections.map((item) => (
-            <SummaryBlock key={item.label} label={item.label} icon={item.icon} section={item.section} emphasis />
+            <SummaryBlock key={item.label} label={item.label} icon={item.icon} section={item.section} emphasis tone="warning" />
           ))}
         </div>
       </div>
 
       <div className="grid gap-3 lg:grid-cols-3">
-        {supportingSections.map((item) => (
-          <SummaryBlock key={item.label} label={item.label} icon={item.icon} section={item.section} />
+        {supportingSections.map((item, index) => (
+          <SummaryBlock
+            key={item.label}
+            label={item.label}
+            icon={item.icon}
+            section={item.section}
+            tone={index === 0 ? 'success' : index === 1 ? 'info' : 'neutral'}
+          />
         ))}
       </div>
 
@@ -402,28 +429,40 @@ function SummaryBlock({
   icon,
   section,
   emphasis = false,
+  tone = 'neutral',
 }: {
   label: string
   icon: ReactNode
   section: AnalysisSection
   emphasis?: boolean
+  tone?: InsightTone
 }) {
+  const tokens = getInsightTone(tone)
+  const points = splitInsightDetail(section.detail)
+
   return (
     <div
-      className="rounded-lg border p-4"
+      className="group relative overflow-hidden rounded-lg border p-4 transition-colors"
       style={{
-        borderColor: emphasis ? 'var(--surface-border)' : 'var(--border-1)',
-        background: emphasis ? 'color-mix(in oklch, var(--bg-2) 78%, var(--accent-soft) 22%)' : 'var(--bg-2)',
+        borderColor: emphasis ? tokens.border : 'var(--border-1)',
+        background: emphasis ? tokens.softBg : 'var(--bg-2)',
       }}
     >
       <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase text-muted">
-        <span className="flex h-7 w-7 items-center justify-center rounded-md" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>
+        <span className="flex h-8 w-8 items-center justify-center rounded-md" style={{ background: tokens.iconBg, color: tokens.color }}>
           {icon}
         </span>
         <span>{label}</span>
       </div>
       <h3 className="text-base font-semibold leading-snug text-text">{section.headline}</h3>
-      <p className="mt-2 text-sm leading-relaxed text-muted">{section.detail}</p>
+      <div className="mt-3 space-y-2">
+        {points.map((point) => (
+          <div key={point} className="flex items-start gap-2 text-sm text-muted">
+            <Eye size={14} className="mt-0.5 flex-shrink-0" style={{ color: tokens.color }} />
+            <span className="leading-relaxed">{point}</span>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -431,24 +470,24 @@ function SummaryBlock({
 function RecommendationBlock({ eyebrow, rec }: { eyebrow: string; rec: AnalysisRecommendation }) {
   return (
     <div
-      className="rounded-lg border p-5"
+      className="relative overflow-hidden rounded-lg border p-5"
       style={{
-        background: 'linear-gradient(180deg, color-mix(in oklch, var(--accent-soft) 76%, var(--bg-2) 24%), var(--accent-soft))',
-        borderColor: 'var(--accent)',
+        background: 'linear-gradient(135deg, color-mix(in oklch, var(--accent-soft) 74%, var(--bg-2) 26%), var(--bg-2))',
+        borderColor: 'var(--surface-border)',
       }}
     >
       <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase" style={{ color: 'var(--accent)' }}>
-        <span className="flex h-8 w-8 items-center justify-center rounded-md" style={{ background: 'var(--bg-2)' }}>
+        <span className="flex h-9 w-9 items-center justify-center rounded-md border" style={{ background: 'var(--bg-2)', borderColor: 'var(--border-1)' }}>
           <Target size={17} />
         </span>
         <span>{eyebrow}</span>
       </div>
-      <h3 className="text-lg font-semibold leading-snug text-text">{rec.headline}</h3>
+      <h3 className="max-w-2xl text-xl font-semibold leading-snug text-text">{rec.headline}</h3>
       {rec.actions.length > 0 && (
-        <ul className="mt-3 space-y-2">
+        <ul className="mt-4 grid gap-2">
           {rec.actions.map((action, index) => (
-            <li key={action} className="flex items-start gap-2 text-sm text-text">
-              <span className="mt-1 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-[11px] font-bold" style={{ background: 'var(--bg-2)', color: 'var(--accent)' }}>
+            <li key={action} className="flex items-start gap-3 rounded-md border p-3 text-sm text-text" style={{ background: 'var(--bg-2)', borderColor: 'var(--border-1)' }}>
+              <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-[11px] font-bold" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>
                 {index + 1}
               </span>
               <span className="leading-relaxed">{action}</span>
@@ -475,22 +514,22 @@ function PlanReviewBlock({
   if (!hasMistakes && !hasSuggestions) return null
 
   return (
-    <div className="rounded-lg border p-5" style={{ background: 'var(--bg-2)', borderColor: 'var(--border-1)' }}>
+    <div className="rounded-lg border p-5" style={{ background: 'color-mix(in oklch, var(--bg-2) 82%, var(--xn-warning-bg) 18%)', borderColor: 'var(--surface-border)' }}>
       <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase text-muted">
-        <span className="flex h-8 w-8 items-center justify-center rounded-md" style={{ background: 'var(--xn-warning-bg)', color: 'var(--xn-warning)' }}>
+        <span className="flex h-9 w-9 items-center justify-center rounded-md" style={{ background: 'var(--xn-warning-bg)', color: 'var(--xn-warning)' }}>
           <AlertTriangle size={17} />
         </span>
         <span>{eyebrow}</span>
       </div>
-      <h3 className="text-base font-semibold leading-snug text-text">{review.headline}</h3>
+      <h3 className="max-w-3xl text-lg font-semibold leading-snug text-text">{review.headline}</h3>
       <div className="mt-3 grid gap-3 md:grid-cols-2">
         {hasMistakes && (
-          <div className="rounded-lg border p-3" style={{ borderColor: 'var(--border-1)' }}>
+          <div className="rounded-lg border p-4" style={{ background: 'var(--bg-2)', borderColor: 'var(--border-1)' }}>
             <p className="text-xs font-semibold uppercase tracking-wide text-muted">{eyebrow}</p>
             <ul className="mt-2 space-y-2">
               {review.mistakes.map((mistake) => (
                 <li key={mistake} className="flex items-start gap-2 text-sm text-text">
-                  <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: 'var(--xn-warning)' }} />
+                  <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" style={{ color: 'var(--xn-warning)' }} />
                   <span className="leading-relaxed">{mistake}</span>
                 </li>
               ))}
@@ -498,12 +537,12 @@ function PlanReviewBlock({
           </div>
         )}
         {hasSuggestions && (
-          <div className="rounded-lg border p-3" style={{ borderColor: 'var(--border-1)' }}>
+          <div className="rounded-lg border p-4" style={{ background: 'var(--bg-2)', borderColor: 'var(--border-1)' }}>
             <p className="text-xs font-semibold uppercase tracking-wide text-muted">{suggestionsLabel}</p>
             <ul className="mt-2 space-y-2">
               {review.suggestions.map((suggestion) => (
                 <li key={suggestion} className="flex items-start gap-2 text-sm text-text">
-                  <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: 'var(--xn-success)' }} />
+                  <CheckCircle2 size={14} className="mt-0.5 flex-shrink-0" style={{ color: 'var(--xn-success)' }} />
                   <span className="leading-relaxed">{suggestion}</span>
                 </li>
               ))}
@@ -513,6 +552,53 @@ function PlanReviewBlock({
       </div>
     </div>
   )
+}
+
+type InsightTone = 'warning' | 'success' | 'info' | 'neutral'
+
+function getInsightTone(tone: InsightTone) {
+  if (tone === 'warning') {
+    return {
+      color: 'var(--xn-warning)',
+      iconBg: 'var(--xn-warning-bg)',
+      softBg: 'color-mix(in oklch, var(--bg-2) 78%, var(--xn-warning-bg) 22%)',
+      border: 'color-mix(in oklch, var(--xn-warning) 45%, var(--border-1) 55%)',
+    }
+  }
+
+  if (tone === 'success') {
+    return {
+      color: 'var(--xn-success)',
+      iconBg: 'var(--xn-success-bg)',
+      softBg: 'color-mix(in oklch, var(--bg-2) 80%, var(--xn-success-bg) 20%)',
+      border: 'color-mix(in oklch, var(--xn-success) 45%, var(--border-1) 55%)',
+    }
+  }
+
+  if (tone === 'info') {
+    return {
+      color: 'var(--xn-info)',
+      iconBg: 'var(--xn-info-bg)',
+      softBg: 'color-mix(in oklch, var(--bg-2) 80%, var(--xn-info-bg) 20%)',
+      border: 'color-mix(in oklch, var(--xn-info) 42%, var(--border-1) 58%)',
+    }
+  }
+
+  return {
+    color: 'var(--accent)',
+    iconBg: 'var(--accent-soft)',
+    softBg: 'var(--bg-2)',
+    border: 'var(--border-1)',
+  }
+}
+
+function splitInsightDetail(detail: string) {
+  const points = detail
+    .split(/(?<=[.!?])\s+/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+
+  return points.length > 0 ? points.slice(0, 3) : [detail]
 }
 
 function ChartShell({

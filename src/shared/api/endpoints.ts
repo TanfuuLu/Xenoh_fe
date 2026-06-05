@@ -165,6 +165,7 @@ export const ENDPOINTS = {
   // Insights (AI-generated user analysis)
   insights: {
     me: (lang: 'en' | 'vi') => `/api/insights/me?lang=${lang}`,
+    coachTip: (lang: 'en' | 'vi') => `/api/insights/me/coach-tip?lang=${lang}`,
   },
 
   // Notifications
