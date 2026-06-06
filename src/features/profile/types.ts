@@ -1,4 +1,4 @@
-import type { Gender } from '@/shared/types/api'
+import type { DevelopmentDirection, Gender, TrainingDiscipline } from '@/shared/types/api'
 import type { Lang } from '@/shared/i18n'
 import type { Theme } from '@/shared/theme'
 import type { WeightUnit } from '@/shared/preferences'
@@ -25,6 +25,8 @@ export interface UserProfileResponse {
   height: number | null
   gender: Gender | null
   dateOfBirth: string | null
+  developmentDirection: DevelopmentDirection | null
+  trainingDiscipline: TrainingDiscipline | null
   currentStreak: number
   latestBodyweight: number | null
   bmi: number | null
@@ -70,6 +72,8 @@ export interface UpdateProfileRequest {
   height?: number
   gender?: Gender
   dateOfBirth?: string
+  developmentDirection?: DevelopmentDirection
+  trainingDiscipline?: TrainingDiscipline
   facebookUrl?: string
   instagramUrl?: string
   zaloUrl?: string

@@ -1,4 +1,5 @@
-import { AlertTriangle, CheckCircle2, RefreshCw, Sparkles, Target } from 'lucide-react'
+import { Activity, AlertTriangle, CheckCircle2, Dumbbell, Eye, Gauge, RefreshCw, Scale, Sparkles, Target, TrendingUp } from 'lucide-react'
+import type { ReactNode } from 'react'
 import { Badge } from '@/shared/components/Badge'
 import { Button } from '@/shared/components/Button'
 import { Card } from '@/shared/components/Card'
@@ -57,6 +58,7 @@ export function AiInsightsPanel({ title, sections, compact = false }: Props) {
     key,
     label: labels[key],
     section: data.content[key],
+    visual: getPanelSectionVisual(key),
   }))
 
   return (
@@ -84,8 +86,8 @@ export function AiInsightsPanel({ title, sections, compact = false }: Props) {
       )}
 
       <div className={compact ? 'grid gap-3 lg:grid-cols-3' : 'grid gap-3 md:grid-cols-2'}>
-        {cards.map(({ key, label, section }) => (
-          <AiInsightSummary key={key} label={label} section={section} />
+        {cards.map(({ key, label, section, visual }) => (
+          <AiInsightSummary key={key} label={label} section={section} icon={visual.icon} tone={visual.tone} />
         ))}
       </div>
     </Card>
@@ -95,18 +97,23 @@ export function AiInsightsPanel({ title, sections, compact = false }: Props) {
 function RecommendationBlock({ label, rec }: { label: string; rec: AnalysisRecommendation }) {
   return (
     <div
-      className="rounded-xl p-4"
-      style={{ background: 'var(--accent-soft)', border: '1px solid var(--accent)' }}
+      className="rounded-lg border p-4"
+      style={{
+        background: 'linear-gradient(135deg, color-mix(in oklch, var(--accent-soft) 76%, var(--bg-2) 24%), var(--bg-2))',
+        borderColor: 'var(--surface-border)',
+      }}
     >
       <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--accent)' }}>
-        <Target size={15} />
+        <span className="flex h-8 w-8 items-center justify-center rounded-md border" style={{ background: 'var(--bg-2)', borderColor: 'var(--border-1)' }}>
+          <Target size={16} />
+        </span>
         {label}
       </div>
-      <p className="mt-2 font-semibold text-text">{rec.headline}</p>
+      <p className="mt-3 text-lg font-semibold leading-snug text-text">{rec.headline}</p>
       {rec.actions.length > 0 && (
         <ul className="mt-3 grid gap-2 md:grid-cols-3">
           {rec.actions.slice(0, 3).map((action) => (
-            <li key={action} className="flex items-start gap-2 text-sm text-text">
+            <li key={action} className="flex items-start gap-2 rounded-md border p-3 text-sm text-text" style={{ background: 'var(--bg-2)', borderColor: 'var(--border-1)' }}>
               <CheckCircle2 size={15} className="mt-0.5 flex-shrink-0" style={{ color: 'var(--accent)' }} />
               <span className="leading-relaxed">{action}</span>
             </li>
@@ -132,20 +139,22 @@ function PlanReviewBlock({
   if (!hasMistakes && !hasSuggestions) return null
 
   return (
-    <div className="rounded-xl border p-4" style={{ background: 'var(--bg-2)', borderColor: 'var(--border-1)' }}>
+    <div className="rounded-lg border p-4" style={{ background: 'color-mix(in oklch, var(--bg-2) 82%, var(--xn-warning-bg) 18%)', borderColor: 'var(--surface-border)' }}>
       <div className="flex flex-wrap items-center gap-2">
-        <AlertTriangle size={16} style={{ color: 'var(--xn-warning)' }} />
+        <span className="flex h-8 w-8 items-center justify-center rounded-md" style={{ background: 'var(--xn-warning-bg)', color: 'var(--xn-warning)' }}>
+          <AlertTriangle size={16} />
+        </span>
         <p className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</p>
       </div>
       <p className="mt-2 font-semibold text-text">{review.headline}</p>
       <div className="mt-3 grid gap-3 md:grid-cols-2">
         {hasMistakes && (
-          <div>
+          <div className="rounded-lg border p-3" style={{ background: 'var(--bg-2)', borderColor: 'var(--border-1)' }}>
             <p className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</p>
             <ul className="mt-2 space-y-2">
               {review.mistakes.slice(0, 3).map((mistake) => (
                 <li key={mistake} className="flex items-start gap-2 text-sm text-text">
-                  <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: 'var(--xn-warning)' }} />
+                  <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" style={{ color: 'var(--xn-warning)' }} />
                   <span className="leading-relaxed">{mistake}</span>
                 </li>
               ))}
@@ -153,7 +162,7 @@ function PlanReviewBlock({
           </div>
         )}
         {hasSuggestions && (
-          <div>
+          <div className="rounded-lg border p-3" style={{ background: 'var(--bg-2)', borderColor: 'var(--border-1)' }}>
             <p className="text-xs font-semibold uppercase tracking-wide text-muted">{suggestionsLabel}</p>
             <ul className="mt-2 space-y-2">
               {review.suggestions.slice(0, 3).map((suggestion) => (
@@ -170,12 +179,99 @@ function PlanReviewBlock({
   )
 }
 
-function AiInsightSummary({ label, section }: { label: string; section: AnalysisSection }) {
+function AiInsightSummary({
+  label,
+  section,
+  icon,
+  tone,
+}: {
+  label: string
+  section: AnalysisSection
+  icon: ReactNode
+  tone: InsightTone
+}) {
+  const tokens = getInsightTone(tone)
+  const points = splitInsightDetail(section.detail)
+
   return (
-    <div className="rounded-xl p-4" style={{ background: 'var(--bg-2)', border: '1px solid var(--border-1)' }}>
-      <p className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</p>
-      <p className="mt-2 font-semibold text-text">{section.headline}</p>
-      <p className="mt-1 text-sm leading-relaxed text-muted">{section.detail}</p>
+    <div className="rounded-lg border p-4" style={{ background: tokens.softBg, borderColor: tokens.border }}>
+      <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted">
+        <span className="flex h-8 w-8 items-center justify-center rounded-md" style={{ background: tokens.iconBg, color: tokens.color }}>
+          {icon}
+        </span>
+        <span>{label}</span>
+      </div>
+      <p className="font-semibold leading-snug text-text">{section.headline}</p>
+      <div className="mt-3 space-y-2">
+        {points.map((point) => (
+          <div key={point} className="flex items-start gap-2 text-sm text-muted">
+            <Eye size={14} className="mt-0.5 flex-shrink-0" style={{ color: tokens.color }} />
+            <span className="leading-relaxed">{point}</span>
+          </div>
+        ))}
+      </div>
     </div>
   )
+}
+
+type InsightTone = 'warning' | 'success' | 'info' | 'neutral'
+
+function getPanelSectionVisual(key: InsightSectionKey): { icon: ReactNode; tone: InsightTone } {
+  switch (key) {
+    case 'trainingAdherence':
+      return { icon: <Activity size={16} />, tone: 'warning' }
+    case 'bodyMetrics':
+      return { icon: <TrendingUp size={16} />, tone: 'warning' }
+    case 'volumeStrength':
+      return { icon: <Dumbbell size={16} />, tone: 'success' }
+    case 'muscleBalance':
+      return { icon: <Scale size={16} />, tone: 'info' }
+    case 'effortGap':
+      return { icon: <Gauge size={16} />, tone: 'neutral' }
+  }
+}
+
+function getInsightTone(tone: InsightTone) {
+  if (tone === 'warning') {
+    return {
+      color: 'var(--xn-warning)',
+      iconBg: 'var(--xn-warning-bg)',
+      softBg: 'color-mix(in oklch, var(--bg-2) 78%, var(--xn-warning-bg) 22%)',
+      border: 'color-mix(in oklch, var(--xn-warning) 42%, var(--border-1) 58%)',
+    }
+  }
+
+  if (tone === 'success') {
+    return {
+      color: 'var(--xn-success)',
+      iconBg: 'var(--xn-success-bg)',
+      softBg: 'color-mix(in oklch, var(--bg-2) 82%, var(--xn-success-bg) 18%)',
+      border: 'color-mix(in oklch, var(--xn-success) 42%, var(--border-1) 58%)',
+    }
+  }
+
+  if (tone === 'info') {
+    return {
+      color: 'var(--xn-info)',
+      iconBg: 'var(--xn-info-bg)',
+      softBg: 'color-mix(in oklch, var(--bg-2) 82%, var(--xn-info-bg) 18%)',
+      border: 'color-mix(in oklch, var(--xn-info) 40%, var(--border-1) 60%)',
+    }
+  }
+
+  return {
+    color: 'var(--accent)',
+    iconBg: 'var(--accent-soft)',
+    softBg: 'var(--bg-2)',
+    border: 'var(--border-1)',
+  }
+}
+
+function splitInsightDetail(detail: string) {
+  const points = detail
+    .split(/(?<=[.!?])\s+/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+
+  return points.length > 0 ? points.slice(0, 3) : [detail]
 }

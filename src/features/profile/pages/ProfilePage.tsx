@@ -17,6 +17,13 @@ import { useT } from '@/shared/i18n'
 import { LevelCard } from '@/features/dashboard/components/LevelCard'
 import { InlineTip } from '@/features/tips'
 import {
+  DevelopmentDirection,
+  TrainingDiscipline,
+  type DevelopmentDirection as DevelopmentDirectionValue,
+  type Gender,
+  type TrainingDiscipline as TrainingDisciplineValue,
+} from '@/shared/types/api'
+import {
   useMyProfile,
   useMyTrainingActivity,
   useUpdateAvatar,
@@ -30,8 +37,10 @@ type ProfileForm = {
   lastName: string
   bio?: string
   height?: number
-  gender?: 'Male' | 'Female' | 'Other'
+  gender?: Gender
   dateOfBirth?: string
+  developmentDirection?: DevelopmentDirectionValue
+  trainingDiscipline?: TrainingDisciplineValue
   facebookUrl?: string
   instagramUrl?: string
   zaloUrl?: string
@@ -74,6 +83,13 @@ function formatTrainingWeightKg(weightKg: number | null | undefined) {
   return `${totalKg.toLocaleString()} kg`
 }
 
+function formatProfileOption<T extends string>(
+  value: T | null | undefined,
+  labels: Record<T, string>,
+) {
+  return value ? labels[value] ?? value : '—'
+}
+
 function toIsoDate(year: number, month: number, day: number) {
   return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 }
@@ -99,6 +115,8 @@ export function ProfilePage() {
     height: z.coerce.number().min(50).max(300).optional(),
     gender: z.enum(['Male', 'Female', 'Other']).optional(),
     dateOfBirth: z.string().optional(),
+    developmentDirection: z.enum(DevelopmentDirection).optional(),
+    trainingDiscipline: z.enum(TrainingDiscipline).optional(),
     facebookUrl:  z.string().url('Invalid URL').or(z.literal('')).optional(),
     instagramUrl: z.string().url('Invalid URL').or(z.literal('')).optional(),
     zaloUrl:      z.string().url('Invalid URL').or(z.literal('')).optional(),
@@ -118,6 +136,8 @@ export function ProfilePage() {
       height: profile?.height ?? undefined,
       gender: profile?.gender ?? undefined,
       dateOfBirth: toDateInputValue(profile?.dateOfBirth),
+      developmentDirection: profile?.developmentDirection ?? undefined,
+      trainingDiscipline: profile?.trainingDiscipline ?? undefined,
       facebookUrl:  profile?.facebookUrl ?? '',
       instagramUrl: profile?.instagramUrl ?? '',
       zaloUrl:      profile?.zaloUrl ?? '',
@@ -132,6 +152,8 @@ export function ProfilePage() {
       height: data.height,
       gender: data.gender,
       dateOfBirth: data.dateOfBirth || undefined,
+      developmentDirection: data.developmentDirection,
+      trainingDiscipline: data.trainingDiscipline,
       facebookUrl: data.facebookUrl?.trim() || undefined,
       instagramUrl: data.instagramUrl?.trim() || undefined,
       zaloUrl: data.zaloUrl?.trim() || undefined,
@@ -170,7 +192,7 @@ export function ProfilePage() {
         {profile && <LevelCard profile={profile} variant="square" className="w-full" />}
 
         {/* Profile info */}
-        <Card>
+        <Card style={{ borderColor: 'var(--surface-border-soft)' }}>
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-3">
             <div className="relative shrink-0">
@@ -273,6 +295,40 @@ export function ProfilePage() {
                 />
               )}
             />
+            <div className="grid gap-2.5 sm:grid-cols-2">
+              <Controller
+                name="developmentDirection"
+                control={profileControl}
+                render={({ field }) => (
+                  <Select
+                    label={tp.developmentDirectionLabel}
+                    options={DevelopmentDirection.map((value) => ({
+                      value,
+                      label: tp.developmentDirections[value],
+                    }))}
+                    placeholder={tc.selectPlaceholder}
+                    value={field.value ?? ''}
+                    onChange={(value) => field.onChange(value || undefined)}
+                  />
+                )}
+              />
+              <Controller
+                name="trainingDiscipline"
+                control={profileControl}
+                render={({ field }) => (
+                  <Select
+                    label={tp.trainingDisciplineLabel}
+                    options={TrainingDiscipline.map((value) => ({
+                      value,
+                      label: tp.trainingDisciplines[value],
+                    }))}
+                    placeholder={tc.selectPlaceholder}
+                    value={field.value ?? ''}
+                    onChange={(value) => field.onChange(value || undefined)}
+                  />
+                )}
+              />
+            </div>
             <div className="space-y-2.5">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted">Social links</p>
               <Input
@@ -314,6 +370,8 @@ export function ProfilePage() {
             <Stat label={tp.heightStat} value={profile?.height ? `${profile.height} cm` : '—'} />
             <Stat label={tp.genderStat} value={profile?.gender === 'Male' ? tp.male : profile?.gender === 'Female' ? tp.female : profile?.gender === 'Other' ? tp.other : '—'} />
             <Stat label={tp.dobStat}    value={formatDisplayDate(profile?.dateOfBirth)} />
+            <Stat label={tp.developmentDirectionStat} value={formatProfileOption(profile?.developmentDirection, tp.developmentDirections)} />
+            <Stat label={tp.trainingDisciplineStat} value={formatProfileOption(profile?.trainingDiscipline, tp.trainingDisciplines)} />
             <Stat label={tp.bmiStat}    value={profile?.bmi ? `${profile.bmi.toFixed(1)} (${profile.bmiCategory})` : '—'} />
             <Stat label={tp.dotsStat}   value={profile?.dotsScore ? profile.dotsScore.toFixed(1) : '—'} />
             <Stat label={tp.streakStat} value={`${profile?.currentStreak ?? 0} ${tc.days}`} />
@@ -372,7 +430,7 @@ function TrainingMetricCard({
   return (
     <Card
       className="flex h-28 w-full flex-col justify-between"
-      style={{ boxShadow: 'none' }}
+      style={{ borderColor: 'var(--surface-border-soft)', boxShadow: 'none' }}
     >
       <div className="flex items-center gap-2 text-muted">
         {icon}
@@ -422,7 +480,7 @@ function TrainingCalendar({
   const hasTraining = trainedSet.size > 0
 
   return (
-    <Card className="w-full max-w-[480px] justify-self-center">
+    <Card className="w-full" style={{ borderColor: 'var(--surface-border-soft)' }}>
       <div className="mb-3 flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
           <CalendarDays size={16} className="shrink-0 text-primary" />

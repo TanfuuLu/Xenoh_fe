@@ -41,7 +41,7 @@ import type {
   PersonalDashboardNutrition,
   PersonalDashboardTodayWorkout,
 } from '../types'
-import { ActionIcon, Macro, PanelHeader, ProgressBar, SmallStat, insightStyle } from './dashboardWidgets'
+import { ActionIcon, Macro, PanelHeader, ProgressBar, SmallStat } from './dashboardWidgets'
 
 type BodyweightForm = { weight: number }
 
@@ -400,36 +400,80 @@ export function ProInsightsPanel({
   insights: PersonalDashboardInsight[]
 }) {
   const td = useT().dashboard
-  return (
-    <Card className="xn-dashboard-card space-y-4" variants={softCardItem}>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <PanelHeader icon={<Sparkles size={18} />} label={td.proInsights} title={unlocked ? td.personalRecommendations : td.unlockDeeperGuidance} accent="#8b5cf6" />
-        {!unlocked && ctaRoute && (
-          <Link to={ctaRoute}><Button size="sm">{ctaLabel ?? td.upgrade}</Button></Link>
-        )}
-      </div>
+  const signals = insights.slice(0, 3)
+  const destination = unlocked ? '/insights' : ctaRoute
+  const buttonLabel = unlocked ? td.openAiInsights : ctaLabel ?? td.upgrade
 
-      {!unlocked ? (
-        <p className="text-sm text-muted">
-          {td.proFreeHint}
-        </p>
-      ) : insights.length === 0 ? (
-        <p className="text-sm text-muted">{td.proEmpty}</p>
-      ) : (
-        <div className="flex gap-3 overflow-x-auto pb-2">
-          {insights.map((insight) => (
-            <div
-              key={`${insight.type}-${insight.title}`}
-              className="min-w-[280px] flex-1 rounded-xl border p-4 sm:min-w-[340px] lg:min-w-[360px]"
-              style={insightStyle(insight.severity)}
-            >
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted">{insight.type}</p>
-              <p className="mt-2 font-semibold text-text">{insight.title}</p>
-              <p className="mt-1 text-sm text-muted">{insight.message}</p>
-            </div>
-          ))}
+  return (
+    <Card
+      className="xn-dashboard-card overflow-hidden"
+      variants={softCardItem}
+      style={{
+        background: unlocked
+          ? 'linear-gradient(135deg, color-mix(in oklch, var(--accent-soft) 50%, var(--bg-2) 50%), var(--bg-2))'
+          : 'linear-gradient(135deg, color-mix(in oklch, var(--bg-2) 82%, var(--bg-3) 18%), var(--bg-2))',
+        borderColor: 'var(--surface-border)',
+      }}
+    >
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(280px,0.85fr)] lg:items-start">
+        <div className="min-w-0 space-y-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <PanelHeader
+              icon={<Sparkles size={18} />}
+              label={td.proInsights}
+              title={unlocked ? td.personalRecommendations : td.unlockDeeperGuidance}
+              subtitle={unlocked ? td.proInsightsSubtitle : td.proFreeHint}
+              accent="#8b5cf6"
+            />
+            <Badge variant={unlocked ? 'primary' : 'default'}>{td.proBadge}</Badge>
+          </div>
+
+          <p className="max-w-3xl text-sm leading-relaxed text-muted">
+            {unlocked ? td.proAiPreviewBody : td.proLockedPreviewBody}
+          </p>
+
+          {destination && (
+            <Link to={destination} className="inline-flex">
+              <Button size="sm" className="gap-1.5">
+                {buttonLabel} <ArrowRight size={15} />
+              </Button>
+            </Link>
+          )}
         </div>
-      )}
+
+        <div className="min-w-0">
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted">{td.proSignalLabel}</p>
+            {unlocked && <p className="text-xs text-muted">{td.proPreviewNote}</p>}
+          </div>
+
+          {signals.length > 0 ? (
+            <div className="divide-y" style={{ borderColor: 'var(--border-1)' }}>
+              {signals.map((insight) => (
+                <div key={`${insight.type}-${insight.title}`} className="grid grid-cols-[auto_minmax(0,1fr)] gap-3 py-3 first:pt-0 last:pb-0">
+                  <span
+                    className="mt-1 h-2.5 w-2.5 rounded-full"
+                    style={{ background: signalColor(insight.severity) }}
+                  />
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted">{insight.type}</p>
+                    <p className="mt-1 text-sm font-semibold leading-snug text-text">{insight.title}</p>
+                    <p className="mt-0.5 text-sm leading-relaxed text-muted">{insight.message}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="py-4 text-sm leading-relaxed text-muted">{td.proEmpty}</p>
+          )}
+        </div>
+      </div>
     </Card>
   )
+}
+
+function signalColor(severity: string) {
+  if (severity === 'Warning' || severity === 'Critical') return 'var(--xn-warning)'
+  if (severity === 'Positive') return 'var(--xn-success)'
+  return 'var(--accent)'
 }

@@ -2,9 +2,10 @@ import { useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { Trophy } from 'lucide-react'
 import {
+  Bar,
+  BarChart,
   CartesianGrid,
-  Line,
-  LineChart,
+  Cell,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -48,16 +49,40 @@ export function ExercisePrPanel({ exerciseTemplateId, exerciseName }: Props) {
     [prs, exerciseTemplateId],
   )
 
-  const chartData = useMemo(
-    () =>
-      (history ?? []).map((point) => ({
+  const chartData = useMemo(() => {
+    const points = [...(history ?? [])].sort(
+      (a, b) => new Date(a.achievedAt).getTime() - new Date(b.achievedAt).getTime(),
+    )
+
+    return points.map((point, index) => {
+      const previous = points[index - 1]
+      const gain = previous ? Math.max(0, point.weight - previous.weight) : point.weight
+      const isBaseline = index === 0
+
+      return {
         date: formatDate(point.achievedAt, 'dd/MM'),
         fullDate: formatDate(point.achievedAt),
+        label: isBaseline ? 'Baseline' : `PR ${index + 1}`,
         weight: point.weight,
+        previousWeight: previous?.weight ?? null,
         reps: point.reps,
-      })),
-    [history],
-  )
+        gain,
+        gainLabel: isBaseline ? `${point.weight} kg start` : `+${gain} kg`,
+      }
+    })
+  }, [history])
+
+  const improvementData = useMemo(() => {
+    if (chartData.length <= 1) return chartData
+    return chartData.slice(1)
+  }, [chartData])
+
+  const totalGain = chartData.length >= 2
+    ? Math.max(0, chartData[chartData.length - 1].weight - chartData[0].weight)
+    : null
+  const bestJump = improvementData.length > 0
+    ? Math.max(...improvementData.map((point) => point.gain))
+    : null
 
   return (
     <RequireTier feature="Exercise Tracking & Personal Records">
@@ -88,41 +113,83 @@ export function ExercisePrPanel({ exerciseTemplateId, exerciseName }: Props) {
                 <Spinner />
               </div>
             ) : chartData.length > 0 ? (
-              <motion.div initial="hidden" animate="visible" variants={slideUp} className="h-60">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-1)" />
-                    <XAxis dataKey="date" tick={{ fill: 'var(--fg-3)', fontSize: 11 }} />
-                    <YAxis
-                      tick={{ fill: 'var(--fg-3)', fontSize: 11 }}
-                      domain={['auto', 'auto']}
-                      width={44}
-                    />
-                    <Tooltip
-                      formatter={(value, name, item) => [
-                        `${value} kg (${item.payload.reps} reps)`,
-                        name,
-                      ]}
-                      labelFormatter={(_, payload) => payload?.[0]?.payload?.fullDate ?? ''}
-                      contentStyle={{
-                        background: 'var(--bg-2)',
-                        border: '1px solid var(--border-1)',
-                        borderRadius: 8,
-                      }}
-                      labelStyle={{ color: 'var(--fg-1)' }}
-                      itemStyle={{ color: 'var(--xn-clay-700)' }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="weight"
-                      name="Weight"
-                      stroke="var(--xn-clay-700)"
-                      strokeWidth={2}
-                      dot={{ fill: 'var(--xn-clay-700)', r: 3 }}
-                      activeDot={{ r: 5 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+              <motion.div initial="hidden" animate="visible" variants={slideUp} className="space-y-3">
+                <div className="flex flex-wrap items-end justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted">PR jumps</p>
+                    <p className="text-sm text-muted">
+                      {chartData.length === 1
+                        ? 'First recorded PR for this lift.'
+                        : 'Each bar shows the kg added since the previous PR.'}
+                    </p>
+                  </div>
+                  {totalGain !== null && (
+                    <div className="flex gap-4 text-right">
+                      <SummaryStat label="Total gain" value={`+${totalGain} kg`} />
+                      <SummaryStat label="Best jump" value={`+${bestJump ?? 0} kg`} />
+                    </div>
+                  )}
+                </div>
+                <div className="h-56">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={improvementData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border-1)" vertical={false} />
+                      <XAxis dataKey="date" tick={{ fill: 'var(--fg-3)', fontSize: 11 }} />
+                      <YAxis
+                        tick={{ fill: 'var(--fg-3)', fontSize: 11 }}
+                        tickFormatter={(value) => `+${value}`}
+                        width={44}
+                        allowDecimals={false}
+                      />
+                      <Tooltip
+                        cursor={{ fill: 'color-mix(in srgb, var(--xn-clay-500) 10%, transparent)' }}
+                        formatter={(value, name, item) => [
+                          item.payload.previousWeight === null
+                            ? `${item.payload.weight} kg baseline (${item.payload.reps} reps)`
+                            : `+${value} kg to ${item.payload.weight} kg (${item.payload.reps} reps)`,
+                          name,
+                        ]}
+                        labelFormatter={(_, payload) => payload?.[0]?.payload?.fullDate ?? ''}
+                        contentStyle={{
+                          background: 'var(--bg-2)',
+                          border: '1px solid var(--border-1)',
+                          borderRadius: 8,
+                        }}
+                        labelStyle={{ color: 'var(--fg-1)' }}
+                        itemStyle={{ color: 'var(--xn-clay-700)' }}
+                      />
+                      <Bar dataKey="gain" name="PR jump" radius={[6, 6, 0, 0]} maxBarSize={56}>
+                        {improvementData.map((point, index) => (
+                          <Cell
+                            key={`${point.fullDate}-${index}`}
+                            fill={
+                              point.previousWeight === null
+                                ? 'var(--xn-clay-500)'
+                                : 'var(--xn-clay-700)'
+                            }
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {chartData.slice(-4).map((point) => (
+                    <div
+                      key={`${point.fullDate}-${point.weight}-${point.reps}`}
+                      className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2"
+                      style={{ borderColor: 'var(--border-1)', background: 'var(--bg-2)' }}
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-text">{point.weight} kg x {point.reps}</p>
+                        <p className="text-xs text-muted">{point.fullDate}</p>
+                      </div>
+                      <span className="shrink-0 text-sm font-semibold text-[var(--xn-clay-700)]">
+                        {point.gainLabel}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </motion.div>
             ) : (
               <p className="text-sm text-muted">No PR history found for this exercise.</p>

@@ -17,6 +17,31 @@ export interface LogForm {
   notes: string
 }
 
+interface FoodSuggestion {
+  title: string
+  amount: string
+  reason: string
+  examples: string[]
+}
+
+interface MacroStrategy {
+  title: string
+  bestFor: string
+  pros: string
+  cons: string
+  whenToUse: string
+  proteinPct: number
+  carbsPct: number
+  fatPct: number
+  calories: number | null
+  proteinG: number | null
+  carbsG: number | null
+  fatG: number | null
+  mealSplit: string
+  timing: string
+  recommended: boolean
+}
+
 export function toField(value: number | null | undefined) {
   return value == null ? '' : String(value)
 }
@@ -58,6 +83,133 @@ function formatWeightAction(weightDiff: number, tn: Record<string, string>) {
   return tn.insightWeightLossBody.replace('{n}', amount)
 }
 
+function splitExamples(value: string) {
+  return value.split('|').map((item) => item.trim()).filter(Boolean)
+}
+
+function buildFoodSuggestions(
+  avg: { calories: number; proteinG: number; carbsG: number; fatG: number },
+  targets: { calories: number | null; proteinG: number | null; carbsG: number | null; fatG: number | null },
+  tn: Record<string, string>,
+): FoodSuggestion[] {
+  const calorieDiff = targets.calories != null ? Math.round(avg.calories - targets.calories) : null
+  const proteinGap = targets.proteinG != null ? Math.round(targets.proteinG - avg.proteinG) : null
+  const carbsGap = targets.carbsG != null ? Math.round(targets.carbsG - avg.carbsG) : null
+  const fatGap = targets.fatG != null ? Math.round(targets.fatG - avg.fatG) : null
+
+  const suggestions: FoodSuggestion[] = []
+
+  if (proteinGap == null || proteinGap > 10) {
+    suggestions.push({
+      title: tn.foodProteinTitle,
+      amount: proteinGap && proteinGap > 0
+        ? tn.foodProteinAmount.replace('{n}', String(Math.max(20, Math.min(45, proteinGap))))
+        : tn.foodProteinDefaultAmount,
+      reason: tn.foodProteinReason,
+      examples: splitExamples(tn.foodProteinExamples),
+    })
+  }
+
+  if (carbsGap != null && carbsGap > 25) {
+    suggestions.push({
+      title: tn.foodCarbTitle,
+      amount: tn.foodCarbAmount.replace('{n}', String(Math.max(30, Math.min(80, carbsGap)))),
+      reason: tn.foodCarbReason,
+      examples: splitExamples(tn.foodCarbExamples),
+    })
+  }
+
+  if (fatGap != null && fatGap > 8) {
+    suggestions.push({
+      title: tn.foodFatTitle,
+      amount: tn.foodFatAmount.replace('{n}', String(Math.max(10, Math.min(25, fatGap)))),
+      reason: tn.foodFatReason,
+      examples: splitExamples(tn.foodFatExamples),
+    })
+  }
+
+  if (calorieDiff != null && calorieDiff > 180) {
+    suggestions.push({
+      title: tn.foodReduceTitle,
+      amount: tn.foodReduceAmount.replace('{n}', String(calorieDiff)),
+      reason: tn.foodReduceReason,
+      examples: splitExamples(tn.foodReduceExamples),
+    })
+  }
+
+  if (suggestions.length === 0) {
+    suggestions.push({
+      title: tn.foodBalancedTitle,
+      amount: tn.foodBalancedAmount,
+      reason: tn.foodBalancedReason,
+      examples: splitExamples(tn.foodBalancedExamples),
+    })
+  }
+
+  return suggestions.slice(0, 3)
+}
+
+function buildMacroStrategies(
+  summary: NutritionSummaryResponse,
+  avg: { calories: number; proteinG: number; carbsG: number; fatG: number },
+  targets: { calories: number | null; proteinG: number | null; carbsG: number | null; fatG: number | null },
+  tn: Record<string, string>,
+): MacroStrategy[] {
+  const goal = summary.profile.goal
+  const calories = targets.calories
+  const proteinRatio = targetRatio(avg.proteinG, targets.proteinG)
+  const carbsRatio = targetRatio(avg.carbsG, targets.carbsG)
+  const fatRatio = targetRatio(avg.fatG, targets.fatG)
+
+  function macroPlan(proteinPct: number, carbsPct: number, fatPct: number) {
+    return {
+      proteinPct,
+      carbsPct,
+      fatPct,
+      calories,
+      proteinG: calories == null ? null : Math.round((calories * proteinPct / 100) / 4),
+      carbsG: calories == null ? null : Math.round((calories * carbsPct / 100) / 4),
+      fatG: calories == null ? null : Math.round((calories * fatPct / 100) / 9),
+    }
+  }
+
+  return [
+    {
+      title: tn.strategyHighProteinTitle,
+      bestFor: tn.strategyHighProteinBestFor,
+      pros: tn.strategyHighProteinPros,
+      cons: tn.strategyHighProteinCons,
+      whenToUse: tn.strategyHighProteinUse,
+      ...macroPlan(goal === 'Bulk' ? 28 : 35, goal === 'Bulk' ? 47 : 35, goal === 'Bulk' ? 25 : 30),
+      mealSplit: tn.strategyHighProteinSplit,
+      timing: tn.strategyHighProteinTiming,
+      recommended: goal === 'Cut' || goal === 'Maintain' || proteinRatio == null || proteinRatio < 90,
+    },
+    {
+      title: tn.strategyHighCarbTitle,
+      bestFor: tn.strategyHighCarbBestFor,
+      pros: tn.strategyHighCarbPros,
+      cons: tn.strategyHighCarbCons,
+      whenToUse: tn.strategyHighCarbUse,
+      ...macroPlan(25, 55, 20),
+      mealSplit: tn.strategyHighCarbSplit,
+      timing: tn.strategyHighCarbTiming,
+      recommended: goal === 'Bulk' || carbsRatio == null || carbsRatio < 85,
+    },
+    {
+      title: tn.strategyHigherFatTitle,
+      bestFor: tn.strategyHigherFatBestFor,
+      pros: tn.strategyHigherFatPros,
+      cons: tn.strategyHigherFatCons,
+      whenToUse: tn.strategyHigherFatUse,
+      ...macroPlan(25, 35, 40),
+      mealSplit: tn.strategyHigherFatSplit,
+      timing: tn.strategyHigherFatTiming,
+      recommended: fatRatio != null && fatRatio < 80,
+    },
+  ]
+}
+
 export function buildNutritionInsight(
   summary: NutritionSummaryResponse,
   logForm: LogForm,
@@ -84,6 +236,12 @@ export function buildNutritionInsight(
     proteinG: average(source.map((item) => item.proteinG)),
     carbsG: average(source.map((item) => item.carbsG)),
     fatG: average(source.map((item) => item.fatG)),
+  }
+  const targets = {
+    calories: calorieTarget,
+    proteinG: proteinTarget,
+    carbsG: carbsTarget,
+    fatG: fatTarget,
   }
   const weightDiff = bodyweight != null && targetWeight != null ? targetWeight - bodyweight : null
   const calorieDiff = calorieTarget != null ? Math.round(avg.calories - calorieTarget) : null
@@ -136,5 +294,7 @@ export function buildNutritionInsight(
         ? tn.insightMacrosOnTrack
         : tn.insightMacrosNeedWork,
     actions,
+    foodSuggestions: buildFoodSuggestions(avg, targets, tn),
+    macroStrategies: buildMacroStrategies(summary, avg, targets, tn),
   }
 }

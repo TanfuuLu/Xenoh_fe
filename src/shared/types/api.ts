@@ -3,6 +3,27 @@ export type ReportReason = 'Harassment' | 'Spam' | 'Scam' | 'Inappropriate' | 'O
 export type ReportStatus = 'Pending' | 'Resolved' | 'Dismissed'
 export type DayStatus = 'Normal' | 'Rest' | 'Missed'
 export type Gender = 'Male' | 'Female' | 'Other'
+export const DevelopmentDirection = [
+  'Strength',
+  'Hypertrophy',
+  'FatLoss',
+  'Recomposition',
+  'Endurance',
+  'GeneralHealth',
+] as const
+export type DevelopmentDirection = (typeof DevelopmentDirection)[number]
+
+export const TrainingDiscipline = [
+  'Powerlifting',
+  'Bodybuilding',
+  'Weightlifting',
+  'Calisthenics',
+  'CrossFit',
+  'Running',
+  'GeneralFitness',
+] as const
+export type TrainingDiscipline = (typeof TrainingDiscipline)[number]
+
 export type RelationshipStatus =
   | 'Pending'
   | 'Active'

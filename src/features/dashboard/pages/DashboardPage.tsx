@@ -11,6 +11,7 @@ import { Spinner } from '@/shared/components/Spinner'
 import { softCardGroup, softCardItem } from '@/shared/utils/motion'
 import { useLangStore, useT } from '@/shared/i18n'
 import { DailyTipCard } from '@/features/tips'
+import { TrainingCoachTipCard, useTrainingCoachTip } from '@/features/insights'
 import { usePersonalDashboard } from '../api/usePersonalDashboard'
 import { LevelCard, MetricCard } from '../components/dashboardWidgets'
 import {
@@ -29,6 +30,13 @@ export function DashboardPage() {
   const td = useT().dashboard
   const dateLocale = lang === 'vi' ? viLocale : enUS
   const { data, isLoading, isError } = usePersonalDashboard()
+  const {
+    data: coachTip,
+    isLoading: isCoachTipLoading,
+    isFetching: isCoachTipFetching,
+    isError: isCoachTipError,
+    refetch: refetchCoachTip,
+  } = useTrainingCoachTip(Boolean(data?.proInsights.isUnlocked))
   const [plateCalcOpen, setPlateCalcOpen] = useState(false)
   const [plateInput, setPlateInput] = useState<{ value: string; unit: 'kg' | 'lbs' }>({
     value: '100',
@@ -90,7 +98,11 @@ export function DashboardPage() {
           <div className="flex flex-wrap gap-2">
             <Link to="/insights">
               <Button size="sm" className="gap-1.5">
-                <Sparkles size={15} /> {td.aiInsights}
+                <Sparkles size={15} />
+                <span>{td.aiInsights}</span>
+                <span className="rounded-full bg-white/20 px-1.5 py-0.5 text-[10px] font-bold uppercase leading-none">
+                  {td.proBadge}
+                </span>
               </Button>
             </Link>
             <Button
@@ -126,6 +138,17 @@ export function DashboardPage() {
       </motion.section>
 
       <BodyweightPanel latestBodyweight={profile.latestBodyweight} />
+
+      {data.proInsights.isUnlocked && (
+        <TrainingCoachTipCard
+          compact
+          tip={coachTip}
+          isLoading={isCoachTipLoading}
+          isError={isCoachTipError}
+          isFetching={isCoachTipFetching}
+          onRefresh={() => void refetchCoachTip()}
+        />
+      )}
 
       <motion.div variants={shouldReduce ? undefined : softCardGroup} className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
         <NutritionPanel nutrition={data.nutritionToday} />

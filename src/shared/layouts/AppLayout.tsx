@@ -15,10 +15,8 @@ import { useAuthStore } from '@/features/auth'
 import { useLogout } from '@/features/auth'
 import { useT } from '@/shared/i18n'
 import { useLangStore, type Lang } from '@/shared/i18n'
-import { useThemeStore, type Theme } from '@/shared/theme'
 import { usePreferenceStore, type WeightUnit } from '@/shared/preferences'
 import { LanguageSwitcher } from '@/shared/components/LanguageSwitcher'
-import { ThemeToggle } from '@/shared/components/ThemeToggle'
 import { UserAvatar } from '@/shared/components/UserAvatar'
 import { NotificationBell } from '@/features/notifications/components/NotificationBell'
 import { useNotificationHub } from '@/features/notifications/hooks/useNotificationHub'
@@ -47,8 +45,6 @@ export function AppLayout() {
   const tn        = t.nav
   const lang = useLangStore((s) => s.lang)
   const setLang = useLangStore((s) => s.setLang)
-  const theme = useThemeStore((s) => s.theme)
-  const setTheme = useThemeStore((s) => s.setTheme)
   const weightUnit = usePreferenceStore((s) => s.weightUnit)
   const setWeightUnit = usePreferenceStore((s) => s.setWeightUnit)
   const { data: preferences } = useMyPreferences(!!user)
@@ -67,19 +63,17 @@ export function AppLayout() {
   useEffect(() => {
     if (!preferences) return
     setLang(preferences.language)
-    setTheme(preferences.theme)
     setWeightUnit(preferences.weightUnit)
-  }, [preferences, setLang, setTheme, setWeightUnit])
+  }, [preferences, setLang, setWeightUnit])
 
-  function savePreferences(next: Partial<{ language: Lang; theme: Theme; weightUnit: WeightUnit }>) {
+  // Theme is fixed to light; the preferences payload still carries it for the backend contract.
+  function savePreferences(next: Partial<{ language: Lang; weightUnit: WeightUnit }>) {
     const language = next.language ?? lang
-    const nextTheme = next.theme ?? theme
     const nextWeightUnit = next.weightUnit ?? weightUnit
 
     setLang(language)
-    setTheme(nextTheme)
     setWeightUnit(nextWeightUnit)
-    updatePreferences.mutate({ language, theme: nextTheme, weightUnit: nextWeightUnit })
+    updatePreferences.mutate({ language, theme: 'light', weightUnit: nextWeightUnit })
   }
 
   const individualNav = [
@@ -227,7 +221,6 @@ export function AppLayout() {
           {/* Right: lang switcher + notification bell + user menu */}
           <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <LanguageSwitcher variant="text" onChange={(language) => savePreferences({ language })} />
-            <ThemeToggle onChange={(nextTheme) => savePreferences({ theme: nextTheme })} />
             <NotificationBell />
             <div className="relative">
               <button
@@ -298,16 +291,6 @@ export function AppLayout() {
                                 { value: 'vi', label: 'VI' },
                               ]}
                               onChange={(language) => savePreferences({ language })}
-                            />
-                          </PreferenceRow>
-                          <PreferenceRow label="Theme">
-                            <SegmentedPreference
-                              value={theme}
-                              options={[
-                                { value: 'light', label: 'Light' },
-                                { value: 'dark', label: 'Dark' },
-                              ]}
-                              onChange={(nextTheme) => savePreferences({ theme: nextTheme })}
                             />
                           </PreferenceRow>
                           <PreferenceRow label="Weight">
