@@ -101,6 +101,7 @@ export const ENDPOINTS = {
   // Exercises
   exercises: {
     byDay: (dailyWorkoutId: string) => `/api/exercises/by-day/${dailyWorkoutId}`,
+    byWeek: (weeklyWorkoutId: string) => `/api/exercises/by-week/${weeklyWorkoutId}`,
     create: '/api/exercises',
     update: (id: string) => `/api/exercises/${id}`,
     delete: (id: string) => `/api/exercises/${id}`,

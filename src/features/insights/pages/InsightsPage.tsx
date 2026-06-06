@@ -68,8 +68,12 @@ export function InsightsPage() {
   } = useTrainingCoachTip()
 
   const errorMessage = (() => {
-    const e = error as { response?: { data?: { message?: string } }; message?: string } | null | undefined
-    return e?.response?.data?.message ?? e?.message ?? ti.errorGeneric
+    const e = error as
+      | { response?: { status?: number; data?: { message?: string } }; message?: string }
+      | null
+      | undefined
+    if (e?.response?.status === 429) return ti.errorRateLimited
+    return e?.response?.data?.message ?? ti.errorGeneric
   })()
 
   return (

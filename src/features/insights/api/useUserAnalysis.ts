@@ -9,10 +9,16 @@ export const insightsKeys = {
   coachTip: (lang: 'en' | 'vi') => ['insights', 'coach-tip', lang] as const,
 }
 
+// The backend caches AI analysis per (user, language) and re-generates only
+// when the underlying training data changes. The cached payload is stable for
+// minutes, so we keep it fresh client-side for the same window. This avoids
+// re-firing the rate-limited AI endpoints on every dashboard/insights mount
+// (which previously tripped the server's 429 limiter during normal browsing).
+// The "Refresh" buttons call refetch(), which bypasses staleTime on demand.
+const AI_STALE_TIME = 5 * 60 * 1000
+
 /**
- * Loads the user's AI-generated training analysis. The backend caches per
- * (user, language) and re-generates only when underlying data has changed,
- * so this hook can safely re-run on every page mount without burning tokens.
+ * Loads the user's AI-generated training analysis.
  */
 export function useUserAnalysis() {
   const lang = useLangStore((s) => s.lang)
@@ -20,8 +26,7 @@ export function useUserAnalysis() {
     queryKey: insightsKeys.me(lang),
     queryFn: () =>
       api.get<UserAnalysisResponse>(ENDPOINTS.insights.me(lang)).then((r) => r.data),
-    staleTime: 0,
-    refetchOnMount: 'always',
+    staleTime: AI_STALE_TIME,
     retry: false,
   })
 }
@@ -33,8 +38,7 @@ export function useTrainingCoachTip(enabled = true) {
     queryFn: () =>
       api.get<TrainingCoachTipResponse>(ENDPOINTS.insights.coachTip(lang)).then((r) => r.data),
     enabled,
-    staleTime: 0,
-    refetchOnMount: 'always',
+    staleTime: AI_STALE_TIME,
     retry: false,
   })
 }
