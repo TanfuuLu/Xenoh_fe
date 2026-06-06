@@ -2,7 +2,7 @@ import { cn } from '@/shared/utils/cn'
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
 
 interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'danger' | 'ghost'
+  variant?: 'primary' | 'secondary' | 'danger' | 'success' | 'ghost'
   size?: 'sm' | 'md' | 'lg'
   loading?: boolean
   children: ReactNode
@@ -13,6 +13,7 @@ export function Button({ variant = 'primary', size = 'md', loading, children, cl
   const v = variant === 'primary' ? 'primary'
     : variant === 'secondary' ? 'secondary'
     : variant === 'danger' ? 'danger'
+    : variant === 'success' ? 'success'
     : 'ghost'
   const s = size === 'sm' ? 'sm' : size === 'lg' ? 'lg' : ''
 

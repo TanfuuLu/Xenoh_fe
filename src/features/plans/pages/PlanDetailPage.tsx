@@ -29,7 +29,6 @@ export function PlanDetailPage() {
   const { planId = '' } = useParams()
   const shouldReduce = useReducedMotion()
   const navigate = useNavigate()
-  const isCoach = useAuthStore((s) => s.user?.roles?.includes('Coach') ?? false)
   const currentUserId = useAuthStore((s) => s.user?.id)
   const { data: plan, isLoading: planLoading, isError: planError } = usePlan(planId)
   const {
@@ -47,8 +46,15 @@ export function PlanDetailPage() {
   const tpd = t.planDetail
   const tc  = t.common
 
-  // Coach can always edit; Individual can only edit their own Self plans
-  const canEdit = isCoach || plan?.planType === 'Self'
+  // Mirror backend authorization: a Coach plan is editable only by the coach who
+  // created it; a Self plan is editable only by its owner. This prevents a user
+  // who is *both* a coach and someone else's client from editing the plan their
+  // own coach assigned to them.
+  const canEdit = plan
+    ? plan.planType === 'Self'
+      ? plan.ownerId === currentUserId
+      : plan.createdByCoachId === currentUserId
+    : false
   // Only the plan owner can mark sets as done
   const canComplete = !!currentUserId && plan?.ownerId === currentUserId
 

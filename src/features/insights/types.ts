@@ -133,3 +133,12 @@ export interface TrainingCoachTipResponse {
   nextAction: string
   confidence: TrainingCoachTipConfidence
 }
+
+export interface CoachChatMessage {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+export interface CoachChatResponse {
+  reply: string
+}

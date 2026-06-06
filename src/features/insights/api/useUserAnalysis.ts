@@ -1,8 +1,8 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { api } from '@/shared/api/axios'
 import { ENDPOINTS } from '@/shared/api/endpoints'
 import { useLangStore } from '@/shared/i18n'
-import type { TrainingCoachTipResponse, UserAnalysisResponse } from '../types'
+import type { CoachChatMessage, CoachChatResponse, TrainingCoachTipResponse, UserAnalysisResponse } from '../types'
 
 export const insightsKeys = {
   me: (lang: 'en' | 'vi') => ['insights', 'me', lang] as const,
@@ -40,5 +40,19 @@ export function useTrainingCoachTip(enabled = true) {
     enabled,
     staleTime: AI_STALE_TIME,
     retry: false,
+  })
+}
+
+/**
+ * Sends the recent conversation to the AI coach and returns a single reply.
+ * Stateless — the page owns the message history and passes it on every send.
+ */
+export function useCoachChat() {
+  const lang = useLangStore((s) => s.lang)
+  return useMutation({
+    mutationFn: (messages: CoachChatMessage[]) =>
+      api
+        .post<CoachChatResponse>(ENDPOINTS.insights.coachChat(), { language: lang, messages })
+        .then((r) => r.data),
   })
 }

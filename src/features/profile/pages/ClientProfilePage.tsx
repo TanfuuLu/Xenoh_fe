@@ -347,9 +347,18 @@ export function ClientProfilePage() {
             <ClipboardList size={14} />
             <h2 className="text-sm font-semibold uppercase tracking-wide">{vx.trainingPlan}</h2>
           </div>
-          <Button size="sm" onClick={openPlanModal}>
-            <Plus size={14} /> {vx.createPlan}
-          </Button>
+          <div className="flex items-center gap-2">
+            {activePlan && (
+              <Link to={`/coach/clients/${clientId}/today-workout?planId=${activePlan.id}`}>
+                <Button size="sm" variant="secondary">
+                  <Dumbbell size={14} /> {lang === 'vi' ? 'Buổi tập hôm nay' : "Today's workout"}
+                </Button>
+              </Link>
+            )}
+            <Button size="sm" onClick={openPlanModal}>
+              <Plus size={14} /> {vx.createPlan}
+            </Button>
+          </div>
         </div>
         <div className="mb-4 rounded-xl border border-border p-4" style={{ background: 'var(--bg-2)' }}>
           <div className="flex items-center justify-between gap-3">

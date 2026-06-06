@@ -167,6 +167,7 @@ export const ENDPOINTS = {
   insights: {
     me: (lang: 'en' | 'vi') => `/api/insights/me?lang=${lang}`,
     coachTip: (lang: 'en' | 'vi') => `/api/insights/me/coach-tip?lang=${lang}`,
+    coachChat: () => `/api/insights/me/coach-chat`,
   },
 
   // Notifications

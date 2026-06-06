@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import type { InfiniteData } from '@tanstack/react-query'
 import { api } from '@/shared/api/axios'
@@ -74,9 +75,17 @@ export function useExercises(dailyWorkoutId: string) {
     },
   })
 
+  // Memoize the flattened list so its reference stays stable while the underlying
+  // pages are unchanged. Without this, every render produces a new array, which
+  // makes consumers that copy it into state inside an effect loop infinitely.
+  const data = useMemo(
+    () => query.data?.pages.flatMap((page) => page.items),
+    [query.data],
+  )
+
   return {
     ...query,
-    data: query.data?.pages.flatMap((page) => page.items),
+    data,
     totalCount: query.data?.pages[0]?.totalCount ?? 0,
   }
 }

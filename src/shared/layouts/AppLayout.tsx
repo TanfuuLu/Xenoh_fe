@@ -7,7 +7,7 @@ import {
   UserCheck, Menu, X, LogOut, ChevronDown,
   PanelLeftClose, PanelLeftOpen, TrendingUp,
   LockKeyhole, Lock, BookOpen, CreditCard,
-  Shield, Utensils, Ban, KeyRound, MessageCircle,
+  Shield, Utensils, Ban, KeyRound, MessageCircle, MessagesSquare,
 } from 'lucide-react'
 import { cn } from '@/shared/utils/cn'
 import { Link as RouterLink } from 'react-router'
@@ -57,8 +57,9 @@ export function AppLayout() {
 
   useNotificationHub()
   useChatUnreadSync()
-  const { data: myCoach } = useMyCoach(isIndividual)
-  const hasChatSidebar = isCoach && location.pathname === '/coach/clients'
+  // A user can have a coach even while holding the Coach role (they're both a
+  // coach and someone else's client), so fetch for everyone except admins.
+  const { data: myCoach } = useMyCoach(!isAdmin)
 
   useEffect(() => {
     if (!preferences) return
@@ -94,6 +95,11 @@ export function AppLayout() {
     { to: '/progress',        icon: TrendingUp,        label: tn.progress,         color: '#f59e0b' },
     { to: '/nutrition',       icon: Utensils,          label: 'Nutrition',         color: '#ec4899' },
     { to: '/coach/clients',   icon: UserCheck,         label: tn.clients,          color: '#8b5cf6' },
+    { to: '/coach/chat',      icon: MessagesSquare,    label: 'Chat',              color: '#8b5cf6' },
+    // A coach can also be someone else's client: show their coach, or let them connect to one.
+    ...(myCoach
+      ? [{ to: '/coach', icon: MessageCircle, label: 'My Coach', color: '#8b5cf6' }]
+      : [{ to: '/enter-coach-code', icon: KeyRound, label: t.enterCoachCode.label, color: '#8b5cf6' }]),
     { to: '/subscription',    icon: CreditCard,        label: 'Subscription',      color: '#eab308' },
   ]
 
@@ -332,10 +338,7 @@ export function AppLayout() {
         </header>
 
         {/* Page content */}
-        <main
-          className="flex-1 overflow-y-auto"
-          style={hasChatSidebar ? { paddingRight: 'calc(22rem + 16px)' } : undefined}
-        >
+        <main className="flex-1 overflow-y-auto">
           <div className={cn('xn-page-container', isWidePage && 'wide', isInsightsPage && 'insights-page')}>
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
@@ -498,7 +501,7 @@ function SidebarInner({
           <NavLink
             key={to}
             to={to}
-            end={to === '/dashboard'}
+            end={to === '/dashboard' || to === '/coach'}
             onClick={() => onNavClick?.(to)}
             title={mini ? label : undefined}
             className={({ isActive }) => cn('xn-nav-item', isActive && 'active')}

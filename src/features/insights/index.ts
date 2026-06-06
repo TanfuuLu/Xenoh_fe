@@ -1,5 +1,6 @@
-export { useTrainingCoachTip, useUserAnalysis, insightsKeys } from './api/useUserAnalysis'
+export { useTrainingCoachTip, useUserAnalysis, useCoachChat, insightsKeys } from './api/useUserAnalysis'
 export { InsightsPage } from './pages/InsightsPage'
+export { AiCoachChatPage } from './pages/AiCoachChatPage'
 export { AiInsightsPanel } from './components/AiInsightsPanel'
 export { TrainingCoachTipCard } from './components/TrainingCoachTipCard'
 export type { UserAnalysisResponse, AnalysisContent, AnalysisSection, AnalysisRecommendation } from './types'

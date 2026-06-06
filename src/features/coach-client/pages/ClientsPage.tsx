@@ -4,8 +4,8 @@ import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import {
   CheckCircle2, XCircle, User, Users, Clock, Mail, FileText,
   Flame, Dumbbell, Ruler, Weight, AlertTriangle, TrendingUp,
-  CalendarDays, Scale, UserMinus, RefreshCw,
-  ClipboardList, Plus, Trash2, KeyRound,
+  CalendarDays, UserMinus, RefreshCw,
+  ClipboardList, KeyRound,
 } from 'lucide-react'
 import { useAuthStore } from '@/features/auth'
 import { useSubscription } from '@/features/billing/api/useSubscription'
@@ -17,7 +17,7 @@ import { Badge } from '@/shared/components/Badge'
 import { Spinner } from '@/shared/components/Spinner'
 import { Modal } from '@/shared/components/Modal'
 import { useConfirm } from '@/shared/components/ConfirmModal'
-import { staggerContainer, slideUp } from '@/shared/utils/motion'
+import { staggerContainer, slideUp, softCardGroup, softCardItem } from '@/shared/utils/motion'
 import { useLangStore, useT } from '@/shared/i18n'
 import { usePublicUserProfile } from '@/features/profile'
 import { InlineTip } from '@/features/tips'
@@ -33,12 +33,8 @@ import {
   useRejectTermination,
   useAcceptRenewal,
   useRejectRenewal,
-  useMyInviteCodes,
-  useDeleteInviteCode,
 } from '../index'
-import { CoachChatSidebar } from '@/features/chat/components/CoachChatSidebar'
 import { RenewalModal } from '../components/RenewalModal'
-import { InviteCodeModal } from '../components/InviteCodeModal'
 import { CoachScheduleCalendar } from '../components/CoachScheduleCalendar'
 
 function formatContractDate(value: string | null): string {
@@ -51,14 +47,14 @@ function formatContractDate(value: string | null): string {
 
 function StatCard({ icon, label, value, sub }: { icon: ReactNode; label: string; value: string; sub?: string }) {
   return (
-    <div className="rounded-xl px-3 py-2.5" style={{ background: 'var(--bg-3)' }}>
+    <motion.div variants={softCardItem} className="xn-card">
       <div className="mb-1 flex items-center gap-1.5 text-xs text-muted">
         {icon}
         <span className="uppercase tracking-wide">{label}</span>
       </div>
-      <p className="font-semibold text-text">{value}</p>
+      <p className="text-lg font-bold text-text">{value}</p>
       {sub && <p className="mt-0.5 text-xs text-muted">{sub}</p>}
-    </div>
+    </motion.div>
   )
 }
 
@@ -109,7 +105,7 @@ function RequesterProfileModal({
 
           {profile.bio && (
             <div className="flex items-start gap-2 text-muted">
-              <FileText size={14} className="mt-0.5 flex-shrink-0" />
+              <FileText size={14} className="mt-0.5 shrink-0" />
               <p className="text-sm leading-relaxed">{profile.bio}</p>
             </div>
           )}
@@ -138,7 +134,7 @@ function RequesterProfileModal({
             <Button variant="danger" size="sm" loading={declining} onClick={onDecline}>
               <XCircle size={14} /> Decline
             </Button>
-            <Button size="sm" loading={accepting} onClick={onAccept}>
+            <Button variant="success" size="sm" loading={accepting} onClick={onAccept}>
               <CheckCircle2 size={14} /> Accept
             </Button>
           </div>
@@ -157,6 +153,7 @@ interface ClientCardProps {
   stats: CoachClientDashboardResponse | undefined
   currentUserId: string
   onView: () => void
+  onOpenWorkout: () => void
   onDisconnect: () => void
   onCancelDisconnect: () => void
   onAcceptDisconnect: () => void
@@ -181,7 +178,7 @@ function reasonBadgeVariant(reason: string): 'success' | 'danger' | 'warning' | 
   return 'default'
 }
 
-function ClientCard({ client, stats, currentUserId, onView, onDisconnect, onCancelDisconnect, onAcceptDisconnect, onRejectDisconnect, onProposeRenewal, onAcceptRenewal, onRejectRenewal, disconnecting, renewalPending }: ClientCardProps) {
+function ClientCard({ client, stats, currentUserId, onView, onOpenWorkout, onDisconnect, onCancelDisconnect, onAcceptDisconnect, onRejectDisconnect, onProposeRenewal, onAcceptRenewal, onRejectRenewal, disconnecting, renewalPending }: ClientCardProps) {
   const lang = useLangStore((s) => s.lang)
   const tx = clientsPageText(lang)
   const isPendingTermination = client.status === 'PendingTermination'
@@ -198,7 +195,6 @@ function ClientCard({ client, stats, currentUserId, onView, onDisconnect, onCanc
   )
   const isInactive = daysSinceLast === null || daysSinceLast > 5
   const progress = stats?.activePlanProgressPercent ?? stats?.planProgressPercent ?? null
-  const big3 = stats?.bigThreePRs
   const attentionLevel = stats?.attentionLevel ?? 'None'
   const attentionVariant =
     attentionLevel === 'High' ? 'danger' :
@@ -218,30 +214,114 @@ function ClientCard({ client, stats, currentUserId, onView, onDisconnect, onCanc
 
   return (
     <motion.div
-      variants={slideUp}
-      className="rounded-2xl overflow-hidden cursor-pointer transition-shadow hover:shadow-md"
-      style={{
-        background: 'var(--bg-2)',
-        border: `1px solid ${isInactive ? 'rgba(245,158,11,0.4)' : 'var(--border-1)'}`,
-        borderLeft: isInactive ? '3px solid var(--color-warning)' : undefined,
-      }}
+      variants={softCardItem}
+      className="xn-card cursor-pointer"
+      style={isInactive ? {
+        borderColor: 'rgba(245,158,11,0.5)',
+        borderLeftWidth: '3px',
+        borderLeftColor: 'var(--color-warning)',
+      } : undefined}
       onClick={onView}
     >
-      {/* Top row: avatar + identity + actions */}
-      <div className="flex items-start justify-between gap-3 px-4 pt-4 pb-3">
-        <div className="flex items-center gap-3 min-w-0">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-4">
+        {/* Identity */}
+        <div className="flex items-center gap-3 min-w-0 lg:flex-1">
           <UserAvatar name={client.fullName} email={client.email} imageUrl={stats?.avatarUrl} size={44} variant="primary" />
           <div className="min-w-0">
             <p className="font-semibold text-text truncate">{client.fullName}</p>
             <p className="text-xs text-muted truncate">{client.email}</p>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--fg-3)' }}>
+            <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--fg-3)' }}>
               {tx.since} {format(new Date(client.connectedAt), 'dd/MM/yyyy')}
+              {' · '}
+              {formatContractDate(client.startDate)} → {formatContractDate(client.endDate)}
+              {isPendingRenewal && client.proposedEndDate && (
+                <span className="ml-1 text-warning">({tx.proposed} {formatContractDate(client.proposedEndDate)})</span>
+              )}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-          {attentionLevel !== 'None' && !isPendingTermination && (
+        {/* Plan progress */}
+        <div className="space-y-1.5 lg:w-56 lg:shrink-0 lg:border-l lg:pl-4" style={{ borderColor: 'var(--border-1)' }}>
+          <div className="flex items-center justify-between gap-2 text-xs">
+            <span className="flex items-center gap-1 text-muted truncate">
+              <TrendingUp size={11} className="shrink-0" />
+              {stats?.activePlanName ?? tx.planProgress}
+            </span>
+            <span className="font-semibold text-text">
+              {progress !== null ? `${progress}%` : '—'}
+            </span>
+          </div>
+          <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ background: 'var(--bg-3)' }}>
+            {progress !== null && (
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${progress}%` }}
+                transition={{ duration: 0.6, ease: 'easeOut' }}
+                className="h-full rounded-full"
+                style={{
+                  background: progress >= 80
+                    ? 'var(--color-success)'
+                    : progress >= 40
+                    ? 'var(--color-primary)'
+                    : 'var(--color-warning)',
+                }}
+              />
+            )}
+          </div>
+          {stats?.attentionReasons && stats.attentionReasons.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {stats.attentionReasons.map((reason) => (
+                <Badge key={reason} variant={reasonBadgeVariant(reason)}>
+                  {translateAttentionReason(reason, lang)}
+                </Badge>
+              ))}
+            </div>
+          )}
+          {completionLabel && (
+            <div
+              className="flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs"
+              style={{ background: completedWorkoutToday ? 'rgba(34,197,94,0.12)' : 'var(--bg-3)' }}
+            >
+              <span
+                className="flex items-center gap-1 font-medium"
+                style={{ color: completedWorkoutToday ? 'var(--color-success)' : 'var(--fg-2)' }}
+              >
+                <CheckCircle2 size={12} />
+                {completionLabel}
+              </span>
+              {completionCount && <span style={{ color: 'var(--fg-3)' }}>{completionCount}</span>}
+            </div>
+          )}
+        </div>
+
+        {/* Last workout */}
+        <div className="lg:w-28 lg:shrink-0 lg:border-l lg:pl-4" style={{ borderColor: 'var(--border-1)' }}>
+          <div className="flex items-center gap-1 text-xs text-muted mb-0.5">
+            <CalendarDays size={11} />
+            {tx.lastWorkout}
+          </div>
+          {stats?.lastWorkoutDate ? (
+            <>
+              <p className="text-xs font-semibold text-text">
+                {format(new Date(stats.lastWorkoutDate), 'dd/MM')}
+              </p>
+              <p className="text-xs" style={{ color: isInactive ? 'var(--color-warning)' : 'var(--fg-3)' }}>
+                {formatDistanceToNow(new Date(stats.lastWorkoutDate), { addSuffix: true })}
+              </p>
+            </>
+          ) : (
+            <p className="text-xs text-muted">{tx.noData}</p>
+          )}
+        </div>
+
+        {/* Status + actions */}
+        <div
+          className="flex flex-col items-start gap-2 lg:items-end lg:shrink-0 lg:border-l lg:pl-4"
+          style={{ borderColor: 'var(--border-1)' }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {(attentionLevel !== 'None' && !isPendingTermination) && (
             <Badge variant={attentionVariant}>
               <AlertTriangle size={11} className="mr-0.5" />
               {translateAttentionLevel(attentionLevel, lang)}
@@ -265,158 +345,51 @@ function ClientCard({ client, stats, currentUserId, onView, onDisconnect, onCanc
               {iInitiatedRenewal ? tx.renewalPending : tx.renewalProposed}
             </Badge>
           )}
-          <Button variant="ghost" size="sm" onClick={onView}>
-            <User size={14} />
-          </Button>
-          {!isPendingTermination && (
-            <Button variant="ghost" size="sm" loading={disconnecting} onClick={onDisconnect}>
-              <XCircle size={14} className="text-danger" />
-            </Button>
-          )}
-          {iInitiated && (
-            <Button variant="ghost" size="sm" loading={disconnecting} onClick={onCancelDisconnect}>
-              <XCircle size={14} className="text-muted" />
-            </Button>
-          )}
-          {clientInitiated && (
-            <>
-              <Button size="sm" variant="danger" loading={disconnecting} onClick={onAcceptDisconnect}>
-                <CheckCircle2 size={14} />
-              </Button>
-              <Button size="sm" variant="ghost" loading={disconnecting} onClick={onRejectDisconnect}>
-                <XCircle size={14} />
-              </Button>
-            </>
-          )}
-          {(isExpired || iInitiatedRenewal) && (
-            <Button size="sm" variant="ghost" onClick={onProposeRenewal}>
-              <RefreshCw size={14} />
-            </Button>
-          )}
-          {clientInitiatedRenewal && (
-            <>
-              <Button size="sm" loading={renewalPending} onClick={onAcceptRenewal}>
-                <CheckCircle2 size={14} />
-              </Button>
-              <Button size="sm" variant="ghost" loading={renewalPending} onClick={onRejectRenewal}>
-                <XCircle size={14} />
-              </Button>
-            </>
-          )}
-        </div>
-      </div>
 
-      <div className="px-4 pb-2 text-xs text-muted">
-        {tx.contract}: {formatContractDate(client.startDate)} → {formatContractDate(client.endDate)}
-        {isPendingRenewal && client.proposedEndDate && (
-          <span className="ml-1 text-warning">({tx.proposed} {formatContractDate(client.proposedEndDate)})</span>
-        )}
-      </div>
-
-      {/* Progress bar */}
-      <div className="px-4 pb-3 space-y-1.5">
-        <div className="flex items-center justify-between text-xs">
-          <span className="flex items-center gap-1 text-muted">
-            <TrendingUp size={11} />
-            {stats?.activePlanName ?? tx.planProgress}
-          </span>
-          <span className="font-semibold text-text">
-            {progress !== null ? `${progress}%` : '—'}
-          </span>
-        </div>
-        <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ background: 'var(--bg-3)' }}>
-          {progress !== null && (
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.6, ease: 'easeOut' }}
-              className="h-full rounded-full"
-              style={{
-                background: progress >= 80
-                  ? 'var(--color-success)'
-                  : progress >= 40
-                  ? 'var(--color-primary)'
-                  : 'var(--color-warning)',
-              }}
-            />
-          )}
-        </div>
-        {stats?.attentionReasons && stats.attentionReasons.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 pt-1">
-            {stats.attentionReasons.map((reason) => (
-              <Badge key={reason} variant={reasonBadgeVariant(reason)}>
-                {translateAttentionReason(reason, lang)}
-              </Badge>
-            ))}
-          </div>
-        )}
-        {completionLabel && (
-          <div
-            className="flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs"
-            style={{ background: completedWorkoutToday ? 'rgba(34,197,94,0.12)' : 'var(--bg-3)' }}
-          >
-            <span
-              className="flex items-center gap-1 font-medium"
-              style={{ color: completedWorkoutToday ? 'var(--color-success)' : 'var(--fg-2)' }}
-            >
-              <CheckCircle2 size={12} />
-              {completionLabel}
-            </span>
-            {completionCount && (
-              <span style={{ color: 'var(--fg-3)' }}>
-                {completionCount}
-              </span>
+          <div className="flex items-center gap-1">
+            {stats?.activePlanId && (
+              <Button variant="secondary" size="sm" onClick={onOpenWorkout} title={tx.viewWorkout}>
+                <Dumbbell size={14} />
+              </Button>
             )}
-          </div>
-        )}
-      </div>
-
-      {/* Stats row */}
-      <div
-        className="grid grid-cols-3 divide-x text-center"
-        style={{ borderTop: '1px solid var(--border-1)' }}
-      >
-        {/* Last workout */}
-        <div className="px-3 py-2.5">
-          <div className="flex items-center justify-center gap-1 text-xs text-muted mb-0.5">
-            <CalendarDays size={11} />
-            {tx.lastWorkout}
-          </div>
-          {stats?.lastWorkoutDate ? (
-            <>
-              <p className="text-xs font-semibold text-text">
-                {format(new Date(stats.lastWorkoutDate), 'dd/MM')}
-              </p>
-              <p className="text-xs" style={{ color: isInactive ? 'var(--color-warning)' : 'var(--fg-3)' }}>
-                {formatDistanceToNow(new Date(stats.lastWorkoutDate), { addSuffix: true })}
-              </p>
-            </>
-          ) : (
-            <p className="text-xs text-muted mt-1">{tx.noData}</p>
-          )}
-        </div>
-
-        {/* Bodyweight */}
-        <div className="px-3 py-2.5">
-          <div className="flex items-center justify-center gap-1 text-xs text-muted mb-0.5">
-            <Scale size={11} />
-            {tx.weight}
-          </div>
-          <p className="text-xs font-semibold text-text mt-1">
-            {stats?.latestBodyweightKg ? `${stats.latestBodyweightKg} kg` : '—'}
-          </p>
-        </div>
-
-        {/* Big 3 */}
-        <div className="px-3 py-2.5">
-          <div className="flex items-center justify-center gap-1 text-xs text-muted mb-0.5">
-            <Dumbbell size={11} />
-            {tx.bigThreePr}
-          </div>
-          <div className="text-xs space-y-0.5">
-            <p><span className="text-muted">S</span> <span className="font-semibold text-text">{big3?.squat ?? '—'}{big3?.squat ? ' kg' : ''}</span></p>
-            <p><span className="text-muted">B</span> <span className="font-semibold text-text">{big3?.bench ?? '—'}{big3?.bench ? ' kg' : ''}</span></p>
-            <p><span className="text-muted">D</span> <span className="font-semibold text-text">{big3?.deadlift ?? '—'}{big3?.deadlift ? ' kg' : ''}</span></p>
+            <Button variant="ghost" size="sm" onClick={onView}>
+              <User size={14} />
+            </Button>
+            {!isPendingTermination && (
+              <Button variant="danger" size="sm" loading={disconnecting} onClick={onDisconnect}>
+                <XCircle size={14} />
+              </Button>
+            )}
+            {iInitiated && (
+              <Button variant="ghost" size="sm" loading={disconnecting} onClick={onCancelDisconnect}>
+                <XCircle size={14} className="text-muted" />
+              </Button>
+            )}
+            {clientInitiated && (
+              <>
+                <Button size="sm" variant="success" loading={disconnecting} onClick={onAcceptDisconnect}>
+                  <CheckCircle2 size={14} />
+                </Button>
+                <Button size="sm" variant="danger" loading={disconnecting} onClick={onRejectDisconnect}>
+                  <XCircle size={14} />
+                </Button>
+              </>
+            )}
+            {(isExpired || iInitiatedRenewal) && (
+              <Button size="sm" variant="ghost" onClick={onProposeRenewal}>
+                <RefreshCw size={14} />
+              </Button>
+            )}
+            {clientInitiatedRenewal && (
+              <>
+                <Button size="sm" variant="success" loading={renewalPending} onClick={onAcceptRenewal}>
+                  <CheckCircle2 size={14} />
+                </Button>
+                <Button size="sm" variant="danger" loading={renewalPending} onClick={onRejectRenewal}>
+                  <XCircle size={14} />
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -447,9 +420,6 @@ export function ClientsPage() {
   const { mutate: rejectRenewal, isPending: rejectingRenewal } = useRejectRenewal()
   const { confirm, ConfirmDialog } = useConfirm()
   const [renewalTarget, setRenewalTarget] = useState<ClientResponse | null>(null)
-  const [showInviteModal, setShowInviteModal] = useState(false)
-  const { data: inviteCodes } = useMyInviteCodes()
-  const { mutate: deleteInviteCode } = useDeleteInviteCode()
   const t   = useT()
   const tcl = t.clients
 
@@ -512,9 +482,14 @@ export function ClientsPage() {
   return (
     <>
     {ConfirmDialog}
-    <div className="space-y-6 sm:space-y-8">
+    <motion.div
+      className="space-y-6 sm:space-y-8"
+      initial={shouldReduce ? false : 'hidden'}
+      animate="visible"
+      variants={staggerContainer}
+    >
       {/* Page header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+      <motion.div variants={slideUp} className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold text-text">{tcl.title}</h1>
@@ -530,21 +505,26 @@ export function ClientsPage() {
             )}
           </p>
         </div>
-      </div>
+        <Button variant="secondary" size="sm" className="self-start" onClick={() => navigate('/coach/key-vault')}>
+          <KeyRound size={14} /> {tx.keyVault}
+        </Button>
+      </motion.div>
 
-      <div className="grid gap-3 min-[390px]:grid-cols-2 lg:grid-cols-4">
+      <motion.div variants={softCardGroup} className="grid gap-3 min-[390px]:grid-cols-2 lg:grid-cols-4">
         <StatCard icon={<Users size={15} />} label={tx.statActiveClients} value={String(activeClients.length)} />
         <StatCard icon={<AlertTriangle size={15} />} label={tx.statNeedAttention} value={String(needsAttentionCount)} />
         <StatCard icon={<ClipboardList size={15} />} label={tx.statNoActivePlan} value={String(noActivePlanCount)} />
         <StatCard icon={<CalendarDays size={15} />} label={tx.statInactive} value={String(inactiveCount)} />
-      </div>
+      </motion.div>
 
       {/* Schedule calendar */}
-      <CoachScheduleCalendar
-        clients={activeClients}
-        pendingRequests={pending ?? []}
-        maxClients={maxClients}
-      />
+      <motion.div variants={slideUp}>
+        <CoachScheduleCalendar
+          clients={activeClients}
+          pendingRequests={pending ?? []}
+          maxClients={maxClients}
+        />
+      </motion.div>
 
       {/* Pending requests */}
       {(pending?.length ?? 0) > 0 && (
@@ -585,6 +565,7 @@ export function ClientsPage() {
                   </div>
                   <div className="flex w-full gap-2 sm:w-auto">
                     <Button
+                      variant="success"
                       size="sm"
                       className="flex-1 sm:flex-none"
                       loading={accepting}
@@ -618,7 +599,7 @@ export function ClientsPage() {
           initial={shouldReduce ? false : 'hidden'}
           animate="visible"
           variants={staggerContainer}
-          className="grid gap-3 md:grid-cols-2"
+          className="max-h-[70vh] space-y-3 overflow-y-auto pr-1"
         >
           <AnimatePresence>
             {sortedActiveClients.map((client) => (
@@ -628,6 +609,10 @@ export function ClientsPage() {
                 stats={statsMap.get(client.clientId)}
                 currentUserId={currentUserId}
                 onView={() => navigate(`/coach/clients/${client.clientId}`)}
+                onOpenWorkout={() => {
+                  const planId = statsMap.get(client.clientId)?.activePlanId
+                  navigate(`/coach/clients/${client.clientId}/today-workout${planId ? `?planId=${planId}` : ''}`)
+                }}
                 onDisconnect={async () => {
                   if (await confirm(tcl.disconnectConfirm.replace('{name}', client.fullName), { confirmLabel: tcl.disconnect, danger: true })) {
                     requestTermination(client.relationshipId)
@@ -646,69 +631,9 @@ export function ClientsPage() {
           </AnimatePresence>
 
           {activeClients.length === 0 && (
-            <Card className="py-8 text-center text-muted md:col-span-2">{tcl.noActive}</Card>
+            <Card className="py-8 text-center text-muted">{tcl.noActive}</Card>
           )}
         </motion.div>
-      </section>
-
-      {/* ─── Invite Codes section ─────────────────────────────────────── */}
-      <section>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted flex items-center gap-1.5">
-            <KeyRound size={13} />
-            Mã Coach ({(inviteCodes ?? []).length})
-          </h2>
-          <Button size="sm" variant="secondary" onClick={() => setShowInviteModal(true)}>
-            <Plus size={13} /> Tạo mã
-          </Button>
-        </div>
-
-        {(!inviteCodes || inviteCodes.length === 0) ? (
-          <Card className="py-6 text-center text-sm text-muted">
-            Chưa có mã Coach. Tạo mã để mời client kết nối.
-          </Card>
-        ) : (
-          <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--border-1)' }}>
-            {inviteCodes.map((code, idx) => {
-              const isUsed = code.isUsed
-              const isExpiredCode = !code.isUsed && new Date(code.coachingEndDate) < new Date()
-              const statusLabel = isUsed ? 'Đã dùng' : isExpiredCode ? 'Hết hạn' : 'Chưa dùng'
-              const statusColor = isUsed ? 'var(--fg-3)' : isExpiredCode ? 'var(--color-warning)' : 'var(--color-success)'
-              return (
-                <div
-                  key={code.id}
-                  className="flex items-center gap-3 px-4 py-3"
-                  style={{
-                    background: idx % 2 === 0 ? 'var(--bg-2)' : 'var(--surface)',
-                    borderTop: idx > 0 ? '1px solid var(--border-1)' : undefined,
-                  }}
-                >
-                  <span className="font-mono font-bold text-sm tracking-widest flex-1" style={{ color: 'var(--fg-1)' }}>
-                    {code.code}
-                  </span>
-                  <span className="text-xs hidden sm:block" style={{ color: 'var(--fg-3)' }}>
-                    {format(new Date(code.coachingStartDate), 'dd/MM/yy')} →{' '}
-                    {format(new Date(code.coachingEndDate), 'dd/MM/yy')}
-                  </span>
-                  <span className="text-xs font-medium" style={{ color: statusColor }}>
-                    {statusLabel}
-                  </span>
-                  {!isUsed && !isExpiredCode && (
-                    <button
-                      type="button"
-                      className="ml-1 opacity-60 hover:opacity-100 transition-opacity"
-                      style={{ color: 'var(--color-danger)' }}
-                      title="Xóa mã"
-                      onClick={() => deleteInviteCode(code.id)}
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        )}
       </section>
 
       {previewReq && (
@@ -731,22 +656,7 @@ export function ClientsPage() {
         />
       )}
 
-      {showInviteModal && (
-        <InviteCodeModal onClose={() => setShowInviteModal(false)} />
-      )}
-
-    </div>
-
-    {/* ── Always-visible chat sidebar — right edge of viewport ─────────── */}
-    <CoachChatSidebar
-      clients={sortedActiveClients
-        .filter((c) => c.status === 'Active')
-        .map((c) => ({
-          relationshipId: c.relationshipId,
-          fullName: c.fullName,
-          avatarUrl: statsMap.get(c.clientId)?.avatarUrl,
-        }))}
-    />
+    </motion.div>
     </>
   )
 }
@@ -775,6 +685,8 @@ function clientsPageText(lang: 'en' | 'vi') {
       bigThreePr: 'PR Big 3',
       doneToday: 'Đã tập hôm nay',
       lastDone: 'Tập gần nhất {time}',
+      viewWorkout: 'Buổi tập hôm nay',
+      keyVault: 'Key Vault',
     }
     : {
       activeClientsCount: '{n} active client(s)',
@@ -798,6 +710,8 @@ function clientsPageText(lang: 'en' | 'vi') {
       bigThreePr: 'Big 3 PR',
       doneToday: 'Done today',
       lastDone: 'Last done {time}',
+      viewWorkout: "Today's workout",
+      keyVault: 'Key Vault',
     }
 }
 

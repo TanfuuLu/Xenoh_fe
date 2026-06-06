@@ -565,6 +565,28 @@ body {
 }
 .xn-btn.sm { font-size: 12px; padding: 5px 11px; }
 
+/* Colored intent variants — override the neutral defaults above */
+.xn-btn.success {
+  background: var(--xn-success);
+  color: #fff;
+  border-color: var(--xn-success);
+}
+.xn-btn.success:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--xn-success) 86%, black);
+  color: #fff;
+  border-color: color-mix(in srgb, var(--xn-success) 86%, black);
+}
+.xn-btn.danger {
+  background: var(--xn-danger);
+  color: #fff;
+  border-color: var(--xn-danger);
+}
+.xn-btn.danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--xn-danger) 86%, black);
+  color: #fff;
+  border-color: color-mix(in srgb, var(--xn-danger) 86%, black);
+}
+
 @media (max-width: 767px) {
   html {
     font-size: 85%;

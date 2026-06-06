@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/shared/api/axios'
 import { ENDPOINTS } from '@/shared/api/endpoints'
@@ -25,9 +26,14 @@ export function useWeeklyWorkouts(planId: string) {
     },
   })
 
+  const data = useMemo(
+    () => query.data?.pages.flatMap((page) => page.items),
+    [query.data],
+  )
+
   return {
     ...query,
-    data: query.data?.pages.flatMap((page) => page.items),
+    data,
     totalCount: query.data?.pages[0]?.totalCount ?? 0,
   }
 }

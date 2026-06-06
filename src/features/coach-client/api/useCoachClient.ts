@@ -3,7 +3,6 @@ import type { AxiosError } from 'axios'
 import { api } from '@/shared/api/axios'
 import { ENDPOINTS } from '@/shared/api/endpoints'
 import { useLangStore } from '@/shared/i18n'
-import { useAuthStore } from '@/features/auth/store/authStore'
 import type { ClientResponse, CoachClientAiBriefResponse, CoachClientDashboardResponse, CoachInviteCodeResponse, CoachRelationshipResponse, ConnectByCodeRequest, GenerateInviteCodeRequest, RequestRenewalRequest } from '../types'
 
 export const coachClientKeys = {
@@ -26,7 +25,6 @@ export function usePendingRequests() {
 }
 
 export function useMyCoach(enabled = true) {
-  const isCoach = useAuthStore((s) => s.user?.roles.includes('Coach') ?? false)
   return useQuery({
     queryKey: coachClientKeys.myCoach,
     queryFn: () =>
@@ -37,20 +35,14 @@ export function useMyCoach(enabled = true) {
           if (err.response?.status === 404) return null
           throw err
         }),
-    enabled: enabled && !isCoach,
+    enabled,
     staleTime: 30_000,
     refetchOnWindowFocus: true,
-    // Poll every 8s while waiting for status to change; don't poll when there's no relationship
-    refetchInterval: (query) => {
-      const data = query.state.data
-      if (
-        data?.status === 'Pending' ||
-        data?.status === 'PendingTermination' ||
-        data?.status === 'PendingRenewal'
-      )
-        return 8_000
-      return false
-    },
+    // Poll every 8s for any live relationship so incoming requests from the coach
+    // (e.g. a disconnect request while Active) show up without a manual refresh.
+    // useMyCoach returns null when there's no active relationship, so polling only
+    // runs while one exists.
+    refetchInterval: (query) => (query.state.data ? 8_000 : false),
   })
 }
 
@@ -84,6 +76,9 @@ export function useMyClients(enabled = true) {
     enabled,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
+    // Poll so client-initiated changes (disconnect/renewal requests, accepts)
+    // appear on the coach's screen without a manual refresh.
+    refetchInterval: 8_000,
   })
 }
 

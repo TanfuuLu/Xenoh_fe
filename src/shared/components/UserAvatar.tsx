@@ -28,6 +28,8 @@ function getInitials(name?: string | null, email?: string | null) {
 
 function resolveImageUrl(imageUrl?: string | null) {
   if (!imageUrl) return null
+  // Treat the legacy default silhouette avatars as "no image" so we fall back to initials.
+  if (/\/assets\/avatars\/default-/.test(imageUrl)) return null
   if (/^(https?:)?\/\//.test(imageUrl) || imageUrl.startsWith('data:')) return imageUrl
   if (imageUrl.startsWith('/assets/')) return imageUrl
 

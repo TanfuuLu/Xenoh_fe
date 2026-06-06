@@ -12,6 +12,7 @@ import {
   Dumbbell,
   Eye,
   Gauge,
+  MessageCircle,
   RefreshCw,
   Scale,
   Sparkles,
@@ -33,9 +34,8 @@ import { Button } from '@/shared/components/Button'
 import { Card } from '@/shared/components/Card'
 import { Spinner } from '@/shared/components/Spinner'
 import { RequireTier } from '@/features/billing/components/RequireTier'
-import { useT } from '@/shared/i18n'
-import { useTrainingCoachTip, useUserAnalysis } from '../api/useUserAnalysis'
-import { TrainingCoachTipCard } from '../components/TrainingCoachTipCard'
+import { useT, useLangStore } from '@/shared/i18n'
+import { useUserAnalysis } from '../api/useUserAnalysis'
 import type {
   AnalysisContent,
   AnalysisEffortGapPoint,
@@ -58,14 +58,11 @@ const MUSCLE_COLORS = ['#876f5e', '#72785a', '#8d560d', '#485a66', '#802013', '#
 export function InsightsPage() {
   const t = useT()
   const ti = t.insights
+  const lang = useLangStore((s) => s.lang)
+  const askCoach = lang === 'vi'
+    ? { title: 'Hỏi AI Coach', subtitle: 'Trò chuyện trực tiếp về dữ liệu tập luyện của bạn.', button: 'Mở chat' }
+    : { title: 'Ask your AI Coach', subtitle: 'Have a back-and-forth about your training data.', button: 'Open chat' }
   const { data, isLoading, isFetching, isError, error, refetch } = useUserAnalysis()
-  const {
-    data: coachTip,
-    isLoading: isCoachTipLoading,
-    isFetching: isCoachTipFetching,
-    isError: isCoachTipError,
-    refetch: refetchCoachTip,
-  } = useTrainingCoachTip()
 
   const errorMessage = (() => {
     const e = error as
@@ -95,14 +92,11 @@ export function InsightsPage() {
           <Button
             variant="secondary"
             size="md"
-            onClick={() => {
-              void refetch()
-              void refetchCoachTip()
-            }}
-            disabled={isFetching || isCoachTipFetching}
+            onClick={() => void refetch()}
+            disabled={isFetching}
             className="gap-1.5 self-start sm:self-auto"
           >
-            <RefreshCw size={15} className={isFetching || isCoachTipFetching ? 'animate-spin' : ''} />
+            <RefreshCw size={15} className={isFetching ? 'animate-spin' : ''} />
             {ti.refresh}
           </Button>
         </div>
@@ -135,13 +129,33 @@ export function InsightsPage() {
                 labels={ti}
               />
 
-              <TrainingCoachTipCard
-                tip={coachTip}
-                isLoading={isCoachTipLoading}
-                isError={isCoachTipError}
-                isFetching={isCoachTipFetching}
-                onRefresh={() => void refetchCoachTip()}
-              />
+              <Card
+                className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between"
+                style={{
+                  borderColor: 'color-mix(in srgb, var(--accent) 22%, var(--border-1))',
+                  background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-soft) 52%, var(--bg-1)), var(--bg-1))',
+                }}
+              >
+                <div className="flex items-start gap-3">
+                  <span
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+                    style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
+                  >
+                    <Sparkles size={19} />
+                  </span>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted">Xenoh Coach</p>
+                    <h2 className="text-lg font-bold text-text">{askCoach.title}</h2>
+                    <p className="mt-0.5 text-sm text-muted">{askCoach.subtitle}</p>
+                  </div>
+                </div>
+                <Link to="/insights/coach-chat" className="self-stretch sm:self-auto">
+                  <Button className="w-full gap-1.5 sm:w-auto">
+                    <MessageCircle size={16} />
+                    {askCoach.button}
+                  </Button>
+                </Link>
+              </Card>
 
               <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
                 <BodyweightTrend metrics={data.metrics} labels={ti} />

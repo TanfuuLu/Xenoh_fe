@@ -18,10 +18,13 @@ const PlanOverviewPage = lazy(() => import('@/features/plans/pages/PlanOverviewP
 const WeekDetailPage = lazy(() => import('@/features/workouts/pages/WeekDetailPage').then((m) => ({ default: m.WeekDetailPage })))
 const WeekAnalyzePage = lazy(() => import('@/features/workouts/pages/WeekAnalyzePage').then((m) => ({ default: m.WeekAnalyzePage })))
 const DayWorkoutPage = lazy(() => import('@/features/workouts/pages/DayWorkoutPage').then((m) => ({ default: m.DayWorkoutPage })))
+const ClientTodayWorkoutPage = lazy(() => import('@/features/workouts/pages/ClientTodayWorkoutPage').then((m) => ({ default: m.ClientTodayWorkoutPage })))
 const ExerciseLibraryPage = lazy(() => import('@/features/workouts/pages/ExerciseLibraryPage').then((m) => ({ default: m.ExerciseLibraryPage })))
 const ProfilePage = lazy(() => import('@/features/profile/pages/ProfilePage').then((m) => ({ default: m.ProfilePage })))
 const ChangePasswordPage = lazy(() => import('@/features/profile/pages/ChangePasswordPage').then((m) => ({ default: m.ChangePasswordPage })))
 const ClientsPage = lazy(() => import('@/features/coach-client/pages/ClientsPage').then((m) => ({ default: m.ClientsPage })))
+const KeyVaultPage = lazy(() => import('@/features/coach-client/pages/KeyVaultPage').then((m) => ({ default: m.KeyVaultPage })))
+const ChatHubPage = lazy(() => import('@/features/coach-client/pages/ChatHubPage').then((m) => ({ default: m.ChatHubPage })))
 const MyCoachPage = lazy(() => import('@/features/coach-client/pages/MyCoachPage').then((m) => ({ default: m.MyCoachPage })))
 const ClientProfilePage = lazy(() => import('@/features/profile/pages/ClientProfilePage').then((m) => ({ default: m.ClientProfilePage })))
 const ClientAiInsightPage = lazy(() => import('@/features/profile/pages/ClientAiInsightPage').then((m) => ({ default: m.ClientAiInsightPage })))
@@ -29,6 +32,7 @@ const ProgressPage = lazy(() => import('@/features/progress/pages/ProgressPage')
 const NutritionPage = lazy(() => import('@/features/nutrition/pages/NutritionPage').then((m) => ({ default: m.NutritionPage })))
 const NutritionInsightPage = lazy(() => import('@/features/nutrition/pages/NutritionInsightPage').then((m) => ({ default: m.NutritionInsightPage })))
 const InsightsPage = lazy(() => import('@/features/insights').then((m) => ({ default: m.InsightsPage })))
+const AiCoachChatPage = lazy(() => import('@/features/insights').then((m) => ({ default: m.AiCoachChatPage })))
 const LandingPage = lazy(() => import('@/features/marketing/pages/LandingPage').then((m) => ({ default: m.LandingPage })))
 const AboutPage = lazy(() => import('@/features/marketing/pages/AboutPage').then((m) => ({ default: m.AboutPage })))
 const SubscriptionPage = lazy(() => import('@/features/billing/pages/SubscriptionPage').then((m) => ({ default: m.SubscriptionPage })))
@@ -166,6 +170,10 @@ export const router = createBrowserRouter([
             element: <Suspended><InsightsPage /></Suspended>,
           },
           {
+            path: 'insights/coach-chat',
+            element: <Suspended><AiCoachChatPage /></Suspended>,
+          },
+          {
             path: 'subscription',
             element: <Suspended><SubscriptionPage /></Suspended>,
           },
@@ -185,8 +193,20 @@ export const router = createBrowserRouter([
                 element: <Suspended><ClientsPage /></Suspended>,
               },
               {
+                path: 'coach/key-vault',
+                element: <Suspended><KeyVaultPage /></Suspended>,
+              },
+              {
+                path: 'coach/chat',
+                element: <Suspended><ChatHubPage /></Suspended>,
+              },
+              {
                 path: 'coach/clients/:clientId',
                 element: <Suspended><ClientProfilePage /></Suspended>,
+              },
+              {
+                path: 'coach/clients/:clientId/today-workout',
+                element: <Suspended><ClientTodayWorkoutPage /></Suspended>,
               },
               {
                 path: 'coach/clients/:clientId/ai-insight',
