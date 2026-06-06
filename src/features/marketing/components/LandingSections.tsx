@@ -6,11 +6,39 @@ import { useLandingCopy } from './landingCopy'
 export function MarketingNav() {
   const t = useLandingCopy()
   const [scrolled, setScrolled] = useState(false)
+  const [active, setActive] = useState('')
+
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 10)
     window.addEventListener('scroll', fn)
     return () => window.removeEventListener('scroll', fn)
   }, [])
+
+  const sections = ['how', 'features', 'pricing', 'faq']
+  useEffect(() => {
+    const els = sections
+      .map((id) => document.getElementById(id))
+      .filter((el): el is HTMLElement => el !== null)
+    if (els.length === 0) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0]
+        if (visible) setActive(visible.target.id)
+      },
+      { rootMargin: '-45% 0px -45% 0px', threshold: [0, 0.25, 0.5, 1] },
+    )
+    els.forEach((el) => observer.observe(el))
+    return () => observer.disconnect()
+  }, [])
+
+  const links = [
+    { id: 'how', label: t.nav.how },
+    { id: 'features', label: t.nav.features },
+    { id: 'pricing', label: t.nav.pricing },
+    { id: 'faq', label: t.nav.faq },
+  ]
 
   return (
     <header className={`mk-nav${scrolled ? ' scrolled' : ''}`}>
@@ -19,11 +47,17 @@ export function MarketingNav() {
         Xenoh
       </Link>
       <nav>
-        <a href="#how">{t.nav.how}</a>
-        <a href="#features">{t.nav.features}</a>
-        <a href="#pricing">{t.nav.pricing}</a>
-        <a href="#faq">{t.nav.faq}</a>
-        <Link to="/about" style={{ textDecoration: 'none', color: 'inherit', fontWeight: 500, fontSize: 14 }}>{t.nav.about}</Link>
+        {links.map((l) => (
+          <a
+            key={l.id}
+            href={`#${l.id}`}
+            className={active === l.id ? 'active' : undefined}
+            aria-current={active === l.id ? 'true' : undefined}
+          >
+            {l.label}
+          </a>
+        ))}
+        <Link to="/about">{t.nav.about}</Link>
       </nav>
       <div className="cta">
         <LanguageSwitcher />
@@ -47,8 +81,19 @@ export function Hero() {
             <Link to="/register" className="mk-btn primary lg">{t.hero.primary}</Link>
             <a href="#how" className="mk-btn secondary lg">{t.hero.secondary}</a>
           </div>
+          <div className="mk-hero-trust">
+            <div className="mk-hero-avatars" aria-hidden="true">
+              <span /><span /><span /><span />
+            </div>
+            <div className="mk-hero-trust-copy">
+              <strong>{t.hero.trusted}</strong>
+              <span>{t.hero.trust}</span>
+            </div>
+          </div>
         </div>
         <div className="visual mk-intro-preview-shell">
+          <div className="mk-hero-badge mk-hero-badge-streak" aria-hidden="true">🔥 {t.hero.streak}</div>
+          <div className="mk-hero-badge mk-hero-badge-pr" aria-hidden="true">★ {t.hero.pr}</div>
           <div className="mk-intro-preview-pad">
             <div className="mk-app-preview mk-today-preview">
               <div className="bar">
@@ -155,6 +200,10 @@ export function FeaturePlan() {
         </div>
         <div className="visual mk-week-preview">
           <div className="body mk-week-body">
+            <div className="mk-week-head">
+              <strong>{t.plan.weekLabel}</strong>
+              <span className="mk-week-progress">{t.plan.weekProgress}</span>
+            </div>
             <div className="mk-week-strip">
               {t.plan.days.map((d, i) => {
                 const isDone = i < 3
@@ -195,16 +244,24 @@ export function FeatureCoach() {
                 xenoh.app / coach / clients
               </div>
               <div className="body mk-coach-list">
-                {t.coach.clients.map((c) => (
-                  <div key={c.name} className="mk-coach-client">
-                    <div className="mk-client-avatar">{c.init}</div>
-                    <div>
-                      <strong>{c.name}</strong>
-                      <p>{c.plan}</p>
+                {t.coach.clients.map((c) => {
+                  const [done, total] = c.stat.split('/').map((x) => parseInt(x.trim(), 10))
+                  const pct = total ? Math.round((done / total) * 100) : 0
+                  const tone = pct >= 80 ? 'good' : pct >= 45 ? 'mid' : 'low'
+                  return (
+                    <div key={c.name} className="mk-coach-client">
+                      <div className="mk-client-avatar">{c.init}</div>
+                      <div className="mk-coach-client-main">
+                        <strong>{c.name}</strong>
+                        <p>{c.plan}</p>
+                        <div className={`mk-coach-bar ${tone}`}>
+                          <span style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                      <span>{c.stat}</span>
                     </div>
-                    <span>{c.stat}</span>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           </div>
@@ -244,11 +301,35 @@ export function FeatureGrid() {
 
 export function Testimonial() {
   const t = useLandingCopy()
+  const reviews = t.testimonial.reviews
   return (
     <section className="mk-section">
-      <div className="mk-quote">
-        <blockquote>{t.testimonial.quote}</blockquote>
-        <div className="who"><b>Elena Arroyo</b> - {t.testimonial.who}</div>
+      <div className="mk-wall-head">
+        <div className="mk-wall-avatars" aria-hidden="true">
+          {reviews.slice(0, 8).map((r, i) => (
+            <div key={r.handle} className={`av ${i % 2 ? 'mk-av-sage' : 'mk-av-clay'}`}>{r.init}</div>
+          ))}
+        </div>
+        <div className="mk-wall-trust">{t.testimonial.trust}</div>
+        <h2>{t.testimonial.title}</h2>
+        <div className="mk-wall-actions">
+          <Link to="/register" className="mk-btn primary">{t.testimonial.join}</Link>
+          <a href="#faq" className="mk-btn secondary">{t.testimonial.more}</a>
+        </div>
+      </div>
+      <div className="mk-wall">
+        {reviews.map((r, i) => (
+          <figure className="mk-review" key={r.handle}>
+            <p>{r.quote}</p>
+            <figcaption className="by">
+              <div className="meta">
+                <strong>{r.handle}</strong>
+                <span>{r.role}</span>
+              </div>
+              <div className={`av ${i % 2 ? 'mk-av-sage' : 'mk-av-clay'}`} aria-hidden="true">{r.init}</div>
+            </figcaption>
+          </figure>
+        ))}
       </div>
     </section>
   )
