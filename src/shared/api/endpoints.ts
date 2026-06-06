@@ -101,6 +101,7 @@ export const ENDPOINTS = {
   // Exercises
   exercises: {
     byDay: (dailyWorkoutId: string) => `/api/exercises/by-day/${dailyWorkoutId}`,
+    byWeek: (weeklyWorkoutId: string) => `/api/exercises/by-week/${weeklyWorkoutId}`,
     create: '/api/exercises',
     update: (id: string) => `/api/exercises/${id}`,
     delete: (id: string) => `/api/exercises/${id}`,
@@ -165,6 +166,7 @@ export const ENDPOINTS = {
   // Insights (AI-generated user analysis)
   insights: {
     me: (lang: 'en' | 'vi') => `/api/insights/me?lang=${lang}`,
+    coachTip: (lang: 'en' | 'vi') => `/api/insights/me/coach-tip?lang=${lang}`,
   },
 
   // Notifications

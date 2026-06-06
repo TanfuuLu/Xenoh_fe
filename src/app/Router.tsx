@@ -27,6 +27,7 @@ const ClientProfilePage = lazy(() => import('@/features/profile/pages/ClientProf
 const ClientAiInsightPage = lazy(() => import('@/features/profile/pages/ClientAiInsightPage').then((m) => ({ default: m.ClientAiInsightPage })))
 const ProgressPage = lazy(() => import('@/features/progress/pages/ProgressPage').then((m) => ({ default: m.ProgressPage })))
 const NutritionPage = lazy(() => import('@/features/nutrition/pages/NutritionPage').then((m) => ({ default: m.NutritionPage })))
+const NutritionInsightPage = lazy(() => import('@/features/nutrition/pages/NutritionInsightPage').then((m) => ({ default: m.NutritionInsightPage })))
 const InsightsPage = lazy(() => import('@/features/insights').then((m) => ({ default: m.InsightsPage })))
 const LandingPage = lazy(() => import('@/features/marketing/pages/LandingPage').then((m) => ({ default: m.LandingPage })))
 const AboutPage = lazy(() => import('@/features/marketing/pages/AboutPage').then((m) => ({ default: m.AboutPage })))
@@ -157,6 +158,10 @@ export const router = createBrowserRouter([
             element: <Suspended><NutritionPage /></Suspended>,
           },
           {
+            path: 'nutrition/insight',
+            element: <Suspended><NutritionInsightPage /></Suspended>,
+          },
+          {
             path: 'insights',
             element: <Suspended><InsightsPage /></Suspended>,
           },
@@ -190,6 +195,10 @@ export const router = createBrowserRouter([
               {
                 path: 'coach/clients/:clientId/nutrition',
                 element: <Suspended><NutritionPage /></Suspended>,
+              },
+              {
+                path: 'coach/clients/:clientId/nutrition/insight',
+                element: <Suspended><NutritionInsightPage /></Suspended>,
               },
             ],
           },

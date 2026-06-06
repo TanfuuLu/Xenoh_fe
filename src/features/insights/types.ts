@@ -109,3 +109,27 @@ export interface UserAnalysisResponse {
   content: AnalysisContent
   metrics: AnalysisMetrics
 }
+
+export type TrainingCoachTipCategory =
+  | 'Technique'
+  | 'Progression'
+  | 'Recovery'
+  | 'Adherence'
+  | 'Volume'
+  | 'Powerlifting'
+  | 'General'
+
+export type TrainingCoachTipConfidence = 'Low' | 'Moderate' | 'High'
+
+export interface TrainingCoachTipResponse {
+  language: 'en' | 'vi'
+  generatedAt: string
+  cached: boolean
+  headline: string
+  category: TrainingCoachTipCategory
+  insight: string
+  evidence: string[]
+  whyItMatters: string
+  nextAction: string
+  confidence: TrainingCoachTipConfidence
+}

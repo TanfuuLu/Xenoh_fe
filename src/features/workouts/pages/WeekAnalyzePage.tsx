@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router'
-import { useQueries } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { motion, useReducedMotion } from 'framer-motion'
 import { ChevronLeft, CheckCircle2, AlertTriangle, Dumbbell, TrendingUp, Calendar, Zap, BedDouble, XCircle, Flame, Timer, Activity } from 'lucide-react'
 import { format } from 'date-fns'
@@ -9,14 +9,13 @@ import {
 } from 'recharts'
 import { api } from '@/shared/api/axios'
 import { ENDPOINTS } from '@/shared/api/endpoints'
-import type { PagedResponse } from '@/shared/types/api'
 import { Button } from '@/shared/components/Button'
 import { Spinner } from '@/shared/components/Spinner'
 import { NotFoundPage } from '@/shared/components/NotFoundPage'
 import { motionProps, staggerContainer } from '@/shared/utils/motion'
 import { useT, useLangStore } from '@/shared/i18n'
 import { RequireTier } from '@/features/billing/components/RequireTier'
-import { exerciseKeys, useDailyWorkouts, useWeeklyWorkouts } from '../index'
+import { useDailyWorkouts, useWeeklyWorkouts } from '../index'
 import type { ExerciseResponse } from '../types'
 import { StatCard, CustomTooltip, WeekInsightCard } from '../components/WeekAnalyzeCards'
 import { WeeklyDiagramGrid } from '../components/WeeklyDiagramGrid'
@@ -32,26 +31,12 @@ import {
   buildWeekInsights,
 } from '../components/weekAnalyzeHelpers'
 
-const WEEK_ANALYZE_EXERCISE_PAGE_SIZE = 100
-
-async function fetchExercisesForWeekAnalyze(dayId: string) {
-  const allExercises: ExerciseResponse[] = []
-  let pageNumber = 1
-  let hasMore = true
-
-  while (hasMore) {
-    const page = await api
-      .get<PagedResponse<ExerciseResponse>>(ENDPOINTS.exercises.byDay(dayId), {
-        params: { pageNumber, pageSize: WEEK_ANALYZE_EXERCISE_PAGE_SIZE },
-      })
-      .then((r) => r.data)
-
-    allExercises.push(...page.items)
-    hasMore = page.hasMore
-    pageNumber += 1
-  }
-
-  return allExercises
+// One request for the whole week (backend returns every day's exercises),
+// instead of one request per day (N+1).
+async function fetchWeekExercises(weekId: string) {
+  return api
+    .get<ExerciseResponse[]>(ENDPOINTS.exercises.byWeek(weekId))
+    .then((r) => r.data)
 }
 
 export function WeekAnalyzePage() {
@@ -70,15 +55,13 @@ export function WeekAnalyzePage() {
     (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
   )
 
-  const daysWithExercises = days?.filter((d) => d.totalExercises > 0) ?? []
-  const exerciseQueries = useQueries({
-    queries: daysWithExercises.map((day) => ({
-      queryKey: [...exerciseKeys.byDay(day.id), 'week-analyze'],
-      queryFn: () => fetchExercisesForWeekAnalyze(day.id),
-    })),
+  const { data: weekExercises, isLoading: exercisesLoading } = useQuery({
+    queryKey: ['exercises', 'by-week', weekId, 'week-analyze'],
+    queryFn: () => fetchWeekExercises(weekId),
+    enabled: !!weekId,
   })
 
-  const allLoading = daysLoading || exerciseQueries.some((q) => q.isLoading)
+  const allLoading = daysLoading || exercisesLoading
 
   if (weeksError || daysError) return <NotFoundPage />
   if (allLoading) {
@@ -89,13 +72,13 @@ export function WeekAnalyzePage() {
     )
   }
 
-  // Build exercise map: dayId → exercises
+  // Group the week's exercises by day
   const exercisesByDayId = new Map<string, ExerciseResponse[]>()
-  daysWithExercises.forEach((day, i) => {
-    if (exerciseQueries[i].data) {
-      exercisesByDayId.set(day.id, exerciseQueries[i].data!)
-    }
-  })
+  for (const exercise of weekExercises ?? []) {
+    const list = exercisesByDayId.get(exercise.dailyWorkoutId)
+    if (list) list.push(exercise)
+    else exercisesByDayId.set(exercise.dailyWorkoutId, [exercise])
+  }
 
   // Chart data: one bar per day
   const chartData = orderedDays.map((day) => {

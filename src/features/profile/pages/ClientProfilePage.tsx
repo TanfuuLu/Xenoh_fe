@@ -4,7 +4,7 @@ import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { motion } from 'framer-motion'
-import { ChevronLeft, Activity, Flame, Scale, Dumbbell, Plus, Ruler, CalendarDays, Users, ClipboardList, Utensils, Pencil, Trash2, Sparkles } from 'lucide-react'
+import { ChevronLeft, Activity, Flame, Scale, Dumbbell, Plus, Ruler, CalendarDays, Users, ClipboardList, Utensils, Pencil, Trash2, Sparkles, Target, Trophy } from 'lucide-react'
 import { format } from 'date-fns'
 import {
   CartesianGrid,
@@ -67,6 +67,14 @@ const clientPlanSchema = z.object({
 })
 
 type ClientPlanForm = z.output<typeof clientPlanSchema>
+
+function formatProfileOption<T extends string>(
+  value: T | null | undefined,
+  labels: Record<T, string>,
+  fallback: string,
+) {
+  return value ? labels[value] ?? value : fallback
+}
 
 export function ClientProfilePage() {
   const lang = useLangStore((s) => s.lang)
@@ -313,6 +321,20 @@ export function ClientProfilePage() {
                   ? format(new Date(profile.dateOfBirth), 'dd/MM/yyyy')
                   : tcp.noData
               }
+            />
+          </motion.div>
+          <motion.div variants={slideUp}>
+            <InfoRow
+              icon={<Target size={15} />}
+              label={tp.developmentDirectionStat}
+              value={formatProfileOption(profile.developmentDirection, tp.developmentDirections, tcp.noData)}
+            />
+          </motion.div>
+          <motion.div variants={slideUp}>
+            <InfoRow
+              icon={<Trophy size={15} />}
+              label={tp.trainingDisciplineStat}
+              value={formatProfileOption(profile.trainingDiscipline, tp.trainingDisciplines, tcp.noData)}
             />
           </motion.div>
         </motion.div>

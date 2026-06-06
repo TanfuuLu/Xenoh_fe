@@ -26,12 +26,13 @@ export function LevelCard({ profile, variant = 'default', className }: Props) {
     <motion.div
       {...(shouldReduce ? {} : slideUp)}
       className={cn(
-        'rounded-xl border border-border bg-surface p-4',
+        'rounded-xl border bg-surface p-4',
         isSquare
           ? 'flex aspect-square min-h-64 flex-col justify-between'
           : 'space-y-3',
         className,
       )}
+      style={{ borderColor: 'var(--surface-border-soft)' }}
     >
       <div className={cn('flex gap-3', isSquare ? 'flex-col items-start' : 'items-center justify-between')}>
         <div className={cn('flex gap-3', isSquare ? 'flex-col items-start' : 'items-center')}>

@@ -16,7 +16,7 @@ import {
 import { useDayFoodLogs } from '../api/useFoodLog'
 import { FoodLogPanel } from '../components/FoodLog/FoodLogPanel'
 import { MetricCard, NutritionValueDiagrams } from '../components/NutritionValueDiagrams'
-import { NutritionHistoryPanel, NutritionInsightPanel } from '../components/NutritionPanels'
+import { NutritionHistoryPanel } from '../components/NutritionPanels'
 import {
   toField,
   optionalNumber,
@@ -71,7 +71,6 @@ export function NutritionPage() {
     fatG: '',
     notes: '',
   })
-  const [showNutritionInsight, setShowNutritionInsight] = useState(false)
 
   useEffect(() => {
     if (!summary) return
@@ -129,14 +128,15 @@ export function NutritionPage() {
           <h1 className="text-2xl font-bold text-text">{isClientView ? tn.clientTitle : tn.title}</h1>
           <p className="mt-1 text-sm text-muted">{tn.subtitle}</p>
         </div>
-        <Button
-          variant={showNutritionInsight ? 'primary' : 'secondary'}
-          size="sm"
-          onClick={() => setShowNutritionInsight((value) => !value)}
-          className="shrink-0 whitespace-nowrap"
-        >
-          <Sparkles size={16} /> {tn.nutritionInsight}
-        </Button>
+        <Link to={isClientView ? `/coach/clients/${clientId}/nutrition/insight` : '/nutrition/insight'} className="shrink-0">
+          <Button
+            variant="secondary"
+            size="sm"
+            className="whitespace-nowrap"
+          >
+            <Sparkles size={16} /> {tn.nutritionInsight}
+          </Button>
+        </Link>
       </div>
 
       {!hasCalculation && (
@@ -176,17 +176,6 @@ export function NutritionPage() {
           fatActual={!isClientView && todayFoodData ? todayFoodData.totals.totalFatG : readNumber(logForm.fatG)}
           tn={tn}
         />
-      )}
-
-      {showNutritionInsight && (
-        <RequireTier feature={tn.nutritionInsight}>
-          <NutritionInsightPanel
-            clientId={clientId}
-            enabled={summary.canUseAdvancedAnalysis}
-            summary={summary}
-            logForm={logForm}
-          />
-        </RequireTier>
       )}
 
       <div className="grid items-start gap-6 xl:grid-cols-2">
@@ -310,6 +299,7 @@ export function NutritionPage() {
       <RequireTier feature={tn.requireFeature}>
         <NutritionHistoryPanel clientId={clientId} enabled={summary.canUseAdvancedAnalysis} calorieTarget={calc.calorieTarget} />
       </RequireTier>
+
     </div>
   )
 }

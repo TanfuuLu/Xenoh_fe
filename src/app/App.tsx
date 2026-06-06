@@ -7,20 +7,14 @@ import { useAuthStore } from '@/features/auth'
 import { refreshAuth } from '@/features/auth/api/useAuth'
 import { useLangStore } from '@/shared/i18n'
 import { initAxiosInterceptors } from '@/shared/api/axios'
-import { useThemeStore } from '@/shared/theme'
 
 export function App() {
   const { setAuth, clear, setAuthChecked } = useAuthStore()
   const lang = useLangStore((s) => s.lang)
-  const theme = useThemeStore((s) => s.theme)
 
   useEffect(() => {
     document.documentElement.lang = lang
   }, [lang])
-
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme
-  }, [theme])
 
   useEffect(() => {
     initAxiosInterceptors(
@@ -57,7 +51,7 @@ export function App() {
   return (
     <QueryProvider>
       <RouterProvider router={router} />
-      <Toaster position="bottom-right" richColors duration={4000} theme={theme} />
+      <Toaster position="bottom-right" richColors duration={4000} theme="light" />
     </QueryProvider>
   )
 }
