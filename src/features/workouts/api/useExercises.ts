@@ -147,8 +147,12 @@ export function useReorderExercises(dailyWorkoutId: string, weeklyWorkoutId?: st
 export function useCompleteSet(dailyWorkoutId: string, weeklyWorkoutId?: string, planId?: string) {
   const qc = useQueryClient()
   const key = exerciseKeys.byDay(dailyWorkoutId)
+  // Scope so we can tell when *this* day's set-completions are all done. Tapping
+  // several sets quickly fires concurrent mutations against the same cache key.
+  const mutationKey = ['complete-set', dailyWorkoutId] as const
 
   return useMutation({
+    mutationKey,
     mutationFn: ({ setId, data }: { setId: string; data: CompleteSetRequest }) =>
       api
         .patch<ExerciseResponse>(ENDPOINTS.exercises.completeSet(setId), data)
@@ -191,24 +195,30 @@ export function useCompleteSet(dailyWorkoutId: string, weeklyWorkoutId?: string,
       return { previous }
     },
 
-    // Rollback on error
-    onError: (_err, _vars, ctx) => {
-      if (ctx?.previous) qc.setQueryData(key, ctx.previous)
-    },
+    // Reconcile with the server only once the *last* concurrent completion for this
+    // day settles. The optimistic update in onMutate already accumulates every tap
+    // correctly, so the card is green the instant you click. If we instead applied
+    // each response as it arrived, an earlier request's response (which predates the
+    // later sets) would report the exercise as not-yet-complete and flip the card
+    // green→white→green for the 1–2s until the final response lands.
+    onSettled: (updated, error) => {
+      // > 1 means other set-completions for this day are still in flight; let the
+      // last one do the reconciliation. (The settling mutation itself counts as 1.)
+      if (qc.isMutating({ mutationKey }) > 1) return
 
-    // The PATCH returns the authoritative exercise (with the backend's own
-    // isCompleted/PR/XP values). Write it straight into the cache instead of
-    // refetching, so the card never flips back while the read-model settles.
-    onSuccess: (updated) => {
-      qc.setQueryData<ExercisePages>(key, (old) =>
-        mapExercisePages(old, (exercise) => (exercise.id === updated.id ? updated : exercise)),
-      )
-    },
+      if (error) {
+        // Drop the optimistic guesses and refetch the real state.
+        void qc.invalidateQueries({ queryKey: key })
+      } else if (updated) {
+        // The PATCH response is the authoritative exercise (server-computed
+        // isCompleted / PR / XP). Write it straight in — no card refetch, no flicker.
+        qc.setQueryData<ExercisePages>(key, (old) =>
+          mapExercisePages(old, (exercise) => (exercise.id === updated.id ? updated : exercise)),
+        )
+      }
 
-    // Sync the rest after settle — days, weeks, and profile (XP update). The
-    // by-day exercise list is already up to date from onSuccess, so skip it to
-    // avoid the green→not-finished→green flicker on the last set.
-    onSettled: () => {
+      // Refresh the dependent views (days, weeks, profile XP, PR tracking). The card
+      // list is already current from the write above, so skip refetching it.
       invalidateWorkoutQueries(qc, {
         dailyWorkoutId,
         weeklyWorkoutId,
