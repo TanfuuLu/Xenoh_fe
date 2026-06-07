@@ -6,18 +6,16 @@ import { Button } from '@/shared/components/Button'
 import { useT } from '@/shared/i18n'
 import { useSubscription } from '../api/useSubscription'
 import { TIER_LABELS, TIER_LIST_PRICES, TIER_PRICES } from '../types'
-import type { PlanTier } from '../types'
+import type { PaidDurationMonths, PlanTier } from '../types'
 
 interface Props {
-  onSelect: (tier: Exclude<PlanTier, 'Free'>, durationMonths: 1 | 3 | 12) => void
+  onSelect: (tier: Exclude<PlanTier, 'Free'>, durationMonths: PaidDurationMonths) => void
   loading?: boolean
 }
 
-type Duration = 1 | 3 | 12
+const durations: PaidDurationMonths[] = [1, 3, 6, 12]
 
-const durations: Duration[] = [1, 3, 12]
-
-function getSavingsPercent(duration: Duration) {
+function getSavingsPercent(duration: PaidDurationMonths) {
   if (duration === 1) return null
 
   const monthlyTotal = duration * TIER_PRICES.ProIndividual[1]
@@ -27,9 +25,10 @@ function getSavingsPercent(duration: Duration) {
   return savings > 0 ? savings : null
 }
 
-const savingsPercent: Record<Duration, number | null> = {
+const savingsPercent: Record<PaidDurationMonths, number | null> = {
   1: null,
   3: getSavingsPercent(3),
+  6: getSavingsPercent(6),
   12: getSavingsPercent(12),
 }
 
@@ -44,15 +43,16 @@ function perMonthPrice(total: number, months: number) {
 export function PricingTable({ onSelect, loading }: Props) {
   const t = useT()
   const ts = t.subscription
-  const [duration, setDuration] = useState<Duration>(1)
+  const [duration, setDuration] = useState<PaidDurationMonths>(1)
   const { data: subscription } = useSubscription()
   const currentTier = subscription?.tier ?? 'Free'
 
   const isCurrentPlan = (tier: PlanTier) => currentTier === tier
 
-  const durationLabels: Record<Duration, string> = {
+  const durationLabels: Record<PaidDurationMonths, string> = {
     1: ts.duration1,
     3: ts.duration3,
+    6: ts.duration6,
     12: ts.duration12,
   }
 

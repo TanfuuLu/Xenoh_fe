@@ -27,15 +27,15 @@ export const translations = {
       forgotPasswordLink: 'Forgot password?',
       noAccount: "Don't have an account?",
       registerLink: 'Sign up free',
-      panelHeading: 'Built for the bar.\nNot for the app.',
-      panelDesc: 'A training journal where coaches write programs and clients log every rep — in sync, in real time.',
+      panelHeading: 'From program to every set.\nAll in one place.',
+      panelDesc: 'Coaches assign training, clients log sets as they lift, and Xenoh turns progress into one shared journal that is easy to trust and follow.',
       panelFeatures: [
-        'Coach writes the plan — client logs mid-set, one hand',
-        'PRs detected automatically on every completed set',
-        'One journal. Two views. Both sides trust it.',
+        'Programs come first, every set is logged as it happens',
+        'PRs and completion update after each session',
+        'One shared source of truth for coaches and clients',
       ] as string[],
-      panelQuote: '"Finally something built for how we actually train."',
-      panelQuoteAuthor: '— Strength coach, 3 years on Xenoh',
+      panelQuote: '"Less file management. More focus on the training."',
+      panelQuoteAuthor: '— Strength coach, using Xenoh every week',
     },
 
     // ── Register ─────────────────────────────────────────────────────────────
@@ -940,6 +940,7 @@ export const translations = {
       freePlan: 'Free Plan',
       duration1: '1 month',
       duration3: '3 months',
+      duration6: '6 months',
       duration12: '12 months',
       perMonth: '/mo',
       featuresFree: [
@@ -1149,15 +1150,15 @@ export const translations = {
       forgotPasswordLink: 'Quên mật khẩu?',
       noAccount: 'Chưa có tài khoản?',
       registerLink: 'Đăng ký miễn phí',
-      panelHeading: 'Xây dựng cho sàn tập.\nKhông phải cho ứng dụng.',
-      panelDesc: 'Nhật ký tập luyện nơi HLV viết chương trình và học viên ghi lại mỗi hiệp — đồng bộ, theo thời gian thực.',
+      panelHeading: 'Từ giáo án đến từng hiệp.\nTất cả ở một nơi.',
+      panelDesc: 'HLV giao bài, học viên ghi set ngay khi tập, Xenoh tự gom tiến độ thành một nhật ký chung dễ tin và dễ theo dõi.',
       panelFeatures: [
-        'HLV viết kế hoạch — học viên ghi giữa hiệp, một tay',
-        'PR được phát hiện tự động sau mỗi hiệp hoàn thành',
-        'Một nhật ký. Hai góc nhìn. Cả hai đều tin tưởng.',
+        'Giáo án lên trước, từng hiệp được ghi ngay khi tập',
+        'PR và mức hoàn thành tự cập nhật sau mỗi buổi',
+        'Một nguồn dữ liệu chung cho HLV và học viên',
       ] as string[],
-      panelQuote: '"Cuối cùng cũng có thứ được tạo ra cho cách chúng tôi thực sự tập."',
-      panelQuoteAuthor: '— HLV sức mạnh, 3 năm dùng Xenoh',
+      panelQuote: '"Bớt quản file. Tập trung vào buổi tập."',
+      panelQuoteAuthor: '— HLV sức mạnh, dùng Xenoh mỗi tuần',
     },
 
     forgotPassword: {
@@ -2049,6 +2050,7 @@ export const translations = {
       freePlan: 'Gói miễn phí',
       duration1: '1 tháng',
       duration3: '3 tháng',
+      duration6: '6 tháng',
       duration12: '12 tháng',
       perMonth: '/tháng',
       featuresFree: [

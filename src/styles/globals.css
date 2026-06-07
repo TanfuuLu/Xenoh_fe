@@ -1,5 +1,5 @@
-/* Google Fonts (Be Vietnam Pro, Fraunces, Geist, JetBrains Mono) are loaded via <link> in index.html.
-   Fraunces is the display serif because it ships full Vietnamese diacritics.
+/* Google Fonts (Fraunces, Geist, JetBrains Mono, Lora) are loaded via <link> in index.html.
+   Lora is used for the Vietnamese UI.
    Local Namdhinggo TTFs in /public/fonts are kept on disk for reference. */
 @import "tailwindcss";
 
@@ -118,11 +118,11 @@
   --interactive-focus: 0 0 0 3px color-mix(in oklch, var(--accent) 24%, transparent);
 }
 
-/* ── Vietnamese: use a UI font built for Vietnamese diacritics ─────────── */
+/* ── Vietnamese: use Lora across the localized UI ──────────────────────── */
 html[lang="vi"] {
-  --font-display: "Be Vietnam Pro", "Geist", system-ui, -apple-system, sans-serif;
-  --font-sans:    "Be Vietnam Pro", "Geist", system-ui, -apple-system, sans-serif;
-  --font-mono:    "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-display: "Lora", Georgia, "Times New Roman", serif;
+  --font-sans:    "Lora", Georgia, "Times New Roman", serif;
+  --font-mono:    "Lora", Georgia, "Times New Roman", serif;
 }
 html[lang="vi"] body,
 html[lang="vi"] input,

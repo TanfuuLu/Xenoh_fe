@@ -9,7 +9,7 @@ import { useCreatePaymentOrder } from '../api/useSubscription'
 import { CurrentPlanCard } from '../components/CurrentPlanCard'
 import { PricingTable } from '../components/PricingTable'
 import { PaymentOrderModal } from '../components/PaymentOrderModal'
-import type { PaymentOrderResponse, PlanTier } from '../types'
+import type { PaidDurationMonths, PaymentOrderResponse, PlanTier } from '../types'
 
 export function SubscriptionPage() {
   const t = useT()
@@ -19,7 +19,7 @@ export function SubscriptionPage() {
   const [searchParams] = useSearchParams()
   const showCoachBanner = searchParams.get('reason') === 'coach-required'
 
-  function handleSelectTier(tier: Exclude<PlanTier, 'Free'>, durationMonths: 1 | 3 | 12) {
+  function handleSelectTier(tier: Exclude<PlanTier, 'Free'>, durationMonths: PaidDurationMonths) {
     createOrder(
       { requestedTier: tier, durationMonths },
       {
