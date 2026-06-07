@@ -75,6 +75,16 @@
   --accent-2:      var(--xn-sage-500);
   --accent-2-soft: var(--xn-sage-200);
 
+  /* Bright icon accents — vivid colors for icon chips across the app */
+  --ic-red:    #ef4444;
+  --ic-orange: #f97316;
+  --ic-amber:  #f59e0b;
+  --ic-green:  #22c55e;
+  --ic-cyan:   #06b6d4;
+  --ic-blue:   #3b82f6;
+  --ic-purple: #8b5cf6;
+  --ic-pink:   #ec4899;
+
   --button-bg:     #fbf7ef;
   --button-hover:  #f1e8dc;
   --button-border: #d7c7b6;
@@ -247,6 +257,7 @@ body {
 .xn-shell {
   display: grid;
   grid-template-columns: var(--xn-sidebar-width, 220px) minmax(0, 1fr);
+  column-gap: 14px;
   min-height: 100vh;
   background: var(--bg-1);
   transition: grid-template-columns 0.22s cubic-bezier(0.22,1,0.36,1);
@@ -594,6 +605,7 @@ body {
 
   .xn-shell {
     grid-template-columns: minmax(0, 1fr);
+    column-gap: 0;
   }
 
   .xn-sidebar-desktop {

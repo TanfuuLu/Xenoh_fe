@@ -1,6 +1,6 @@
 import { useParams, Link, useLocation, useNavigate } from 'react-router'
 import { motion, useReducedMotion } from 'framer-motion'
-import { ChevronLeft, ChevronRight, CheckCircle2, AlertTriangle, BarChart2, BedDouble, XCircle } from 'lucide-react'
+import { ChevronLeft, ChevronRight, CheckCircle2, AlertTriangle, BarChart2, BedDouble, XCircle, type LucideIcon } from 'lucide-react'
 import { format } from 'date-fns'
 import { vi as viLocale, enUS } from 'date-fns/locale'
 import { Badge } from '@/shared/components/Badge'
@@ -11,9 +11,37 @@ import { staggerContainer, slideUp } from '@/shared/utils/motion'
 import { useT, useLangStore } from '@/shared/i18n'
 import { NotFoundPage } from '@/shared/components/NotFoundPage'
 import { useDailyWorkouts, useWeeklyWorkouts } from '../index'
+import { usePlan } from '@/features/plans'
 import { InlineTip } from '@/features/tips'
 import { CommentSection } from '@/features/comments/components/CommentSection'
 import { useWeekComments, useAddWeekComment, useDeleteWeekComment } from '@/features/comments/api/useWeekComments'
+import { WeekSnapshotCard } from '../components/WeekSnapshotCard'
+import type { DailyWorkoutResponse } from '../types'
+
+interface DayVisual {
+  cardBg: string
+  accent: string
+  Icon: LucideIcon | null
+  iconColor: string
+}
+
+/** Resolve the colour treatment + status icon for a single day cell. */
+function getDayVisual(day: DailyWorkoutResponse, warned: boolean): DayVisual {
+  const cardBg = day.isCompleted
+    ? 'var(--xn-sage-200)'
+    : day.status === 'Rest'
+    ? 'var(--xn-clay-200)'
+    : day.status === 'Missed'
+    ? 'rgba(239,68,68,0.06)'
+    : 'var(--bg-2)'
+
+  // Icon + accent precedence: a warning overrides the base status.
+  if (warned) return { cardBg, accent: 'var(--color-warning)', Icon: AlertTriangle, iconColor: 'var(--color-warning)' }
+  if (day.isCompleted) return { cardBg, accent: 'var(--xn-success)', Icon: CheckCircle2, iconColor: 'var(--xn-success)' }
+  if (day.status === 'Rest') return { cardBg, accent: 'var(--xn-clay-400)', Icon: BedDouble, iconColor: 'var(--xn-clay-600)' }
+  if (day.status === 'Missed') return { cardBg, accent: 'var(--color-danger)', Icon: XCircle, iconColor: 'var(--color-danger)' }
+  return { cardBg, accent: 'var(--color-primary)', Icon: null, iconColor: 'var(--fg-3)' }
+}
 
 export function WeekDetailPage() {
   const { planId = '', weekId = '' } = useParams()
@@ -39,6 +67,9 @@ export function WeekDetailPage() {
     fetchNextPage: fetchMoreDays,
     isFetchingNextPage: loadingMoreDays,
   } = useDailyWorkouts(weekId)
+  const { data: plan } = usePlan(planId)
+  // Week comments are the coach ↔ client channel — only meaningful on coach plans.
+  const showComments = plan?.planType === 'Coach'
   const { data: comments = [], isLoading: commentsLoading } = useWeekComments(weekId)
   const { mutateAsync: addComment, isPending: addingComment } = useAddWeekComment(weekId)
   const { mutate: deleteComment, isPending: deletingComment } = useDeleteWeekComment(weekId)
@@ -62,6 +93,8 @@ export function WeekDetailPage() {
   )
   const warnedDayIds = new Set(orderedDays.filter((day) => day.hasWarning).map((day) => day.id))
   const weekHasWarning = warnedDayIds.size > 0
+  const restCount = orderedDays.filter((day) => day.status === 'Rest').length
+  const missedCount = orderedDays.filter((day) => !day.isCompleted && day.status === 'Missed').length
 
   if (weeksError || daysError) return <NotFoundPage />
 
@@ -109,7 +142,10 @@ export function WeekDetailPage() {
           </Link>
 
           {allWeeks && allWeeks.length > 1 && (
-            <div className="flex flex-1 items-center justify-end gap-1 min-[390px]:flex-none">
+            <div
+              className="flex flex-1 items-center justify-end gap-1 rounded-full p-1 min-[390px]:flex-none"
+              style={{ background: 'var(--bg-3)' }}
+            >
               <button
                 disabled={!prevWeek}
                 onClick={() =>
@@ -117,16 +153,19 @@ export function WeekDetailPage() {
                   navigate(`/plans/${planId}/weeks/${prevWeek.id}`, { state: { canEdit, canComplete } })
                 }
                 className={cn(
-                  'flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors',
+                  'flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium transition-colors',
                   prevWeek ? 'cursor-pointer hover:opacity-80' : 'cursor-not-allowed opacity-30',
                 )}
-                style={{ background: 'var(--bg-3)', color: 'var(--fg-2)' }}
+                style={{ color: 'var(--fg-2)' }}
               >
                 <ChevronLeft size={14} />
                 {prevWeek ? `W${prevWeek.weekNumber}` : ''}
               </button>
 
-              <span className="px-1 text-xs font-medium" style={{ color: 'var(--fg-3)' }}>
+              <span
+                className="rounded-full px-3 py-1.5 text-xs font-bold"
+                style={{ background: 'var(--xn-paper)', color: 'var(--fg-1)', boxShadow: 'var(--sh-xs)' }}
+              >
                 {currentWeek ? `W${currentWeek.weekNumber}` : ''}
               </span>
 
@@ -138,10 +177,10 @@ export function WeekDetailPage() {
                     : void fetchMoreWeeks()
                 }
                 className={cn(
-                  'flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors',
+                  'flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium transition-colors',
                   nextWeek || hasMoreWeeks ? 'cursor-pointer hover:opacity-80' : 'cursor-not-allowed opacity-30',
                 )}
-                style={{ background: 'var(--bg-3)', color: 'var(--fg-2)' }}
+                style={{ color: 'var(--fg-2)' }}
               >
                 {nextWeek ? `W${nextWeek.weekNumber}` : loadingMoreWeeks ? '...' : hasMoreWeeks ? 'More' : ''}
                 <ChevronRight size={14} />
@@ -151,39 +190,76 @@ export function WeekDetailPage() {
         </div>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px] 2xl:grid-cols-[minmax(0,1fr)_400px]">
-        <div className="min-w-0 space-y-6">
-      {/* Weekly completion progress */}
+      <div className="space-y-6">
+      {/* Weekly summary: completion ring-style header + quick stats */}
       {currentWeek && currentWeek.effectiveTotalDays > 0 && (() => {
         const effective = currentWeek.effectiveTotalDays
         const pct       = Math.round((currentWeek.completedDays / effective) * 100)
         const weekDone  = currentWeek.isCompleted
+        const accent    = weekDone ? 'var(--xn-success)' : 'var(--color-primary)'
         return (
-          <div
-            className="rounded-xl px-4 py-3 space-y-2"
-            style={{ background: 'var(--bg-2)', border: `1px solid ${weekDone ? 'var(--xn-success)' : 'var(--border-1)'}` }}
+          <motion.div
+            initial={shouldReduce ? false : { opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+            className="rounded-2xl border p-5"
+            style={{ background: 'var(--bg-2)', borderColor: weekDone ? 'var(--xn-sage-400)' : 'var(--border-1)' }}
           >
-            <div className="flex items-center justify-between text-sm">
-              <span className="font-medium text-text">
-                {weekDone ? '✓ Week Complete' : tw.weeklyCompletion}
-              </span>
-              <span className="font-bold" style={{ color: weekDone ? 'var(--xn-success)' : 'var(--color-primary)' }}>
-                {pct}%
-              </span>
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'var(--fg-3)' }}>
+                  {weekDone ? tw.completed : tw.weeklyCompletion}
+                </p>
+                <div className="mt-1.5 flex items-baseline gap-2">
+                  <span className="text-4xl font-bold leading-none" style={{ color: accent }}>
+                    {pct}%
+                  </span>
+                  <span className="text-sm text-muted">
+                    {currentWeek.completedDays}/{effective} {tc.days}
+                  </span>
+                </div>
+              </div>
+
+              {/* Quick stat chips */}
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold"
+                  style={{ background: 'var(--xn-sage-200)', color: '#5d6635' }}
+                >
+                  <CheckCircle2 size={13} />
+                  {currentWeek.completedDays} · {tw.completed}
+                </span>
+                {restCount > 0 && (
+                  <span
+                    className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold"
+                    style={{ background: 'var(--xn-clay-200)', color: 'var(--xn-clay-800)' }}
+                  >
+                    <BedDouble size={13} />
+                    {restCount} · Rest
+                  </span>
+                )}
+                {missedCount > 0 && (
+                  <span
+                    className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold"
+                    style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--color-danger)' }}
+                  >
+                    <XCircle size={13} />
+                    {missedCount} · Missed
+                  </span>
+                )}
+              </div>
             </div>
-            <div className="h-2 w-full overflow-hidden rounded-full" style={{ background: 'var(--border-1)' }}>
+
+            <div className="mt-4 h-2.5 w-full overflow-hidden rounded-full" style={{ background: 'var(--border-1)' }}>
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${pct}%` }}
                 transition={{ duration: 0.6, ease: 'easeOut' }}
-                className="h-full rounded-full transition-colors"
-                style={{ background: weekDone ? 'var(--xn-success)' : 'var(--color-primary)' }}
+                className="h-full rounded-full"
+                style={{ background: accent }}
               />
             </div>
-            <p className="text-xs text-muted">
-              {currentWeek.completedDays} / {effective} {tc.days} · {tw.daysCompleted}
-            </p>
-          </div>
+          </motion.div>
         )
       })()}
 
@@ -207,35 +283,31 @@ export function WeekDetailPage() {
         initial={shouldReduce ? false : 'hidden'}
         animate="visible"
         variants={staggerContainer}
-        className="space-y-2 sm:hidden"
+        className="space-y-2.5 sm:hidden"
       >
         {orderedDays.map((day) => {
           const isToday =
             format(new Date(day.date), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
           const dayWarned = warnedDayIds.has(day.id)
+          const v = getDayVisual(day, dayWarned)
 
           return (
             <motion.div
               key={day.id}
               variants={slideUp}
-              className="overflow-hidden rounded-xl border"
-              style={{
-                borderColor: dayWarned ? 'var(--color-warning)' : 'var(--border-1)',
-                background: day.isCompleted
-                  ? 'var(--xn-sage-200)'
-                  : day.status === 'Rest'
-                  ? 'var(--xn-clay-200)'
-                  : day.status === 'Missed'
-                  ? 'rgba(239,68,68,0.07)'
-                  : 'var(--bg-2)',
-              }}
+              className="relative overflow-hidden rounded-2xl border"
+              style={{ borderColor: 'var(--border-1)', background: v.cardBg }}
             >
+              <span className="absolute inset-y-0 left-0 w-1" style={{ background: v.accent }} />
               <Link
                 to={`/days/${day.id}`}
                 state={{ canEdit, canComplete, weeklyWorkoutId: day.weeklyWorkoutId, planId }}
-                className="flex items-center gap-3 p-3"
+                className="flex items-center gap-3 py-3 pl-4 pr-3"
               >
-                <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl" style={isToday ? { background: 'var(--color-primary)', color: 'white' } : { background: 'var(--bg-3)', color: 'var(--fg-1)' }}>
+                <div
+                  className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl"
+                  style={isToday ? { background: 'var(--color-primary)', color: 'white' } : { background: 'var(--bg-3)', color: 'var(--fg-1)' }}
+                >
                   <span className="text-sm font-bold">{format(new Date(day.date), 'd')}</span>
                   <span className="text-[10px] uppercase">{format(new Date(day.date), 'EEE', { locale: dateLocale })}</span>
                 </div>
@@ -246,14 +318,12 @@ export function WeekDetailPage() {
                     {day.totalExercises > 0 && ` · ${day.completedExercises}/${day.totalExercises}`}
                   </p>
                 </div>
-                {dayWarned ? (
-                  <AlertTriangle size={17} style={{ color: 'var(--color-warning)', flexShrink: 0 }} />
-                ) : day.isCompleted ? (
-                  <CheckCircle2 size={17} style={{ color: 'var(--xn-success)', flexShrink: 0 }} />
-                ) : day.status === 'Rest' ? (
-                  <BedDouble size={17} style={{ color: 'var(--xn-clay-600)', flexShrink: 0 }} />
-                ) : day.status === 'Missed' ? (
-                  <XCircle size={17} style={{ color: 'var(--color-danger)', flexShrink: 0 }} />
+                {v.Icon ? (
+                  <v.Icon size={18} style={{ color: v.iconColor, flexShrink: 0 }} />
+                ) : day.totalExercises > 0 ? (
+                  <Badge variant="warning">
+                    {day.completedExercises}/{day.totalExercises}
+                  </Badge>
                 ) : (
                   <ChevronRight size={16} style={{ color: 'var(--fg-3)', flexShrink: 0 }} />
                 )}
@@ -276,151 +346,137 @@ export function WeekDetailPage() {
         </div>
       )}
 
-      {/* Calendar grid */}
+      {/* Calendar grid (tablet / desktop) */}
       <motion.div
         initial={shouldReduce ? false : 'hidden'}
         animate="visible"
         variants={staggerContainer}
-        className="hidden overflow-hidden rounded-2xl border sm:block"
-        style={{ borderColor: 'var(--border-1)', background: 'var(--border-1)' }}
+        className="hidden grid-cols-7 gap-2.5 sm:grid"
       >
-        {/* Day-of-week header row */}
-        <div className="grid grid-cols-7 gap-px">
-          {orderedDays.map((day) => (
-            <div
+        {orderedDays.map((day) => {
+          const isToday =
+            format(new Date(day.date), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
+          const dayWarned = warnedDayIds.has(day.id)
+          const v = getDayVisual(day, dayWarned)
+
+          return (
+            <motion.div
               key={day.id}
-              className="px-3 py-2.5 text-center text-xs font-semibold uppercase tracking-widest"
-              style={{ background: 'var(--bg-2)', color: 'var(--fg-3)' }}
+              variants={slideUp}
+              whileHover={shouldReduce ? undefined : { y: -3 }}
+              className="min-w-0"
             >
-              {format(new Date(day.date), 'EEE', { locale: dateLocale })}
-            </div>
-          ))}
-        </div>
-
-        {/* Day cells */}
-        <div className="grid grid-cols-7 gap-px">
-          {orderedDays.map((day) => {
-            const isToday =
-              format(new Date(day.date), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
-            const dayWarned = warnedDayIds.has(day.id)
-
-            return (
-              <motion.div
-                key={day.id}
-                variants={slideUp}
-                className="relative min-h-36"
-                style={
-                  day.isCompleted
-                    ? { background: 'var(--xn-sage-200)' }
-                    : day.status === 'Rest'
-                    ? { background: 'var(--xn-clay-200)' }
-                    : day.status === 'Missed'
-                    ? { background: 'rgba(239,68,68,0.07)' }
-                    : { background: 'var(--bg-2)' }
-                }
+              <Link
+                to={`/days/${day.id}`}
+                state={{ canEdit, canComplete, weeklyWorkoutId: day.weeklyWorkoutId, planId }}
+                className="relative flex h-full min-h-40 flex-col overflow-hidden rounded-2xl border p-3 transition-shadow hover:shadow-md"
+                style={{
+                  background: v.cardBg,
+                  borderColor: isToday ? 'var(--color-primary)' : 'var(--border-1)',
+                  boxShadow: isToday ? '0 0 0 1px var(--color-primary)' : undefined,
+                }}
               >
-                <Link
-                  to={`/days/${day.id}`}
-                  state={{ canEdit, canComplete, weeklyWorkoutId: day.weeklyWorkoutId, planId }}
-                  className="flex flex-col h-full min-h-36 p-3 transition-opacity hover:opacity-80"
-                >
-                  {/* Date number */}
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <span
-                        className={cn(
-                          'inline-flex items-center justify-center w-7 h-7 rounded-full text-sm font-bold',
-                          isToday ? 'text-white' : day.isCompleted ? 'text-success' : 'text-text',
-                        )}
-                        style={isToday ? { background: 'var(--color-primary)' } : undefined}
-                      >
-                        {format(new Date(day.date), 'd')}
-                      </span>
-                      <p className="text-xs mt-0.5" style={{ color: 'var(--fg-3)' }}>
-                        {format(new Date(day.date), 'MMM', { locale: dateLocale })}
-                      </p>
-                    </div>
+                {/* Top accent strip */}
+                <span className="absolute inset-x-0 top-0 h-1" style={{ background: v.accent }} />
 
-                    {dayWarned ? (
-                      <AlertTriangle size={15} style={{ color: 'var(--color-warning)', flexShrink: 0 }} />
-                    ) : day.isCompleted ? (
-                      <CheckCircle2 size={15} style={{ color: 'var(--xn-success)', flexShrink: 0 }} />
-                    ) : day.status === 'Rest' ? (
-                      <BedDouble size={15} style={{ color: 'var(--xn-clay-600)', flexShrink: 0 }} />
-                    ) : day.status === 'Missed' ? (
-                      <XCircle size={15} style={{ color: 'var(--color-danger)', flexShrink: 0 }} />
-                    ) : day.totalExercises > 0 ? (
-                      <Badge variant="warning">
-                        {day.completedExercises}/{day.totalExercises}
-                      </Badge>
-                    ) : null}
+                {/* Weekday label + status icon */}
+                <div className="flex items-center justify-between">
+                  <span
+                    className="text-[10px] font-bold uppercase tracking-widest"
+                    style={{ color: isToday ? 'var(--color-primary)' : 'var(--fg-3)' }}
+                  >
+                    {format(new Date(day.date), 'EEE', { locale: dateLocale })}
+                  </span>
+                  {v.Icon ? (
+                    <v.Icon size={15} style={{ color: v.iconColor, flexShrink: 0 }} />
+                  ) : day.totalExercises > 0 ? (
+                    <Badge variant="warning">
+                      {day.completedExercises}/{day.totalExercises}
+                    </Badge>
+                  ) : null}
+                </div>
+
+                {/* Date number */}
+                <div className="mt-1 flex items-baseline gap-1.5">
+                  <span
+                    className={cn(
+                      'inline-flex h-8 min-w-8 items-center justify-center rounded-full px-1 text-base font-bold',
+                      isToday ? 'text-white' : day.isCompleted ? 'text-success' : 'text-text',
+                    )}
+                    style={isToday ? { background: 'var(--color-primary)' } : undefined}
+                  >
+                    {format(new Date(day.date), 'd')}
+                  </span>
+                  <span className="text-xs" style={{ color: 'var(--fg-3)' }}>
+                    {format(new Date(day.date), 'MMM', { locale: dateLocale })}
+                  </span>
+                </div>
+
+                {/* Exercise count */}
+                {day.totalExercises > 0 ? (
+                  <p className="mt-1 text-xs" style={{ color: 'var(--fg-3)' }}>
+                    {day.totalExercises} {tc.exercises}
+                  </p>
+                ) : (
+                  <p className="mt-1 text-xs" style={{ color: 'var(--fg-3)', opacity: 0.5 }}>
+                    Rest
+                  </p>
+                )}
+
+                {/* Footer status pill */}
+                {!day.isCompleted && day.status === 'Rest' && (
+                  <div
+                    className="mt-auto flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium"
+                    style={{ background: 'var(--xn-clay-300)', color: 'var(--xn-clay-800)' }}
+                  >
+                    <BedDouble size={11} />
+                    Rest Day
                   </div>
+                )}
 
-                  {/* Exercise count */}
-                  {day.totalExercises > 0 ? (
-                    <p className="text-xs" style={{ color: 'var(--fg-3)' }}>
-                      {day.totalExercises} {tc.exercises}
-                    </p>
-                  ) : (
-                    <p className="text-xs" style={{ color: 'var(--fg-3)', opacity: 0.5 }}>
-                      Rest
-                    </p>
-                  )}
+                {!day.isCompleted && day.status === 'Missed' && (
+                  <div
+                    className="mt-auto flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium"
+                    style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--color-danger)' }}
+                  >
+                    <XCircle size={11} />
+                    Missed
+                  </div>
+                )}
 
-                  {!day.isCompleted && day.status === 'Rest' && (
-                    <div
-                      className="mt-auto flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium"
-                      style={{ background: 'var(--xn-clay-300)', color: 'var(--xn-clay-800)' }}
-                    >
-                      <BedDouble size={11} />
-                      Rest Day
-                    </div>
-                  )}
+                {!day.isCompleted && day.status === 'Normal' && day.totalExercises > 0 && (
+                  <div
+                    className="mt-auto flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium"
+                    style={{ background: 'var(--xn-clay-200)', color: 'var(--xn-clay-800)' }}
+                  >
+                    {tw.startSession}
+                    <ChevronRight size={11} className="ml-auto" />
+                  </div>
+                )}
 
-                  {!day.isCompleted && day.status === 'Missed' && (
-                    <div
-                      className="mt-auto flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium"
-                      style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--color-danger)' }}
-                    >
-                      <XCircle size={11} />
-                      Missed
-                    </div>
-                  )}
+                {day.isCompleted && !dayWarned && (
+                  <div
+                    className="mt-auto flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium"
+                    style={{ background: 'rgba(139,150,101,0.15)', color: 'var(--xn-success)' }}
+                  >
+                    <CheckCircle2 size={11} />
+                    {tw.completed}
+                  </div>
+                )}
 
-                  {!day.isCompleted && day.status === 'Normal' && day.totalExercises > 0 && (
-                    <div
-                      className="mt-auto flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium"
-                      style={{ background: 'var(--xn-clay-200)', color: 'var(--xn-clay-800)' }}
-                    >
-                      {tw.startSession}
-                      <ChevronRight size={11} className="ml-auto" />
-                    </div>
-                  )}
-
-                  {day.isCompleted && !dayWarned && (
-                    <div
-                      className="mt-auto flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium"
-                      style={{ background: 'rgba(139,150,101,0.15)', color: 'var(--xn-success)' }}
-                    >
-                      <CheckCircle2 size={11} />
-                      {tw.completed}
-                    </div>
-                  )}
-
-                  {day.isCompleted && dayWarned && (
-                    <div
-                      className="mt-auto flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium"
-                      style={{ background: 'rgba(245,158,11,0.12)', color: 'var(--color-warning)' }}
-                    >
-                      <AlertTriangle size={11} />
-                      Below planned
-                    </div>
-                  )}
-                </Link>
-              </motion.div>
-            )
-          })}
-        </div>
+                {day.isCompleted && dayWarned && (
+                  <div
+                    className="mt-auto flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium"
+                    style={{ background: 'rgba(245,158,11,0.12)', color: 'var(--color-warning)' }}
+                  >
+                    <AlertTriangle size={11} />
+                    Below planned
+                  </div>
+                )}
+              </Link>
+            </motion.div>
+          )
+        })}
       </motion.div>
       {hasMoreDays && (
         <div className="hidden justify-center sm:flex">
@@ -436,9 +492,11 @@ export function WeekDetailPage() {
         </div>
       )}
 
-        </div>
+      </div>
 
-        <aside className="min-w-0 xl:sticky xl:top-6 xl:self-start">
+      {/* Bottom row — week snapshot, plus comments only on coach plans */}
+      {showComments ? (
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
           <CommentSection
             comments={comments}
             isLoading={commentsLoading}
@@ -447,8 +505,13 @@ export function WeekDetailPage() {
             isPendingAdd={addingComment}
             isPendingDelete={deletingComment}
           />
-        </aside>
-      </div>
+          <WeekSnapshotCard weekId={weekId} planId={planId} />
+        </div>
+      ) : (
+        <div className="lg:max-w-sm">
+          <WeekSnapshotCard weekId={weekId} planId={planId} />
+        </div>
+      )}
     </div>
   )
 }

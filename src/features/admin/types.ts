@@ -128,3 +128,21 @@ export interface AdminSubscription {
   expiresAt: string | null
   createdAt: string
 }
+
+export interface AdminAiUsageTopUser {
+  userId: string
+  userName: string
+  userEmail: string
+  currentTier: PlanTier
+  usedRequests: number
+  lastConsumedAt: string | null
+}
+
+export interface AdminAiUsageSummary {
+  periodStart: string
+  totalUsedRequests: number
+  activeQuotaUsers: number
+  requestsByCurrentTier: AdminMetricPoint[]
+  requestsByFeature: AdminMetricPoint[]
+  topUsers: AdminAiUsageTopUser[]
+}

@@ -78,7 +78,7 @@ export function AdminReportsPage() {
                 <span className="rounded-full border border-border px-3 py-1 text-xs text-muted">{report.status}</span>
               </div>
 
-              <p className="rounded-xl bg-panel px-3 py-2 text-sm text-text">{report.details}</p>
+              <p className="rounded-xl bg-surface px-3 py-2 text-sm text-text">{report.details}</p>
 
               {report.adminNote && <p className="text-sm text-muted">Admin note: {report.adminNote}</p>}
 

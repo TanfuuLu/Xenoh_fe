@@ -94,8 +94,6 @@ export const ENDPOINTS = {
     byWeek: (weeklyWorkoutId: string) => `/api/weeks/${weeklyWorkoutId}/days`,
     copy: (sourceDailyWorkoutId: string) => `/api/days/${sourceDailyWorkoutId}/copy`,
     markStatus: (dailyWorkoutId: string) => `/api/days/${dailyWorkoutId}/status`,
-    aiGuidance: (dailyWorkoutId: string, lang: 'en' | 'vi') =>
-      `/api/days/${dailyWorkoutId}/ai-guidance?lang=${lang}`,
   },
 
   // Exercises
@@ -200,6 +198,7 @@ export const ENDPOINTS = {
     payments: '/api/admin/payments',
     paymentsSummary: '/api/admin/payments/summary',
     subscriptions: '/api/admin/subscriptions',
+    aiUsageSummary: '/api/admin/ai-usage/summary',
   },
 
   // Messages (Chat)

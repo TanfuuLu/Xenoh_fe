@@ -1,13 +1,14 @@
 import type { ReactElement, ReactNode } from 'react'
-import { BarChart3, ClipboardList, CreditCard, Shield, Users } from 'lucide-react'
+import { BarChart3, Bot, ClipboardList, CreditCard, Shield, Users } from 'lucide-react'
 import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { Card } from '@/shared/components/Card'
 import { Spinner } from '@/shared/components/Spinner'
-import { useAdminDashboard } from '../index'
+import { useAdminAiUsageSummary, useAdminDashboard } from '../index'
 import { AdminHeader, formatMoney, MetricCard } from '../components/AdminPageParts'
 
 export function AdminDashboardPage() {
   const { data, isLoading } = useAdminDashboard()
+  const { data: aiUsage, isLoading: isAiUsageLoading } = useAdminAiUsageSummary()
 
   if (isLoading) return <div className="flex h-64 items-center justify-center"><Spinner /></div>
   if (!data) return null
@@ -21,6 +22,7 @@ export function AdminDashboardPage() {
     ['Revenue this month', formatMoney(data.completedPaymentRevenueThisMonth)],
     ['Total plans created', data.totalPlansCreated],
     ['Completed workout days', data.completedWorkoutDays],
+    ['AI requests this month', aiUsage?.totalUsedRequests ?? '...'],
   ] as const
 
   return (
@@ -72,6 +74,48 @@ export function AdminDashboardPage() {
             <Line type="monotone" dataKey="value" stroke="#556b3f" strokeWidth={2} />
           </LineChart>
         </ChartCard>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-3">
+        <ChartCard title="AI requests by feature" icon={<Bot size={17} />}>
+          <BarChart data={aiUsage?.requestsByFeature ?? []}>
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border-1)" />
+            <XAxis dataKey="label" tick={{ fontSize: 11 }} />
+            <YAxis tick={{ fontSize: 11 }} />
+            <Tooltip />
+            <Bar dataKey="value" fill="#556b3f" radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ChartCard>
+
+        <ChartCard title="AI requests by tier" icon={<Shield size={17} />}>
+          <BarChart data={aiUsage?.requestsByCurrentTier ?? []}>
+            <XAxis dataKey="label" tick={{ fontSize: 11 }} />
+            <YAxis tick={{ fontSize: 11 }} />
+            <Tooltip />
+            <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+              {(aiUsage?.requestsByCurrentTier ?? []).map((_, index) => <Cell key={index} fill={index % 2 ? '#7a5b44' : '#556b3f'} />)}
+            </Bar>
+          </BarChart>
+        </ChartCard>
+
+        <Card animate={false} className="space-y-4">
+          <div className="flex items-center gap-2 text-sm font-semibold text-text"><Users size={17} />Top AI users</div>
+          {isAiUsageLoading && <div className="flex h-44 items-center justify-center"><Spinner size="sm" /></div>}
+          {!isAiUsageLoading && (
+            <div className="space-y-3">
+              {(aiUsage?.topUsers ?? []).slice(0, 5).map((user) => (
+                <div key={user.userId} className="flex items-center justify-between gap-3 rounded-md border border-border/60 px-3 py-2">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-text">{user.userName}</p>
+                    <p className="truncate text-xs text-muted">{user.currentTier}</p>
+                  </div>
+                  <span className="text-sm font-bold text-text">{user.usedRequests}</span>
+                </div>
+              ))}
+              {(aiUsage?.topUsers?.length ?? 0) === 0 && <p className="py-8 text-center text-sm text-muted">No AI usage this month.</p>}
+            </div>
+          )}
+        </Card>
       </div>
     </div>
   )

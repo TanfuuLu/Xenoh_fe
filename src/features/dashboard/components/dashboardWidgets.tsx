@@ -1,22 +1,23 @@
 import type { CSSProperties, ReactNode } from 'react'
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import { Activity, ClipboardList, Dumbbell, Sparkles, Utensils, Weight } from 'lucide-react'
 import { softCardItem } from '@/shared/utils/motion'
 import { cn } from '@/shared/utils/cn'
 
 const LIGHT_CARD_BORDER = 'var(--surface-border-soft)'
 
-export function MetricCard({ icon, label, value, sub, accent }: { icon: ReactNode; label: string; value: string; sub?: string; accent?: string }) {
+export function MetricCard({ icon, label, value, sub, accent }: { icon: ReactNode; label: string; value: ReactNode; sub?: string; accent?: string }) {
+  const tone = accent ?? 'var(--color-primary)'
   return (
-    <motion.div variants={softCardItem} className="xn-mini-card rounded-xl border bg-panel p-4" style={{ borderColor: LIGHT_CARD_BORDER }}>
+    <motion.div variants={softCardItem} className="xn-mini-card rounded-xl border p-4" style={{ borderColor: LIGHT_CARD_BORDER, background: 'var(--bg-2)' }}>
       <div
-        className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg"
-        style={{ background: accent ? `${accent}20` : 'var(--bg-surface)', color: accent ?? 'var(--color-primary)' }}
+        className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl"
+        style={{ background: `color-mix(in oklch, ${tone} 16%, transparent)`, color: tone }}
       >
         {icon}
       </div>
-      <p className="text-xs text-muted">{label}</p>
-      <p className="text-lg font-bold text-text">{value}</p>
+      <p className="text-[11px] font-semibold uppercase tracking-widest text-muted">{label}</p>
+      <p className="mt-0.5 text-2xl font-bold leading-tight text-text tabular-nums">{value}</p>
       {sub && <p className="text-xs text-muted">{sub}</p>}
     </motion.div>
   )
@@ -34,7 +35,7 @@ export function LevelCard({
   progress: number
 }) {
   return (
-    <motion.div variants={softCardItem} className="xn-mini-card rounded-xl border bg-panel p-4" style={{ borderColor: LIGHT_CARD_BORDER }}>
+    <motion.div variants={softCardItem} className="xn-mini-card rounded-xl border p-4" style={{ borderColor: LIGHT_CARD_BORDER, background: 'var(--bg-2)' }}>
       <div className="flex h-full flex-col justify-between gap-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -51,7 +52,7 @@ export function LevelCard({
 
 export function SmallStat({ label, value }: { label: string; value: string }) {
   return (
-    <motion.div variants={softCardItem} className="xn-mini-card rounded-xl border bg-panel p-3" style={{ borderColor: LIGHT_CARD_BORDER }}>
+    <motion.div variants={softCardItem} className="xn-mini-card rounded-xl border bg-surface p-3" style={{ borderColor: LIGHT_CARD_BORDER }}>
       <p className="text-xs text-muted">{label}</p>
       <p className="mt-1 font-semibold text-text">{value}</p>
     </motion.div>
@@ -84,7 +85,7 @@ export function PanelHeader({
     <div className="flex min-w-0 items-start gap-3">
       <div
         className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
-        style={{ background: accent ? `${accent}20` : 'var(--bg-panel)', color: accent ?? 'var(--color-primary)' }}
+        style={{ background: `color-mix(in oklch, ${accent ?? 'var(--color-primary)'} 16%, transparent)`, color: accent ?? 'var(--color-primary)' }}
       >
         {icon}
       </div>
@@ -98,11 +99,15 @@ export function PanelHeader({
 }
 
 export function ProgressBar({ value, className }: { value: number; className?: string }) {
+  const reduce = useReducedMotion()
+  const pct = Math.max(0, Math.min(100, value))
   return (
     <div className={cn('h-2 w-full overflow-hidden rounded-full', className)} style={{ background: 'var(--border-1)' }}>
-      <div
-        className="h-full rounded-full bg-primary transition-all duration-500"
-        style={{ width: `${Math.max(0, Math.min(100, value))}%` }}
+      <motion.div
+        className="h-full rounded-full bg-primary"
+        initial={reduce ? false : { width: 0 }}
+        animate={{ width: `${pct}%` }}
+        transition={{ duration: 0.7, ease: 'easeOut' }}
       />
     </div>
   )

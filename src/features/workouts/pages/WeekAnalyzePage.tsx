@@ -1,21 +1,18 @@
 import { useParams, Link } from 'react-router'
-import { useQuery } from '@tanstack/react-query'
 import { motion, useReducedMotion } from 'framer-motion'
-import { ChevronLeft, CheckCircle2, AlertTriangle, Dumbbell, TrendingUp, Calendar, Zap, BedDouble, XCircle, Flame, Timer, Activity } from 'lucide-react'
+import { ChevronLeft, AlertTriangle, TrendingUp, Calendar, Zap, BedDouble, XCircle, Flame, Timer, Activity } from 'lucide-react'
 import { format } from 'date-fns'
 import { vi as viLocale, enUS } from 'date-fns/locale'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts'
-import { api } from '@/shared/api/axios'
-import { ENDPOINTS } from '@/shared/api/endpoints'
 import { Button } from '@/shared/components/Button'
 import { Spinner } from '@/shared/components/Spinner'
 import { NotFoundPage } from '@/shared/components/NotFoundPage'
 import { motionProps, staggerContainer } from '@/shared/utils/motion'
 import { useT, useLangStore } from '@/shared/i18n'
 import { RequireTier } from '@/features/billing/components/RequireTier'
-import { useDailyWorkouts, useWeeklyWorkouts } from '../index'
+import { useDailyWorkouts, useWeeklyWorkouts, useWeekExercises } from '../index'
 import type { ExerciseResponse } from '../types'
 import { StatCard, CustomTooltip, WeekInsightCard } from '../components/WeekAnalyzeCards'
 import { WeeklyDiagramGrid } from '../components/WeeklyDiagramGrid'
@@ -30,14 +27,6 @@ import {
   formatDuration,
   buildWeekInsights,
 } from '../components/weekAnalyzeHelpers'
-
-// One request for the whole week (backend returns every day's exercises),
-// instead of one request per day (N+1).
-async function fetchWeekExercises(weekId: string) {
-  return api
-    .get<ExerciseResponse[]>(ENDPOINTS.exercises.byWeek(weekId))
-    .then((r) => r.data)
-}
 
 export function WeekAnalyzePage() {
   const { planId = '', weekId = '' } = useParams()
@@ -55,11 +44,7 @@ export function WeekAnalyzePage() {
     (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
   )
 
-  const { data: weekExercises, isLoading: exercisesLoading } = useQuery({
-    queryKey: ['exercises', 'by-week', weekId, 'week-analyze'],
-    queryFn: () => fetchWeekExercises(weekId),
-    enabled: !!weekId,
-  })
+  const { data: weekExercises, isLoading: exercisesLoading } = useWeekExercises(weekId)
 
   const allLoading = daysLoading || exercisesLoading
 
@@ -179,59 +164,66 @@ export function WeekAnalyzePage() {
       >
         <StatCard
           icon={<Calendar size={18} />}
+          iconColor="var(--ic-blue)"
           label={ta.daysCompleted}
           value={`${currentWeek?.completedDays ?? 0} / ${currentWeek?.effectiveTotalDays ?? orderedDays.length}`}
           sub={`${completionPct}% · ${trainedDays} ${trainedDays !== 1 ? ta.workoutDays : ta.workoutDay}`}
         />
         <StatCard
           icon={<TrendingUp size={18} />}
+          iconColor="var(--ic-green)"
           label={ta.actualVolume}
           value={totalActualVol.toLocaleString()}
           sub={ta.kgReps}
         />
         <StatCard
           icon={<Zap size={18} />}
+          iconColor="var(--ic-purple)"
           label={ta.volumeVsPlan}
           value={`${volumeRatio}%`}
           sub={totalPlannedVol > 0 ? ta.ofPlanned.replace('{v}', totalPlannedVol.toLocaleString()) : ta.noPlanSet}
         />
         <StatCard
           icon={<Flame size={18} />}
+          iconColor="var(--ic-orange)"
           label={ta.estimatedCalories}
           value={totalEstimatedCalories > 0 ? totalEstimatedCalories.toLocaleString() : '—'}
           sub={totalEstimatedCalories > 0 ? ta.kcalThisWeek : ta.noTimedExercises}
         />
         <StatCard
           icon={<Timer size={18} />}
+          iconColor="var(--ic-cyan)"
           label={ta.totalTime}
           value={totalDurationSeconds > 0 ? formatDuration(totalDurationSeconds) : '—'}
           sub={totalDurationSeconds > 0 ? ta.timedExercises : ta.noTimedExercises}
         />
         <StatCard
           icon={<Activity size={18} />}
+          iconColor="var(--ic-pink)"
           label={ta.avgRpe}
           value={weekAverageRpe != null ? weekAverageRpe.toFixed(1) : '—'}
           sub={weekAverageRpe != null ? ta.rpeDesc : ta.noRpeLogged}
         />
         <StatCard
           icon={<AlertTriangle size={18} />}
+          iconColor="var(--ic-amber)"
           label={ta.belowTarget}
           value={warnDays}
           sub={warnDays === 1 ? ta.dayWithWarnings : ta.daysWithWarnings}
         />
         <StatCard
           icon={<BedDouble size={18} />}
+          iconColor="var(--ic-cyan)"
           label={ta.restDays}
           value={restDays}
           sub={ta.intentionalRest}
-          accent="var(--xn-clay-200)"
         />
         <StatCard
           icon={<XCircle size={18} />}
+          iconColor="var(--ic-red)"
           label={ta.missedDays}
           value={missedDays}
           sub={missedDays === 1 ? ta.daySkipped : ta.daysSkipped}
-          accent="rgba(239,68,68,0.1)"
         />
       </motion.div>
 
@@ -266,149 +258,86 @@ export function WeekAnalyzePage() {
         />
       </motion.div>
 
-      {/* Training days visual */}
-      <motion.div
-        {...motionProps.slideUp}
-        className="rounded-xl p-4 space-y-3"
-        style={{ background: 'var(--bg-2)', border: '1px solid var(--border-1)' }}
-      >
-        <h2 className="text-sm font-semibold text-text">{ta.trainingDays}</h2>
-        <div className="flex gap-2 overflow-x-auto pb-1 sm:overflow-visible sm:pb-0">
-          {orderedDays.map((day) => {
-            const dayLabel = format(new Date(day.date), 'EEE', { locale: dateLocale })
-            const isPending = day.totalExercises === 0 && day.status === 'Normal'
-            const bg = day.isCompleted && !day.hasWarning
-              ? 'var(--color-primary)'
-              : day.hasWarning
-              ? 'var(--color-warning)'
-              : day.status === 'Rest'
-              ? 'var(--xn-clay-300)'
-              : day.status === 'Missed'
-              ? 'rgba(239,68,68,0.18)'
-              : 'var(--bg-3)'
-            const textColor = (day.isCompleted || day.hasWarning) ? '#fff' : 'var(--fg-3)'
-
-            return (
-              <div key={day.id} className="flex min-w-10 flex-1 flex-col items-center gap-1">
-                <div
-                  className="w-full flex items-center justify-center rounded-lg text-xs font-semibold py-2"
-                  style={{ background: bg, color: textColor, minWidth: 0 }}
-                >
-                  {day.isCompleted && !day.hasWarning ? (
-                    <CheckCircle2 size={14} />
-                  ) : day.hasWarning ? (
-                    <AlertTriangle size={14} />
-                  ) : day.status === 'Rest' ? (
-                    <BedDouble size={14} style={{ color: 'var(--xn-clay-700)' }} />
-                  ) : day.status === 'Missed' ? (
-                    <XCircle size={14} style={{ color: 'var(--color-danger)' }} />
-                  ) : isPending ? (
-                    <span style={{ opacity: 0.4 }}>—</span>
-                  ) : (
-                    <Dumbbell size={13} />
-                  )}
-                </div>
-                <span className="text-xs" style={{ color: 'var(--fg-3)' }}>{dayLabel}</span>
-              </div>
-            )
-          })}
+      {/* Charts — volume + calories side by side */}
+      <motion.div {...motionProps.slideUp} className="grid gap-4 xl:grid-cols-2">
+        {/* Volume bar chart */}
+        <div
+          className="rounded-xl p-4 space-y-3"
+          style={{ background: 'var(--bg-2)', border: '1px solid var(--border-1)' }}
+        >
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 className="text-sm font-semibold text-text">{ta.volumeChart}</h2>
+            <span className="text-xs text-muted tabular-nums">
+              {ta.actual}: <span className="font-semibold text-text">{totalActualVol.toLocaleString()}</span>
+            </span>
+          </div>
+          {totalPlannedVol === 0 && totalActualVol === 0 ? (
+            <p className="py-12 text-center text-sm text-muted">{ta.noExerciseData}</p>
+          ) : (
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }} barGap={3}>
+                <defs>
+                  <linearGradient id="xn-vol-planned" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--xn-clay-300)" stopOpacity={0.95} />
+                    <stop offset="100%" stopColor="var(--xn-clay-300)" stopOpacity={0.55} />
+                  </linearGradient>
+                  <linearGradient id="xn-vol-actual" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--color-primary)" stopOpacity={1} />
+                    <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0.7} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-1)" vertical={false} />
+                <XAxis dataKey="day" tick={{ fontSize: 11, fill: 'var(--fg-3)' }} axisLine={false} tickLine={false} />
+                <YAxis
+                  tick={{ fontSize: 11, fill: 'var(--fg-3)' }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={48}
+                  tickFormatter={(v: number) => Math.round(v).toLocaleString()}
+                />
+                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'var(--bg-3)', opacity: 0.5 }} />
+                <Legend wrapperStyle={{ fontSize: 12, color: 'var(--fg-3)', paddingTop: 8 }} iconType="circle" iconSize={8} />
+                <Bar dataKey="planned" name={ta.planned} fill="url(#xn-vol-planned)" radius={[5, 5, 0, 0]} maxBarSize={28} />
+                <Bar dataKey="actual" name={ta.actual} fill="url(#xn-vol-actual)" radius={[5, 5, 0, 0]} maxBarSize={28} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </div>
-        <div className="flex flex-wrap items-center gap-3 text-xs" style={{ color: 'var(--fg-3)' }}>
-          <span className="flex items-center gap-1">
-            <span className="inline-block w-3 h-3 rounded-sm" style={{ background: 'var(--color-primary)' }} />
-            {ta.completedLegend}
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="inline-block w-3 h-3 rounded-sm" style={{ background: 'var(--color-warning)' }} />
-            {ta.belowTargetLegend}
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="inline-block w-3 h-3 rounded-sm" style={{ background: 'var(--xn-clay-300)' }} />
-            {ta.restDayLegend}
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="inline-block w-3 h-3 rounded-sm" style={{ background: 'rgba(239,68,68,0.18)' }} />
-            {ta.missedLegend}
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="inline-block w-3 h-3 rounded-sm" style={{ background: 'var(--bg-3)' }} />
-            {ta.pendingLegend}
-          </span>
+
+        {/* Calories chart */}
+        <div
+          className="rounded-xl p-4 space-y-3"
+          style={{ background: 'var(--bg-2)', border: '1px solid var(--border-1)' }}
+        >
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 className="text-sm font-semibold text-text">{ta.caloriesChart}</h2>
+            <span className="text-xs text-muted tabular-nums">
+              <span className="font-semibold text-text">{totalEstimatedCalories.toLocaleString()}</span> kcal
+            </span>
+          </div>
+          {totalEstimatedCalories === 0 ? (
+            <p className="py-12 text-center text-sm text-muted">{ta.noCaloriesData}</p>
+          ) : (
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="xn-cal-fill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--xn-clay-600)" stopOpacity={1} />
+                    <stop offset="100%" stopColor="var(--xn-clay-600)" stopOpacity={0.6} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-1)" vertical={false} />
+                <XAxis dataKey="day" tick={{ fontSize: 11, fill: 'var(--fg-3)' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: 'var(--fg-3)' }} axisLine={false} tickLine={false} width={48} />
+                <Tooltip
+                  formatter={(value) => [`${Number(value ?? 0).toLocaleString()} kcal`, ta.estimated]}
+                  cursor={{ fill: 'var(--bg-3)', opacity: 0.5 }}
+                />
+                <Bar dataKey="calories" name={ta.estimated} fill="url(#xn-cal-fill)" radius={[5, 5, 0, 0]} maxBarSize={30} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </div>
-      </motion.div>
-
-      {/* Volume bar chart */}
-      <motion.div
-        {...motionProps.slideUp}
-        className="rounded-xl p-4 space-y-3"
-        style={{ background: 'var(--bg-2)', border: '1px solid var(--border-1)' }}
-      >
-        <h2 className="text-sm font-semibold text-text">{ta.volumeChart}</h2>
-        {totalPlannedVol === 0 && totalActualVol === 0 ? (
-          <p className="py-8 text-center text-sm text-muted">{ta.noExerciseData}</p>
-        ) : (
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }} barGap={4}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border-1)" vertical={false} />
-              <XAxis
-                dataKey="day"
-                tick={{ fontSize: 11, fill: 'var(--fg-3)' }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <YAxis
-                tick={{ fontSize: 11, fill: 'var(--fg-3)' }}
-                axisLine={false}
-                tickLine={false}
-                width={48}
-                tickFormatter={(v: number) => Math.round(v).toLocaleString()}
-              />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
-              <Legend
-                wrapperStyle={{ fontSize: 12, color: 'var(--fg-3)', paddingTop: 8 }}
-                iconType="circle"
-                iconSize={8}
-              />
-              <Bar dataKey="planned" name={ta.planned} fill="var(--border-1)" radius={[4, 4, 0, 0]} maxBarSize={32} />
-              <Bar dataKey="actual" name={ta.actual} fill="var(--color-primary)" radius={[4, 4, 0, 0]} maxBarSize={32} />
-            </BarChart>
-          </ResponsiveContainer>
-        )}
-      </motion.div>
-
-      {/* Calories chart */}
-      <motion.div
-        {...motionProps.slideUp}
-        className="rounded-xl p-4 space-y-3"
-        style={{ background: 'var(--bg-2)', border: '1px solid var(--border-1)' }}
-      >
-        <h2 className="text-sm font-semibold text-text">{ta.caloriesChart}</h2>
-        {totalEstimatedCalories === 0 ? (
-          <p className="py-8 text-center text-sm text-muted">{ta.noCaloriesData}</p>
-        ) : (
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border-1)" vertical={false} />
-              <XAxis
-                dataKey="day"
-                tick={{ fontSize: 11, fill: 'var(--fg-3)' }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <YAxis
-                tick={{ fontSize: 11, fill: 'var(--fg-3)' }}
-                axisLine={false}
-                tickLine={false}
-                width={48}
-              />
-              <Tooltip
-                formatter={(value) => [`${Number(value ?? 0).toLocaleString()} kcal`, ta.estimated]}
-                cursor={{ fill: 'rgba(255,255,255,0.04)' }}
-              />
-              <Bar dataKey="calories" name={ta.estimated} fill="var(--color-primary)" radius={[4, 4, 0, 0]} maxBarSize={36} />
-            </BarChart>
-          </ResponsiveContainer>
-        )}
       </motion.div>
 
       {/* Muscle group distribution */}

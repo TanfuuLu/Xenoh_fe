@@ -8,9 +8,13 @@ interface StatCardProps {
   value: string | number
   sub?: string
   accent?: string
+  /** Bright icon color; tints the chip background and colors the icon. */
+  iconColor?: string
 }
 
-export function StatCard({ icon, label, value, sub, accent }: StatCardProps) {
+export function StatCard({ icon, label, value, sub, accent, iconColor }: StatCardProps) {
+  const chipBg = iconColor ? `color-mix(in oklch, ${iconColor} 16%, transparent)` : accent ?? 'var(--bg-3)'
+  const chipColor = iconColor ?? 'var(--color-primary)'
   return (
     <motion.div
       variants={slideUp}
@@ -19,7 +23,7 @@ export function StatCard({ icon, label, value, sub, accent }: StatCardProps) {
     >
       <div
         className="flex-shrink-0 flex items-center justify-center rounded-lg"
-        style={{ width: 36, height: 36, background: accent ?? 'var(--bg-3)', color: 'var(--color-primary)' }}
+        style={{ width: 36, height: 36, background: chipBg, color: chipColor }}
       >
         {icon}
       </div>

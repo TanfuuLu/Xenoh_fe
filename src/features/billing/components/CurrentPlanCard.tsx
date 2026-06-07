@@ -25,7 +25,6 @@ export function CurrentPlanCard() {
     : null
   const isExpiringSoon = daysLeft !== null && daysLeft <= 7 && daysLeft >= 0
   const isExpired = daysLeft !== null && daysLeft < 0
-
   return (
     <Card
       animate={false}
@@ -90,6 +89,7 @@ export function CurrentPlanCard() {
               {ts.currentPlanExpired}
             </div>
           )}
+
         </div>
       </div>
     </Card>

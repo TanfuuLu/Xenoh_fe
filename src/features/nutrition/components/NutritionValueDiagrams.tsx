@@ -4,14 +4,42 @@ import { Card } from '@/shared/components/Card'
 import type { NutritionSummaryResponse } from '../types'
 import { formatKcal } from './nutritionHelpers'
 
-export function MetricCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+export function MetricCard({
+  icon,
+  label,
+  value,
+  accent = 'var(--color-primary)',
+  sub,
+  highlight = false,
+}: {
+  icon: React.ReactNode
+  label: string
+  value: React.ReactNode
+  accent?: string
+  sub?: string
+  highlight?: boolean
+}) {
   return (
-    <Card className="space-y-2" animate={false}>
-      <div className="flex items-center gap-2 text-muted">
+    <Card
+      animate={false}
+      className="flex items-center gap-3"
+      style={
+        highlight
+          ? { borderColor: accent, background: `color-mix(in oklch, ${accent} 7%, var(--xn-paper))` }
+          : undefined
+      }
+    >
+      <span
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
+        style={{ background: `color-mix(in oklch, ${accent} 16%, transparent)`, color: accent }}
+      >
         {icon}
-        <span className="text-xs font-semibold uppercase tracking-wide">{label}</span>
+      </span>
+      <div className="min-w-0">
+        <p className="truncate text-[11px] font-semibold uppercase tracking-widest text-muted">{label}</p>
+        <p className="truncate text-xl font-bold leading-tight text-text">{value}</p>
+        {sub && <p className="truncate text-xs text-muted">{sub}</p>}
       </div>
-      <p className="text-2xl font-bold text-text">{value}</p>
     </Card>
   )
 }
@@ -136,9 +164,9 @@ function MacroDonut({
 }) {
   const total = proteinG + carbsG + fatG
   const segments = [
-    { label: proteinLabel, value: proteinG, target: proteinTarget, color: '#6366f1' },
-    { label: carbsLabel,   value: carbsG,   target: carbsTarget,   color: '#22c55e' },
-    { label: fatLabel,     value: fatG,     target: fatTarget,     color: '#f97316' },
+    { label: proteinLabel, value: proteinG, target: proteinTarget, color: 'var(--color-primary)' },
+    { label: carbsLabel,   value: carbsG,   target: carbsTarget,   color: 'var(--xn-sage-500)' },
+    { label: fatLabel,     value: fatG,     target: fatTarget,     color: 'var(--color-warning)' },
   ]
   const pieData = total > 0
     ? segments.map((s) => ({ ...s, pieValue: s.value }))

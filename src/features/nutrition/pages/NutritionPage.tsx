@@ -7,6 +7,7 @@ import { Card } from '@/shared/components/Card'
 import { Input } from '@/shared/components/Input'
 import { Select } from '@/shared/components/Select'
 import { Spinner } from '@/shared/components/Spinner'
+import { AnimatedNumber } from '@/shared/components/AnimatedNumber'
 import { useT } from '@/shared/i18n'
 import { RequireTier } from '@/features/billing/components/RequireTier'
 import {
@@ -21,7 +22,6 @@ import {
   toField,
   optionalNumber,
   readNumber,
-  formatKcal,
   formatMissingField,
   type ProfileForm,
   type LogForm,
@@ -157,13 +157,31 @@ export function NutritionPage() {
       )}
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard icon={<Activity size={18} />} label={tn.bmrLabel} value={formatKcal(calc.bmr, tn.kcal, tn.missing)} />
-        <MetricCard icon={<Flame size={18} />} label={tn.tdeeLabel} value={formatKcal(calc.tdee, tn.kcal, tn.missing)} />
-        <MetricCard icon={<Target size={18} />} label={tn.targetLabel} value={formatKcal(calc.calorieTarget, tn.kcal, tn.missing)} />
         <MetricCard
-          icon={<Utensils size={18} />}
+          icon={<Activity size={20} />}
+          label={tn.bmrLabel}
+          value={calc.bmr != null ? <AnimatedNumber value={calc.bmr} suffix={` ${tn.kcal}`} /> : tn.missing}
+          accent="var(--ic-green)"
+        />
+        <MetricCard
+          icon={<Flame size={20} />}
+          label={tn.tdeeLabel}
+          value={calc.tdee != null ? <AnimatedNumber value={calc.tdee} suffix={` ${tn.kcal}`} /> : tn.missing}
+          accent="var(--ic-orange)"
+        />
+        <MetricCard
+          icon={<Target size={20} />}
+          label={tn.targetLabel}
+          value={calc.calorieTarget != null ? <AnimatedNumber value={calc.calorieTarget} suffix={` ${tn.kcal}`} /> : tn.missing}
+          accent="var(--ic-purple)"
+          sub={summary.profile.goal}
+          highlight
+        />
+        <MetricCard
+          icon={<Utensils size={20} />}
           label={tn.bodyweightLabel}
-          value={calc.bodyweightKg ? `${calc.bodyweightKg} ${tn.kg}` : tn.missing}
+          value={calc.bodyweightKg ? <AnimatedNumber value={calc.bodyweightKg} decimals={1} suffix={` ${tn.kg}`} /> : tn.missing}
+          accent="var(--ic-blue)"
         />
       </div>
 
@@ -273,19 +291,19 @@ export function NutritionPage() {
           </div>
           {isClientView ? (
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-lg p-3" style={{ background: 'var(--surface-2, var(--surface))' }}>
+              <div className="rounded-lg p-3" style={{ background: 'var(--bg-3)' }}>
                 <p className="text-xs" style={{ color: 'var(--fg-3)' }}>{tn.caloriesLabel}</p>
                 <p className="text-lg font-semibold" style={{ color: 'var(--fg-1)' }}>{readNumber(logForm.calories)} kcal</p>
               </div>
-              <div className="rounded-lg p-3" style={{ background: 'var(--surface-2, var(--surface))' }}>
+              <div className="rounded-lg p-3" style={{ background: 'var(--bg-3)' }}>
                 <p className="text-xs" style={{ color: 'var(--fg-3)' }}>{tn.proteinLabel}</p>
                 <p className="text-lg font-semibold" style={{ color: 'var(--fg-1)' }}>{readNumber(logForm.proteinG)}g</p>
               </div>
-              <div className="rounded-lg p-3" style={{ background: 'var(--surface-2, var(--surface))' }}>
+              <div className="rounded-lg p-3" style={{ background: 'var(--bg-3)' }}>
                 <p className="text-xs" style={{ color: 'var(--fg-3)' }}>{tn.carbsLabel}</p>
                 <p className="text-lg font-semibold" style={{ color: 'var(--fg-1)' }}>{readNumber(logForm.carbsG)}g</p>
               </div>
-              <div className="rounded-lg p-3" style={{ background: 'var(--surface-2, var(--surface))' }}>
+              <div className="rounded-lg p-3" style={{ background: 'var(--bg-3)' }}>
                 <p className="text-xs" style={{ color: 'var(--fg-3)' }}>{tn.fatLabel}</p>
                 <p className="text-lg font-semibold" style={{ color: 'var(--fg-1)' }}>{readNumber(logForm.fatG)}g</p>
               </div>

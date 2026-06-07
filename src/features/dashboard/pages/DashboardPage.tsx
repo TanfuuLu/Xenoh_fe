@@ -4,10 +4,11 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { Calculator, Dumbbell, Flame, Sparkles, TrendingUp } from 'lucide-react'
 import { format } from 'date-fns'
 import { enUS, vi as viLocale } from 'date-fns/locale'
+import { AnimatedNumber } from '@/shared/components/AnimatedNumber'
 import { Button } from '@/shared/components/Button'
 import { Card } from '@/shared/components/Card'
 import { Modal } from '@/shared/components/Modal'
-import { Spinner } from '@/shared/components/Spinner'
+import { Skeleton } from '@/shared/components/Skeleton'
 import { softCardGroup, softCardItem } from '@/shared/utils/motion'
 import { useLangStore, useT } from '@/shared/i18n'
 import { DailyTipCard } from '@/features/tips'
@@ -40,7 +41,18 @@ export function DashboardPage() {
   )
 
   if (isLoading) {
-    return <div className="flex h-64 items-center justify-center"><Spinner size="lg" /></div>
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-44 rounded-2xl" />
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)}
+        </div>
+        <div className="grid gap-4 xl:grid-cols-2">
+          <Skeleton className="h-40 rounded-xl" />
+          <Skeleton className="h-40 rounded-xl" />
+        </div>
+      </div>
+    )
   }
 
   if (isError || !data) {
@@ -118,9 +130,9 @@ export function DashboardPage() {
             xpText={`${xpIntoLevel.toLocaleString()} / ${profile.xpToNextLevel.toLocaleString()} XP`}
             progress={xpPct}
           />
-          <MetricCard icon={<Flame size={18} />}     label={td.streak}     value={td.streakValue.replace('{n}', String(profile.currentStreak))}    accent="#f97316" />
-          <MetricCard icon={<TrendingUp size={18} />} label={td.bodyweight} value={profile.latestBodyweight ? `${profile.latestBodyweight} kg` : '-'} accent="#06b6d4" />
-          <MetricCard icon={<Dumbbell size={18} />}   label="DOTS"          value={profile.dotsScore ? profile.dotsScore.toFixed(1) : '-'}               accent="#6366f1" />
+          <MetricCard icon={<Flame size={18} />}     label={td.streak}     value={<AnimatedNumber value={profile.currentStreak} suffix={` ${td.streakValue.replace('{n}', '').trim()}`} />} accent="var(--ic-orange)" />
+          <MetricCard icon={<TrendingUp size={18} />} label={td.bodyweight} value={profile.latestBodyweight ? <AnimatedNumber value={profile.latestBodyweight} decimals={1} suffix=" kg" /> : '-'} accent="var(--ic-green)" />
+          <MetricCard icon={<Dumbbell size={18} />}   label="DOTS"          value={profile.dotsScore ? <AnimatedNumber value={profile.dotsScore} decimals={1} /> : '-'}               accent="var(--ic-purple)" />
         </motion.div>
 
         <motion.div variants={shouldReduce ? undefined : softCardGroup} className="mt-5 grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">

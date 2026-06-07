@@ -38,7 +38,7 @@ export interface ExchangeExternalLoginTicketRequest {
 }
 
 export interface CompleteExternalRegistrationRequest {
-  role: Extract<UserRole, 'Individual' | 'Coach'>
+  role: Extract<UserRole, 'Individual'>
 }
 
 export interface ChangePasswordRequest {

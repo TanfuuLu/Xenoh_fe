@@ -3,6 +3,7 @@ import { api } from '@/shared/api/axios'
 import { ENDPOINTS } from '@/shared/api/endpoints'
 import type { PlanType, UserRole } from '@/shared/types/api'
 import type {
+  AdminAiUsageSummary,
   AdminDashboardResponse,
   AdminPaymentOrder,
   AdminPaymentSummary,
@@ -25,6 +26,7 @@ export const adminKeys = {
   payments: (filters: unknown) => ['admin', 'payments', filters] as const,
   paymentsSummary: ['admin', 'payments', 'summary'] as const,
   subscriptions: ['admin', 'subscriptions'] as const,
+  aiUsageSummary: ['admin', 'ai-usage', 'summary'] as const,
 }
 
 export function useAdminDashboard() {
@@ -130,6 +132,13 @@ export function useAdminSubscriptions() {
   return useQuery({
     queryKey: adminKeys.subscriptions,
     queryFn: () => api.get<AdminSubscription[]>(ENDPOINTS.admin.subscriptions).then((r) => r.data),
+  })
+}
+
+export function useAdminAiUsageSummary() {
+  return useQuery({
+    queryKey: adminKeys.aiUsageSummary,
+    queryFn: () => api.get<AdminAiUsageSummary>(ENDPOINTS.admin.aiUsageSummary).then((r) => r.data),
   })
 }
 

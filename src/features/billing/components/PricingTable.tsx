@@ -1,11 +1,11 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { Check, Lock } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { cn } from '@/shared/utils/cn'
 import { Button } from '@/shared/components/Button'
 import { useT } from '@/shared/i18n'
 import { useSubscription } from '../api/useSubscription'
-import { TIER_LABELS, TIER_PRICES } from '../types'
+import { TIER_LABELS, TIER_LIST_PRICES, TIER_PRICES } from '../types'
 import type { PlanTier } from '../types'
 
 interface Props {
@@ -179,7 +179,7 @@ export function PricingTable({ onSelect, loading }: Props) {
               <p className="text-xs mt-1" style={{ color: 'var(--fg-3)' }}>/{durationLabels[duration]}</p>
             ) : (
               <p className="text-xs mt-1" style={{ color: 'var(--fg-3)' }}>
-                /{durationLabels[duration]} ·{' '}
+                /{durationLabels[duration]} -{' '}
                 <span style={{ color: 'var(--color-success)', fontWeight: 600 }}>
                   ~{formatVnd(perMonthPrice(TIER_PRICES.ProIndividual[duration], duration))}{ts.perMonth}
                 </span>
@@ -230,11 +230,24 @@ export function PricingTable({ onSelect, loading }: Props) {
             <p className="mt-1 text-3xl font-bold" style={{ color: 'var(--fg-1)' }}>
               {formatVnd(TIER_PRICES.ProCoach[duration])}
             </p>
+            {TIER_LIST_PRICES.ProCoach[duration] > TIER_PRICES.ProCoach[duration] && (
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                <span className="text-sm line-through" style={{ color: 'var(--fg-4)' }}>
+                  {formatVnd(TIER_LIST_PRICES.ProCoach[duration])}
+                </span>
+                <span
+                  className="rounded-full px-2 py-0.5 text-[11px] font-bold"
+                  style={{ background: 'var(--xn-sage-200)', color: 'var(--color-success)' }}
+                >
+                  {ts.launchPromo}
+                </span>
+              </div>
+            )}
             {duration === 1 ? (
               <p className="text-xs mt-1" style={{ color: 'var(--fg-3)' }}>/{durationLabels[duration]}</p>
             ) : (
               <p className="text-xs mt-1" style={{ color: 'var(--fg-3)' }}>
-                /{durationLabels[duration]} ·{' '}
+                /{durationLabels[duration]} -{' '}
                 <span style={{ color: 'var(--color-success)', fontWeight: 600 }}>
                   ~{formatVnd(perMonthPrice(TIER_PRICES.ProCoach[duration], duration))}{ts.perMonth}
                 </span>
@@ -283,3 +296,4 @@ function FeatureList({ items }: { items: readonly string[] }) {
     </ul>
   )
 }
+

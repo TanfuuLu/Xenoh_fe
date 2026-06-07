@@ -2,7 +2,7 @@ import { Link } from 'react-router'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { motion, useReducedMotion } from 'framer-motion'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import {
   ArrowRight,
   Calendar,
@@ -41,6 +41,7 @@ import type {
   PersonalDashboardNutrition,
   PersonalDashboardTodayWorkout,
 } from '../types'
+import { AnimatedNumber } from '@/shared/components/AnimatedNumber'
 import { ActionIcon, Macro, PanelHeader, ProgressBar, SmallStat } from './dashboardWidgets'
 
 type BodyweightForm = { weight: number }
@@ -83,7 +84,7 @@ export function BodyweightPanel({ latestBodyweight }: { latestBodyweight: number
           label="Bodyweight"
           title={latestBodyweight ? `${latestBodyweight} kg` : 'Log your weight'}
           subtitle="Keep BMI, DOTS, and nutrition targets up to date."
-          accent="#06b6d4"
+          accent="var(--ic-green)"
         />
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-2 sm:flex-row sm:items-start">
           <div>
@@ -107,7 +108,7 @@ export function BodyweightPanel({ latestBodyweight }: { latestBodyweight: number
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="h-48 min-w-0 rounded-xl border border-border bg-panel p-3">
+        <div className="h-48 min-w-0 rounded-xl border border-border p-3" style={{ background: 'var(--bg-2)' }}>
           {chartData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
@@ -121,9 +122,10 @@ export function BodyweightPanel({ latestBodyweight }: { latestBodyweight: number
                 <Line
                   type="monotone"
                   dataKey="weight"
-                  stroke="var(--xn-clay-700)"
+                  stroke="#f59e0b"
                   strokeWidth={2}
-                  dot={{ fill: 'var(--xn-clay-700)', r: 3 }}
+                  dot={{ fill: '#f59e0b', r: 3 }}
+                  activeDot={{ r: 5 }}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -134,24 +136,36 @@ export function BodyweightPanel({ latestBodyweight }: { latestBodyweight: number
           )}
         </div>
 
-        <div className="max-h-48 overflow-y-auto rounded-xl border border-border bg-panel">
+        <div className="max-h-48 overflow-y-auto rounded-xl border border-border bg-surface">
           {history.length > 0 ? (
-            history.slice(0, 8).map((entry) => (
-              <div key={entry.id} className="flex items-center justify-between gap-3 border-b border-border px-3 py-2 last:border-b-0">
-                <div>
-                  <p className="text-sm font-medium text-text">{entry.weight} kg</p>
-                  <p className="text-xs text-muted">{format(new Date(entry.date), 'dd/MM/yyyy')}</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => deleteWeight(entry.id)}
-                  className="rounded-md p-1.5 text-danger transition hover:bg-danger/10"
-                  aria-label="Delete bodyweight log"
+            <AnimatePresence initial={false}>
+              {history.slice(0, 8).map((entry) => (
+                <motion.div
+                  key={entry.id}
+                  layout
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2, ease: 'easeOut' }}
+                  className="overflow-hidden"
                 >
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            ))
+                  <div className="flex items-center justify-between gap-3 border-b border-border px-3 py-2">
+                    <div>
+                      <p className="text-sm font-medium text-text">{entry.weight} kg</p>
+                      <p className="text-xs text-muted">{format(new Date(entry.date), 'dd/MM/yyyy')}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => deleteWeight(entry.id)}
+                      className="rounded-md p-1.5 text-danger transition hover:bg-danger/10"
+                      aria-label="Delete bodyweight log"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
           ) : (
             <p className="p-4 text-sm text-muted">Recent logs will appear here.</p>
           )}
@@ -166,7 +180,7 @@ export function TodayPanel({ workout }: { workout: PersonalDashboardTodayWorkout
   if (!workout) {
     return (
       <Card className="xn-dashboard-card space-y-4" variants={softCardItem}>
-        <PanelHeader icon={<Calendar size={18} />} label={td.today} title={td.noWorkoutScheduled} accent="#f97316" />
+        <PanelHeader icon={<Calendar size={18} />} label={td.today} title={td.noWorkoutScheduled} accent="var(--ic-orange)" />
         <p className="text-sm text-muted">{td.noWorkoutHint}</p>
         <Link to="/plans">
           <Button size="sm" variant="secondary">{td.openPlans}</Button>
@@ -187,7 +201,7 @@ export function TodayPanel({ workout }: { workout: PersonalDashboardTodayWorkout
           label={td.today}
           title={isRest ? td.restDay : workout.dayOfWeek}
           subtitle={format(new Date(workout.date), 'd MMM yyyy')}
-          accent="#f97316"
+          accent="var(--ic-orange)"
         />
         {workout.isCompleted && <Badge variant="success">{td.done}</Badge>}
         {isRest && <Badge variant="default">{td.rest}</Badge>}
@@ -250,7 +264,7 @@ export function PlanPanel({
   if (!plan) {
     return (
       <Card className="xn-dashboard-card space-y-4" variants={softCardItem}>
-        <PanelHeader icon={<ClipboardList size={18} />} label={td.activePlanLabel} title={td.noActivePlan} accent="#6366f1" />
+        <PanelHeader icon={<ClipboardList size={18} />} label={td.activePlanLabel} title={td.noActivePlan} accent="var(--ic-blue)" />
         <p className="text-sm text-muted">{td.createPlanHint}</p>
         <Link to="/plans"><Button size="sm">{td.createPlan}</Button></Link>
       </Card>
@@ -265,7 +279,7 @@ export function PlanPanel({
           label={td.activePlanLabel}
           title={plan.name}
           subtitle={`${format(new Date(plan.startDate), 'dd/MM/yyyy')} - ${format(new Date(plan.endDate), 'dd/MM/yyyy')}`}
-          accent="#6366f1"
+          accent="var(--ic-blue)"
         />
         <Badge variant="success">{tc.active}</Badge>
       </div>
@@ -279,7 +293,7 @@ export function PlanPanel({
       </div>
 
       {plan.currentWeek && (
-        <div className="rounded-xl border border-border bg-panel p-3">
+        <div className="rounded-xl border border-border bg-surface p-3">
           <div className="flex justify-between gap-3 text-sm">
             <span className="font-medium text-text">{plan.currentWeek.name}</span>
             <span className="text-muted">{plan.currentWeek.completedDays}/{plan.currentWeek.totalDays} {tc.days}</span>
@@ -304,7 +318,7 @@ export function NutritionPanel({ nutrition }: { nutrition: PersonalDashboardNutr
 
   return (
     <Card className="xn-dashboard-card space-y-4" variants={softCardItem}>
-      <PanelHeader icon={<Utensils size={18} />} label={td.nutrition} title={td.todaysIntake} accent="#ec4899" />
+      <PanelHeader icon={<Utensils size={18} />} label={td.nutrition} title={td.todaysIntake} accent="var(--ic-pink)" />
 
       {!hasTargets ? (
         <div className="rounded-xl border border-warning/30 p-4" style={{ background: 'var(--xn-warning-bg)' }}>
@@ -317,7 +331,9 @@ export function NutritionPanel({ nutrition }: { nutrition: PersonalDashboardNutr
         <>
           <div className="flex items-baseline justify-between gap-3">
             <div>
-              <p className="text-3xl font-bold text-text">{nutrition.loggedCalories}</p>
+              <p className="text-3xl font-bold text-text">
+                <AnimatedNumber value={nutrition.loggedCalories} />
+              </p>
               <p className="text-sm text-muted">{td.ofCalories.replace('{n}', String(nutrition.calorieTarget))}</p>
             </div>
             <p className="text-sm font-semibold text-text">
@@ -344,7 +360,7 @@ export function NextActionsPanel({ actions }: { actions: PersonalDashboardAction
   const shouldReduce = useReducedMotion()
   return (
     <Card className="xn-dashboard-card space-y-4" variants={softCardItem}>
-      <PanelHeader icon={<Target size={18} />} label={td.nextActions} title={td.whatToDoNext} accent="#f59e0b" />
+      <PanelHeader icon={<Target size={18} />} label={td.nextActions} title={td.whatToDoNext} accent="var(--ic-amber)" />
       <motion.div
         className="space-y-2"
         initial={shouldReduce ? false : 'hidden'}
@@ -355,7 +371,7 @@ export function NextActionsPanel({ actions }: { actions: PersonalDashboardAction
           <motion.div key={`${action.type}-${action.route}`} variants={shouldReduce ? undefined : slideUp}>
             <Link
               to={action.route}
-              className="xn-choice-card group flex items-center gap-3 rounded-xl border border-border bg-panel p-3"
+              className="xn-choice-card group flex items-center gap-3 rounded-xl border border-border bg-surface p-3"
             >
               <div className="xn-choice-card-icon flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-surface text-primary">
                 <ActionIcon type={action.type} />
@@ -423,7 +439,7 @@ export function ProInsightsPanel({
               label={td.proInsights}
               title={unlocked ? td.personalRecommendations : td.unlockDeeperGuidance}
               subtitle={unlocked ? td.proInsightsSubtitle : td.proFreeHint}
-              accent="#8b5cf6"
+              accent="var(--ic-purple)"
             />
             <Badge variant={unlocked ? 'primary' : 'default'}>{td.proBadge}</Badge>
           </div>

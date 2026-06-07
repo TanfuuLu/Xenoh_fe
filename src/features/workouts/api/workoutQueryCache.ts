@@ -6,13 +6,12 @@ import { profileKeys } from '@/features/profile/api/useProfile'
 export const exerciseKeys = {
   all: ['exercises'] as const,
   byDay: (dayId: string) => ['exercises', 'by-day', dayId] as const,
+  byWeek: (weekId: string) => ['exercises', 'by-week', weekId] as const,
 }
 
 export const dayKeys = {
   all: ['days'] as const,
   byWeek: (weekId: string) => ['days', weekId] as const,
-  aiGuidance: (dailyWorkoutId: string, lang: 'en' | 'vi') =>
-    ['days', dailyWorkoutId, 'ai-guidance', lang] as const,
 }
 
 export const weekKeys = {

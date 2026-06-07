@@ -1,12 +1,11 @@
 import { useMemo } from 'react'
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/shared/api/axios'
 import { ENDPOINTS } from '@/shared/api/endpoints'
-import { useLangStore } from '@/shared/i18n'
 import { dayKeys, invalidateWorkoutQueries } from './workoutQueryCache'
 import type { DayStatus } from '@/shared/types/api'
 import type { PagedResponse } from '@/shared/types/api'
-import type { CopyDayRequest, CopyDayResponse, DailyWorkoutResponse, WorkoutGuidanceResponse } from '../types'
+import type { CopyDayRequest, CopyDayResponse, DailyWorkoutResponse } from '../types'
 
 const DAY_PAGE_SIZE = 7
 
@@ -67,18 +66,5 @@ export function useCopyDay(weeklyWorkoutId: string, planId?: string) {
         weeklyWorkoutId,
         planId,
       }),
-  })
-}
-
-export function useDailyWorkoutGuidance(dailyWorkoutId: string, enabled = true) {
-  const lang = useLangStore((s) => s.lang)
-  return useQuery({
-    queryKey: dayKeys.aiGuidance(dailyWorkoutId, lang),
-    queryFn: () =>
-      api
-        .get<WorkoutGuidanceResponse>(ENDPOINTS.days.aiGuidance(dailyWorkoutId, lang))
-        .then((r) => r.data),
-    enabled: enabled && !!dailyWorkoutId,
-    retry: false,
   })
 }

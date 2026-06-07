@@ -2,6 +2,7 @@ import { useRef, useState, type ChangeEvent, type ReactNode, type TextareaHTMLAt
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { motion, useReducedMotion } from 'framer-motion'
 import { CalendarDays, Camera, ChevronLeft, ChevronRight, Clock3, Dumbbell } from 'lucide-react'
 import { format, isValid } from 'date-fns'
 import { Card } from '@/shared/components/Card'
@@ -468,6 +469,7 @@ function TrainingCalendar({
   onPrevious: () => void
   onNext: () => void
 }) {
+  const reduce = useReducedMotion()
   const trainedSet = new Set(trainedDates)
   const firstDay = new Date(year, month - 1, 1)
   const monthLabel = format(firstDay, 'MMMM yyyy')
@@ -529,18 +531,35 @@ function TrainingCalendar({
             ))}
             {cells.map((cell) => {
               const active = cell.day !== null && trainedSet.has(toIsoDate(year, month, cell.day))
+              if (active) {
+                return (
+                  <motion.div
+                    key={cell.key}
+                    className="flex h-9 items-center justify-center rounded-md text-xs font-bold text-white"
+                    initial={reduce ? false : { scale: 0.4, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 20 }}
+                    whileHover={reduce ? undefined : { scale: 1.12 }}
+                    whileTap={reduce ? undefined : { scale: 0.92 }}
+                    style={{
+                      background: 'var(--ic-red)',
+                      border: '1px solid var(--ic-red)',
+                      boxShadow: '0 2px 10px color-mix(in oklch, var(--ic-red) 45%, transparent)',
+                      cursor: 'default',
+                    }}
+                  >
+                    {cell.day}
+                  </motion.div>
+                )
+              }
               return (
                 <div
                   key={cell.key}
                   className={cn(
-                    'flex h-9 items-center justify-center rounded-md text-xs font-semibold',
+                    'flex h-9 items-center justify-center rounded-md text-xs font-semibold text-text',
                     cell.day === null && 'invisible',
-                    active ? 'text-white shadow-sm' : 'text-text',
                   )}
-                  style={{
-                    background: active ? 'var(--color-primary)' : 'var(--bg-2)',
-                    border: active ? '1px solid var(--color-primary)' : '1px solid var(--border-1)',
-                  }}
+                  style={{ background: 'var(--bg-2)', border: '1px solid var(--border-1)' }}
                 >
                   {cell.day}
                 </div>

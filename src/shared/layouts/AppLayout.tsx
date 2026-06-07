@@ -51,9 +51,8 @@ export function AppLayout() {
   const updatePreferences = useUpdatePreferences()
   const changePasswordLabel = (tn as typeof tn & { changePassword?: string }).changePassword ?? 'Change password'
   const exerciseLibraryLabel = (tn as typeof tn & { exerciseLibrary?: string }).exerciseLibrary ?? 'Exercise Library'
-  const isWeekDetailPage = /^\/plans\/[^/]+\/weeks\/[^/]+$/.test(location.pathname)
   const isInsightsPage = location.pathname === '/insights'
-  const isWidePage = isWeekDetailPage || isInsightsPage
+  const isWidePage = isInsightsPage
 
   useNotificationHub()
   useChatUnreadSync()
@@ -381,6 +380,7 @@ interface SegmentedPreferenceProps<T extends string> {
 }
 
 function SegmentedPreference<T extends string>({ value, options, onChange }: SegmentedPreferenceProps<T>) {
+  const groupId = React.useId()
   return (
     <div
       style={{
@@ -401,6 +401,7 @@ function SegmentedPreference<T extends string>({ value, options, onChange }: Seg
             type="button"
             onClick={() => onChange(option.value)}
             style={{
+              position: 'relative',
               minWidth: 36,
               padding: '4px 8px',
               border: 'none',
@@ -409,13 +410,26 @@ function SegmentedPreference<T extends string>({ value, options, onChange }: Seg
               fontFamily: 'var(--font-sans)',
               fontSize: 12,
               fontWeight: active ? 700 : 500,
-              background: active ? 'var(--bg-2)' : 'transparent',
+              background: 'transparent',
               color: active ? 'var(--fg-1)' : 'var(--fg-3)',
-              boxShadow: active ? 'var(--sh-xs)' : 'none',
-              transition: 'all 140ms',
+              transition: 'color 140ms',
             }}
           >
-            {option.label}
+            {active && (
+              <motion.span
+                layoutId={groupId}
+                transition={{ type: 'spring', stiffness: 420, damping: 34 }}
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  background: 'var(--bg-2)',
+                  borderRadius: 6,
+                  boxShadow: 'var(--sh-xs)',
+                  zIndex: 0,
+                }}
+              />
+            )}
+            <span style={{ position: 'relative', zIndex: 1 }}>{option.label}</span>
           </button>
         )
       })}
