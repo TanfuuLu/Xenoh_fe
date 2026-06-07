@@ -25,13 +25,21 @@ interface WorkoutInvalidationScope {
   planId?: string
   includeUserProgress?: boolean
   includeExerciseTracking?: boolean
+  /**
+   * Skip refetching the by-day exercise list. Use when the mutation already wrote
+   * the authoritative server response into that cache (e.g. completing a set), so a
+   * refetch would only risk a transient flicker while the backend read-model settles.
+   */
+  skipExerciseList?: boolean
 }
 
 export function invalidateWorkoutQueries(qc: QueryClient, scope: WorkoutInvalidationScope = {}) {
-  if (scope.dailyWorkoutId) {
-    void qc.invalidateQueries({ queryKey: exerciseKeys.byDay(scope.dailyWorkoutId) })
-  } else {
-    void qc.invalidateQueries({ queryKey: exerciseKeys.all })
+  if (!scope.skipExerciseList) {
+    if (scope.dailyWorkoutId) {
+      void qc.invalidateQueries({ queryKey: exerciseKeys.byDay(scope.dailyWorkoutId) })
+    } else {
+      void qc.invalidateQueries({ queryKey: exerciseKeys.all })
+    }
   }
 
   if (scope.weeklyWorkoutId) {

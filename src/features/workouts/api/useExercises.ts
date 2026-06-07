@@ -196,7 +196,18 @@ export function useCompleteSet(dailyWorkoutId: string, weeklyWorkoutId?: string,
       if (ctx?.previous) qc.setQueryData(key, ctx.previous)
     },
 
-    // Sync server truth after settle — also invalidate days, weeks, and profile (XP update)
+    // The PATCH returns the authoritative exercise (with the backend's own
+    // isCompleted/PR/XP values). Write it straight into the cache instead of
+    // refetching, so the card never flips back while the read-model settles.
+    onSuccess: (updated) => {
+      qc.setQueryData<ExercisePages>(key, (old) =>
+        mapExercisePages(old, (exercise) => (exercise.id === updated.id ? updated : exercise)),
+      )
+    },
+
+    // Sync the rest after settle — days, weeks, and profile (XP update). The
+    // by-day exercise list is already up to date from onSuccess, so skip it to
+    // avoid the green→not-finished→green flicker on the last set.
     onSettled: () => {
       invalidateWorkoutQueries(qc, {
         dailyWorkoutId,
@@ -204,6 +215,7 @@ export function useCompleteSet(dailyWorkoutId: string, weeklyWorkoutId?: string,
         planId,
         includeUserProgress: true,
         includeExerciseTracking: true,
+        skipExerciseList: true,
       })
     },
   })

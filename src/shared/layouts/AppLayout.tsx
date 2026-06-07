@@ -342,9 +342,9 @@ export function AppLayout() {
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={location.pathname}
-                initial={shouldReduce ? false : { opacity: 0, y: 10, filter: 'blur(2px)' }}
-                animate={shouldReduce ? { opacity: 1 } : { opacity: 1, y: 0, filter: 'blur(0px)' }}
-                exit={shouldReduce ? { opacity: 1 } : { opacity: 0, y: -6, filter: 'blur(2px)' }}
+                initial={shouldReduce ? false : { opacity: 0, y: 8 }}
+                animate={shouldReduce ? { opacity: 1 } : { opacity: 1, y: 0 }}
+                exit={shouldReduce ? { opacity: 1 } : { opacity: 0, y: -4 }}
                 transition={{ duration: 0.18, ease: 'easeOut' }}
               >
                 <Outlet />
