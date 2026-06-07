@@ -2,6 +2,7 @@ import axios from 'axios'
 import type { AxiosInstance, InternalAxiosRequestConfig, AxiosError } from 'axios'
 import type { UserRole } from '@/shared/types/api'
 import { ENDPOINTS } from './endpoints'
+import { API_BASE_URL } from './baseUrl'
 
 interface AuthRefreshResponse {
   userId: string
@@ -27,7 +28,7 @@ export function initAxiosInterceptors(
 }
 
 export const api: AxiosInstance = axios.create({
-  baseURL: import.meta.env['VITE_API_URL'] as string,
+  baseURL: API_BASE_URL,
   headers: { 'Content-Type': 'application/json' },
   withCredentials: true,
 })
@@ -76,7 +77,7 @@ api.interceptors.response.use(
 
       try {
         const res = await axios.post<AuthRefreshResponse>(
-          `${import.meta.env['VITE_API_URL'] as string}${ENDPOINTS.auth.refreshToken}`,
+          `${API_BASE_URL}${ENDPOINTS.auth.refreshToken}`,
           undefined,
           { withCredentials: true },
         )

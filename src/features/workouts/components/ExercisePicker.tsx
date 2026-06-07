@@ -4,6 +4,7 @@ import { Search, X, CheckCircle2 } from 'lucide-react'
 import { Badge } from '@/shared/components/Badge'
 import { Spinner } from '@/shared/components/Spinner'
 import { Select } from '@/shared/components/Select'
+import { API_BASE_URL } from '@/shared/api/baseUrl'
 import { cn } from '@/shared/utils/cn'
 import { useT } from '@/shared/i18n'
 import { MuscleGroup, type MuscleGroup as MuscleGroupValue } from '@/shared/types/api'
@@ -190,7 +191,7 @@ const ExerciseTemplateOption = memo(function ExerciseTemplateOption({
       <span className="flex min-w-0 items-center gap-2">
         {template.imageUrl && (
           <img
-            src={`${import.meta.env.VITE_API_URL}${template.imageUrl}`}
+            src={`${API_BASE_URL}${template.imageUrl}`}
             alt={template.name}
             className="h-7 w-7 shrink-0 rounded-md object-cover"
           />

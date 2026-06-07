@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/shared/api/axios'
 import { ENDPOINTS } from '@/shared/api/endpoints'
+import { API_BASE_URL } from '@/shared/api/baseUrl'
 import { useAuthStore } from '../store/authStore'
 import type {
   AuthResponse,
@@ -45,7 +46,7 @@ export function useRegister() {
 }
 
 export function startExternalLogin(provider: ExternalLoginProvider) {
-  window.location.href = `${import.meta.env['VITE_API_URL'] as string}${ENDPOINTS.auth.externalLogin(provider)}`
+  window.location.href = `${API_BASE_URL}${ENDPOINTS.auth.externalLogin(provider)}`
 }
 
 function storeAuthResponse(

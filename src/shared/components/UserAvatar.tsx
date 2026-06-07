@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { UserRound } from 'lucide-react'
 import { cn } from '@/shared/utils/cn'
+import { API_BASE_URL } from '@/shared/api/baseUrl'
 
 interface UserAvatarProps {
   name?: string | null
@@ -33,10 +34,9 @@ function resolveImageUrl(imageUrl?: string | null) {
   if (/^(https?:)?\/\//.test(imageUrl) || imageUrl.startsWith('data:')) return imageUrl
   if (imageUrl.startsWith('/assets/')) return imageUrl
 
-  const baseUrl = (import.meta.env['VITE_API_URL'] as string | undefined)?.replace(/\/$/, '')
-  if (!baseUrl) return imageUrl
+  if (!API_BASE_URL) return imageUrl
 
-  return `${baseUrl}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`
+  return `${API_BASE_URL}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`
 }
 
 export function UserAvatar({

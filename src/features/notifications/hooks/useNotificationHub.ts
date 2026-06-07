@@ -11,8 +11,9 @@ import { useChatStore } from '@/features/chat/store/chatStore'
 import type { MessagePageResponse, MessageResponse } from '@/features/chat/types'
 import { useNotificationStore } from '../store/notificationStore'
 import type { NotificationResponse } from '../types'
+import { API_BASE_URL } from '@/shared/api/baseUrl'
 
-const HUB_URL = `${import.meta.env['VITE_API_URL'] as string}/hubs/notifications`
+const HUB_URL = `${API_BASE_URL}/hubs/notifications`
 
 
 type PlanCommentAddedPayload = {

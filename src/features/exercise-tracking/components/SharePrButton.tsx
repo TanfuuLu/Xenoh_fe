@@ -4,8 +4,9 @@ import { Modal } from '@/shared/components/Modal'
 import { api } from '@/shared/api/axios'
 import { ENDPOINTS } from '@/shared/api/endpoints'
 import { cn } from '@/shared/utils/cn'
+import { API_BASE_URL } from '@/shared/api/baseUrl'
 
-const API_BASE = (import.meta.env['VITE_API_URL'] as string) ?? ''
+const API_BASE = API_BASE_URL
 
 interface Props {
   userId: string

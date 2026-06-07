@@ -10,6 +10,7 @@ import { Card } from '@/shared/components/Card'
 import { Input } from '@/shared/components/Input'
 import { Modal } from '@/shared/components/Modal'
 import { Select } from '@/shared/components/Select'
+import { API_BASE_URL } from '@/shared/api/baseUrl'
 import { Spinner } from '@/shared/components/Spinner'
 import { useConfirm } from '@/shared/components/ConfirmModal'
 import { MuscleGroup, type MuscleGroup as MuscleGroupValue } from '@/shared/types/api'
@@ -441,7 +442,7 @@ function ExerciseLibraryCard({
         <div className="flex min-w-0 items-start gap-3">
           {template.imageUrl ? (
             <img
-              src={`${import.meta.env.VITE_API_URL}${template.imageUrl}`}
+              src={`${API_BASE_URL}${template.imageUrl}`}
               alt={template.name}
               className="h-11 w-11 shrink-0 rounded-2xl object-cover"
             />
