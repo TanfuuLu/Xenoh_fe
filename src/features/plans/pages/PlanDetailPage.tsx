@@ -19,8 +19,7 @@ import { usePlan } from '../index'
 import { useWeeklyWorkouts, useUpdateWeeklyWorkout } from '@/features/workouts'
 import { InlineTip } from '@/features/tips'
 import type { WeeklyWorkoutResponse } from '@/features/workouts'
-import { CommentSection } from '@/features/comments/components/CommentSection'
-import { usePlanComments, useAddPlanComment, useDeletePlanComment } from '@/features/comments/api/usePlanComments'
+import { PlanSnapshotCard } from '../components/PlanSnapshotCard'
 
 const schema = z.object({ name: z.string().min(1).max(100) })
 type FormData = z.infer<typeof schema>
@@ -39,9 +38,6 @@ export function PlanDetailPage() {
     isFetchingNextPage: loadingMoreWeeks,
   } = useWeeklyWorkouts(planId)
   const { mutate: updateWeek } = useUpdateWeeklyWorkout(planId)
-  const { data: comments = [], isLoading: commentsLoading } = usePlanComments(planId)
-  const { mutateAsync: addComment, isPending: addingComment } = useAddPlanComment(planId)
-  const { mutate: deleteComment, isPending: deletingComment } = useDeletePlanComment(planId)
   const t   = useT()
   const tpd = t.planDetail
   const tc  = t.common
@@ -264,15 +260,7 @@ export function PlanDetailPage() {
         )}
       </div>
 
-      <CommentSection
-        comments={comments}
-        isLoading={commentsLoading}
-        onAdd={(content) => addComment(content)}
-        onDelete={(id) => deleteComment(id)}
-        isPendingAdd={addingComment}
-        isPendingDelete={deletingComment}
-        className="mt-6"
-      />
+      <PlanSnapshotCard plan={plan} />
 
       <Modal open={!!editingWeek} onClose={() => setEditingWeek(null)} title={tpd.renameWeekTitle}>
         <form onSubmit={handleSubmit(onRenameSubmit)} className="space-y-4">

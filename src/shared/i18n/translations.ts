@@ -264,6 +264,11 @@ export const translations = {
       saveBtn: 'Save',
       currentWeek: 'Current week',
       openCurrentWeek: 'Open current week',
+      planSnapshotTitle: 'Plan at a glance',
+      planSnapshotWeeks: 'Weeks completed',
+      planSnapshotDays: 'Days completed',
+      planSnapshotProgress: 'Plan progress',
+      planSnapshotFull: 'Full analysis',
     },
 
     // ── Week detail ───────────────────────────────────────────────────────────
@@ -1382,6 +1387,11 @@ export const translations = {
       saveBtn: 'Lưu',
       currentWeek: 'Tuần hiện tại',
       openCurrentWeek: 'Mở tuần hiện tại',
+      planSnapshotTitle: 'Tổng quan kế hoạch',
+      planSnapshotWeeks: 'Tuần đã hoàn thành',
+      planSnapshotDays: 'Ngày đã hoàn thành',
+      planSnapshotProgress: 'Tiến độ kế hoạch',
+      planSnapshotFull: 'Xem phân tích',
     },
 
     weekDetail: {
