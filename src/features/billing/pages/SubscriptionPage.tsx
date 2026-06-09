@@ -2,13 +2,16 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
 import { useSearchParams } from 'react-router'
+import { differenceInDays } from 'date-fns'
 import { Zap } from 'lucide-react'
 import { slideUp, staggerContainer } from '@/shared/utils/motion'
+import { useConfirm } from '@/shared/components/ConfirmModal'
 import { useT } from '@/shared/i18n'
-import { useCreatePaymentOrder } from '../api/useSubscription'
+import { useCreatePaymentOrder, useSubscription } from '../api/useSubscription'
 import { CurrentPlanCard } from '../components/CurrentPlanCard'
 import { PricingTable } from '../components/PricingTable'
 import { PaymentOrderModal } from '../components/PaymentOrderModal'
+import { TIER_LABELS } from '../types'
 import type { PaidDurationMonths, PaymentOrderResponse, PlanTier } from '../types'
 
 export function SubscriptionPage() {
@@ -16,10 +19,12 @@ export function SubscriptionPage() {
   const ts = t.subscription
   const [order, setOrder] = useState<PaymentOrderResponse | null>(null)
   const { mutate: createOrder, isPending } = useCreatePaymentOrder()
+  const { data: subscription } = useSubscription()
+  const { confirm, ConfirmDialog } = useConfirm()
   const [searchParams] = useSearchParams()
   const showCoachBanner = searchParams.get('reason') === 'coach-required'
 
-  function handleSelectTier(tier: Exclude<PlanTier, 'Free'>, durationMonths: PaidDurationMonths) {
+  function placeOrder(tier: Exclude<PlanTier, 'Free'>, durationMonths: PaidDurationMonths) {
     createOrder(
       { requestedTier: tier, durationMonths },
       {
@@ -33,6 +38,32 @@ export function SubscriptionPage() {
         },
       },
     )
+  }
+
+  async function handleSelectTier(tier: Exclude<PlanTier, 'Free'>, durationMonths: PaidDurationMonths) {
+    const currentTier = subscription?.tier ?? 'Free'
+    const daysLeft = subscription?.expiresAt
+      ? differenceInDays(new Date(subscription.expiresAt), new Date())
+      : 0
+
+    // Switching to a different paid tier restarts the term — warn before forfeiting remaining days.
+    const isTierSwitch = currentTier !== 'Free' && currentTier !== tier && daysLeft > 0
+    if (isTierSwitch) {
+      const confirmed = await confirm(
+        ts.upgradeWarning
+          .replace(/{n}/g, String(daysLeft))
+          .replace('{current}', TIER_LABELS[currentTier])
+          .replace('{target}', TIER_LABELS[tier]),
+        {
+          confirmLabel: ts.upgradeWarningConfirm,
+          cancelLabel: ts.upgradeWarningCancel,
+          danger: true,
+        },
+      )
+      if (!confirmed) return
+    }
+
+    placeOrder(tier, durationMonths)
   }
 
   return (
@@ -92,6 +123,9 @@ export function SubscriptionPage() {
 
       {/* Payment modal */}
       <PaymentOrderModal order={order} onClose={() => setOrder(null)} />
+
+      {/* Upgrade warning */}
+      {ConfirmDialog}
     </motion.div>
   )
 }

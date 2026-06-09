@@ -148,7 +148,7 @@ export function PricingTable({ onSelect, loading }: Props) {
         {/* Pro Individual */}
         <motion.div
           initial={{ scale: 1 }}
-          whileHover={isCurrentPlan('ProIndividual') ? {} : { scale: 1.02 }}
+          whileHover={isCurrentPlan('ProIndividual') || isCurrentPlan('ProCoach') ? {} : { scale: 1.02 }}
           transition={{ duration: 0.15 }}
           className="relative flex flex-col gap-4 rounded-2xl p-6"
           style={{
@@ -192,6 +192,10 @@ export function PricingTable({ onSelect, loading }: Props) {
           {isCurrentPlan('ProIndividual') ? (
             <Button disabled className="mt-auto" style={{ background: 'var(--xn-sage-500)', color: '#fff', cursor: 'default' }}>
               {ts.yourCurrentPlan}
+            </Button>
+          ) : isCurrentPlan('ProCoach') ? (
+            <Button variant="secondary" disabled className="mt-auto">
+              {ts.includedInCoach}
             </Button>
           ) : (
             <Button onClick={() => onSelect('ProIndividual', duration)} loading={loading} className="mt-auto">
