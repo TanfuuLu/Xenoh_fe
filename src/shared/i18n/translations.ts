@@ -1212,6 +1212,8 @@ export const translations = {
         legendOvulation: 'Ovulation',
         legendFertile: 'Fertile',
         weekdays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        needsDataHint: 'Log your period flow on the days it happens. Xenoh needs about 1–2 full cycles of data before it can predict your phases, next period, ovulation, and fertile window.',
+        lowConfidenceHint: 'Good start! These predictions are still rough — keep logging your period for 1–2 full cycles and they’ll get noticeably more accurate.',
       },
       log: {
         titleNew: 'Log {date}',
@@ -2545,6 +2547,8 @@ export const translations = {
         legendOvulation: 'Rụng trứng',
         legendFertile: 'Thụ thai',
         weekdays: ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'],
+        needsDataHint: 'Hãy ghi lượng máu kinh vào đúng những ngày có kinh. Xenoh cần dữ liệu của khoảng 1–2 chu kỳ trước khi có thể dự đoán giai đoạn, kỳ kinh kế tiếp, ngày rụng trứng và cửa sổ thụ thai.',
+        lowConfidenceHint: 'Khởi đầu tốt! Các dự đoán này vẫn còn sơ bộ — hãy tiếp tục ghi kỳ kinh trong 1–2 chu kỳ nữa để độ chính xác tăng lên rõ rệt.',
       },
       log: {
         titleNew: 'Ghi {date}',

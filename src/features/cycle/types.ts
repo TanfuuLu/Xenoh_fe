@@ -70,6 +70,7 @@ export interface CycleOverviewResponse {
   daysLate: number | null
   lastPeriodStart: string | null
   nextPeriodStart: string | null
+  currentPeriodPredictedEnd: string | null
   predictedPeriods: PredictedPeriod[]
   ovulationDates: string[]
   fertileWindows: FertileWindow[]

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Info } from 'lucide-react'
 import {
   addDays,
   addMonths,
@@ -51,12 +51,18 @@ export function CycleCalendar({ overview, logs, onSelectDate }: Props) {
     const s = new Set<string>()
     // Future predicted periods (next cycles).
     overview?.predictedPeriods.forEach((p) => expandRange(p.start, p.end).forEach((d) => s.add(d)))
-    // Current period: extend from the logged start across the expected period length,
-    // so logging day 1 auto-fills the remaining ~5 days as predicted.
+    // Current period: fill from the logged start through the backend's predicted end.
+    // That end is normally start + average period length (so logging day 1 auto-fills the
+    // remaining ~5 days), but collapses to the last logged flow day when the user ends the
+    // period early and logs a normal day — so the extra days re-predict as follicular.
     if (overview?.lastPeriodStart) {
       const start = parseISO(overview.lastPeriodStart)
-      const end = addDays(start, Math.max(1, overview.effectivePeriodLengthDays) - 1)
-      expandRange(format(start, KEY), format(end, KEY)).forEach((d) => s.add(d))
+      const end = overview.currentPeriodPredictedEnd
+        ? parseISO(overview.currentPeriodPredictedEnd)
+        : addDays(start, Math.max(1, overview.effectivePeriodLengthDays) - 1)
+      if (end >= start) {
+        expandRange(format(start, KEY), format(end, KEY)).forEach((d) => s.add(d))
+      }
     }
     return s
   }, [overview])
@@ -68,6 +74,13 @@ export function CycleCalendar({ overview, logs, onSelectDate }: Props) {
   }, [overview])
 
   const ovulationSet = useMemo(() => new Set(overview?.ovulationDates ?? []), [overview])
+
+  // Predictions are rule-based off logged periods: they need ~1-2 cycles of data.
+  // Guide the user instead of leaving the calendar looking empty/broken:
+  //  - needsData  → no usable period logged yet (or data went stale)
+  //  - lowConfidence → only ~1 cycle logged, predictions exist but are rough
+  const needsData = overview?.needsData ?? false
+  const lowConfidence = !needsData && overview?.confidence === 'Low'
 
   const days = useMemo(() => {
     const gridStart = startOfWeek(startOfMonth(month), { weekStartsOn: 1 })
@@ -156,6 +169,20 @@ export function CycleCalendar({ overview, logs, onSelectDate }: Props) {
           )
         })}
       </div>
+
+      {(needsData || lowConfidence) && (
+        <div
+          className="flex items-start gap-2 rounded-lg border px-3 py-2 text-xs"
+          style={{
+            borderColor: 'color-mix(in srgb, #f43f5e 24%, var(--border-1))',
+            background: 'color-mix(in srgb, #f43f5e 6%, var(--bg-2))',
+            color: 'var(--fg-2)',
+          }}
+        >
+          <Info size={14} className="mt-0.5 shrink-0" style={{ color: '#f43f5e' }} />
+          <span>{needsData ? tc.calendar.needsDataHint : tc.calendar.lowConfidenceHint}</span>
+        </div>
+      )}
 
       <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-muted">
         <Legend color="rgba(244, 63, 94, 0.85)" label={tc.calendar.legendPeriod} />
