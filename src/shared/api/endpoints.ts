@@ -21,6 +21,7 @@ export const ENDPOINTS = {
     bodyweight: '/api/users/me/bodyweight',
     bodyweightById: (id: string) => `/api/users/me/bodyweight/${id}`,
     trainingActivity: (year: number, month: number) => `/api/users/me/training-activity?year=${year}&month=${month}`,
+    volumeHistory: (months: number) => `/api/users/me/volume-history?months=${months}`,
     exercisePrs: '/api/users/me/exercise-prs',
     exercisePrHistory: (exerciseTemplateId: string) =>
       `/api/users/me/exercise-prs/${exerciseTemplateId}/history`,
@@ -166,6 +167,8 @@ export const ENDPOINTS = {
     me: (lang: 'en' | 'vi') => `/api/insights/me?lang=${lang}`,
     coachTip: (lang: 'en' | 'vi') => `/api/insights/me/coach-tip?lang=${lang}`,
     coachChat: () => `/api/insights/me/coach-chat`,
+    planProgress: (planId: string, lang: 'en' | 'vi') =>
+      `/api/insights/plan/${planId}/progress?lang=${lang}`,
   },
 
   // Notifications

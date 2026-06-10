@@ -3,7 +3,16 @@ import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { motion, useReducedMotion } from 'framer-motion'
-import { CalendarDays, Camera, ChevronLeft, ChevronRight, Clock3, Dumbbell } from 'lucide-react'
+import { CalendarDays, Camera, ChevronLeft, ChevronRight, Clock3, Dumbbell, TrendingUp } from 'lucide-react'
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
 import { format, isValid } from 'date-fns'
 import { Card } from '@/shared/components/Card'
 import { Button } from '@/shared/components/Button'
@@ -27,9 +36,11 @@ import {
 import {
   useMyProfile,
   useMyTrainingActivity,
+  useMyVolumeHistory,
   useUpdateAvatar,
   useUpdateProfile,
 } from '../index'
+import type { VolumeHistoryPoint } from '../index'
 import type { AxiosError } from 'axios'
 import type { ApiError } from '@/shared/types/api'
 
@@ -102,6 +113,7 @@ export function ProfilePage() {
   const { data: profile, isLoading } = useMyProfile()
   const { data: trainingActivity, isLoading: activityLoading } =
     useMyTrainingActivity(activityMonth.year, activityMonth.month)
+  const { data: volumeHistory, isLoading: volumeLoading } = useMyVolumeHistory(6)
   const { mutate: updateProfile, isPending: saving, error: saveError } = useUpdateProfile()
   const { mutate: updateAvatar, isPending: avatarUploading } = useUpdateAvatar()
   const t  = useT()
@@ -413,7 +425,107 @@ export function ProfilePage() {
         />
       </div>
 
+      <VolumeProgressChart
+        data={volumeHistory}
+        loading={volumeLoading}
+        title={tp.volumeProgress}
+        subtitle={tp.volumeProgressSubtitle}
+        emptyLabel={tp.noVolumeData}
+      />
+
     </div>
+  )
+}
+
+function formatVolumeAxis(value: number) {
+  if (value >= 1000) return `${(value / 1000).toFixed(value >= 10_000 ? 0 : 1)}k`
+  return Math.round(value).toLocaleString()
+}
+
+function VolumeProgressChart({
+  data,
+  loading,
+  title,
+  subtitle,
+  emptyLabel,
+}: {
+  data: VolumeHistoryPoint[] | undefined
+  loading: boolean
+  title: string
+  subtitle: string
+  emptyLabel: string
+}) {
+  const points = (data ?? []).map((point) => ({
+    label: format(new Date(point.year, point.month - 1, 1), 'MMM'),
+    volume: Math.round(point.volumeKg),
+  }))
+  const hasData = points.some((point) => point.volume > 0)
+
+  return (
+    <Card className="w-full" style={{ borderColor: 'var(--surface-border-soft)' }}>
+      <div className="mb-3 flex min-w-0 items-center gap-2">
+        <TrendingUp size={16} className="shrink-0 text-primary" />
+        <div className="min-w-0">
+          <h2 className="truncate text-xs font-semibold uppercase tracking-wide text-muted">{title}</h2>
+          <p className="text-sm font-semibold text-text">{subtitle}</p>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="flex h-56 items-center justify-center">
+          <Spinner size="sm" />
+        </div>
+      ) : !hasData ? (
+        <p className="flex h-56 items-center justify-center text-sm text-muted">{emptyLabel}</p>
+      ) : (
+        <div className="h-56">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={points} margin={{ top: 4, right: 8, left: 8, bottom: 0 }}>
+              <defs>
+                <linearGradient id="profileVolumeFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--ic-red)" stopOpacity={0.35} />
+                  <stop offset="100%" stopColor="var(--ic-red)" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border-1)" vertical={false} />
+              <XAxis
+                dataKey="label"
+                tick={{ fill: 'var(--fg-3)', fontSize: 11 }}
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis
+                tick={{ fill: 'var(--fg-3)', fontSize: 11 }}
+                tickLine={false}
+                axisLine={false}
+                width={48}
+                tickFormatter={formatVolumeAxis}
+              />
+              <Tooltip
+                contentStyle={{
+                  background: 'var(--bg-2)',
+                  border: '1px solid var(--border-1)',
+                  borderRadius: 8,
+                  fontSize: 12,
+                }}
+                labelStyle={{ color: 'var(--fg-1)' }}
+                itemStyle={{ color: 'var(--ic-red)' }}
+                formatter={(value) => [`${Number(value ?? 0).toLocaleString()} kg`, title]}
+              />
+              <Area
+                type="monotone"
+                dataKey="volume"
+                stroke="var(--ic-red)"
+                strokeWidth={2}
+                fill="url(#profileVolumeFill)"
+                dot={{ fill: 'var(--ic-red)', r: 3 }}
+                activeDot={{ r: 5 }}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+    </Card>
   )
 }
 

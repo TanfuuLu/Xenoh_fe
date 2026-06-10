@@ -38,13 +38,13 @@ export function SetRow({ set, canComplete, isCardio = false, onComplete }: SetRo
       >
         <CheckCircle2 size={17} className="flex-shrink-0" />
         <span className="shrink-0 font-medium">Set {set.setNumber}</span>
-        <span className="min-w-0 flex-1">
+        <span className="min-w-0 flex-1 font-bold text-text">
           {isCardio
             ? `${set.actualReps ?? set.plannedReps} min`
             : `${set.actualReps ?? set.plannedReps} reps @ ${set.actualWeight ?? set.plannedWeight ?? 0} kg`}
           {set.rpe != null && (
             <span
-              className="ml-2 rounded-md px-1.5 py-0.5 text-xs font-medium"
+              className="ml-2 rounded-md px-1.5 py-0.5 text-xs font-bold text-text"
               style={{ background: 'rgba(139,150,101,0.3)' }}
             >
               RPE {set.rpe}

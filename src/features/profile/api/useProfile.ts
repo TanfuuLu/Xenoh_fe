@@ -19,6 +19,7 @@ export const profileKeys = {
   preferences: ['profile', 'preferences'] as const,
   bodyweight: ['profile', 'bodyweight'] as const,
   trainingActivity: (year: number, month: number) => ['profile', 'training-activity', year, month] as const,
+  volumeHistory: (months: number) => ['profile', 'volume-history', months] as const,
 }
 
 export function useMyProfile() {
@@ -104,6 +105,22 @@ export function useMyTrainingActivity(year: number, month: number) {
     queryKey: profileKeys.trainingActivity(year, month),
     queryFn: () =>
       api.get<TrainingActivityResponse>(ENDPOINTS.users.trainingActivity(year, month)).then((r) => r.data),
+  })
+}
+
+export interface VolumeHistoryPoint {
+  year: number
+  month: number
+  /** Completed ("done") training volume for the month, in kg. */
+  volumeKg: number
+}
+
+/** Monthly completed training volume for the last `months` calendar months (oldest → newest). */
+export function useMyVolumeHistory(months = 6) {
+  return useQuery({
+    queryKey: profileKeys.volumeHistory(months),
+    queryFn: () =>
+      api.get<VolumeHistoryPoint[]>(ENDPOINTS.users.volumeHistory(months)).then((r) => r.data),
   })
 }
 

@@ -84,6 +84,20 @@ export interface TrainingInsightResponse {
   metricValue: string
 }
 
+export type PlanProgressTrajectory = 'Improving' | 'Flat' | 'Declining' | 'TooEarly'
+
+export interface PlanProgressInsightResponse {
+  language: 'en' | 'vi'
+  planName: string
+  generatedAt: string
+  headline: string
+  trajectory: PlanProgressTrajectory
+  summary: string
+  whatsWorking: string[]
+  focusAreas: string[]
+  nextBlock: string[]
+}
+
 export type CompetitionLift = 'Squat' | 'Bench' | 'Deadlift'
 
 export interface LiftE1RmPoint {

@@ -19,6 +19,7 @@ import { InlineTip } from '@/features/tips'
 import type { PlanAnalyticsResponse, PowerliftingSection } from '../types'
 import { OverviewSection } from '../components/OverviewSection'
 import { PowerliftingAiFocusPanel } from '../components/PowerliftingAiFocusPanel'
+import { PlanProgressInsightPanel } from '../components/PlanProgressInsightPanel'
 import { ProgressTabs, PlanSelect, type ProgressTab } from '../components/ProgressControls'
 
 type ProgressInsightMode = 'overview' | 'powerlifting'
@@ -78,6 +79,8 @@ function IndividualProgressView({
       isError={isError}
       analytics={analytics}
       powerlifting={analytics?.powerlifting ?? null}
+      planId={selectedPlanId || null}
+      planInsightEnabled
       tp={tp}
       planSelector={
         plans && plans.length > 0 ? (
@@ -211,6 +214,8 @@ function ProgressShell({
   isError,
   analytics,
   powerlifting,
+  planId = null,
+  planInsightEnabled = false,
   tp,
   planSelector,
   emptyNode,
@@ -222,6 +227,8 @@ function ProgressShell({
   isError: boolean
   analytics: PlanAnalyticsResponse | undefined
   powerlifting?: PowerliftingSection | null
+  planId?: string | null
+  planInsightEnabled?: boolean
   tp: Record<string, string>
   planSelector?: React.ReactNode
   emptyNode?: React.ReactNode
@@ -284,6 +291,8 @@ function ProgressShell({
         <motion.div {...(shouldReduce ? {} : slideUp)}>
           {insightMode === 'powerlifting' && powerlifting ? (
             <PowerliftingAiFocusPanel section={powerlifting} tp={tp} />
+          ) : planInsightEnabled && planId ? (
+            <PlanProgressInsightPanel planId={planId} tp={tp} />
           ) : (
             <AiInsightsPanel
               sections={['trainingAdherence', 'bodyMetrics', 'volumeStrength', 'muscleBalance']}

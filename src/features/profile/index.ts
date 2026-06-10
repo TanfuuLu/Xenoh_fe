@@ -9,9 +9,11 @@ export {
   useClientBodyweightHistory,
   usePublicUserProfile,
   useMyTrainingActivity,
+  useMyVolumeHistory,
   useMyPreferences,
   useUpdatePreferences,
 } from './api/useProfile'
+export type { VolumeHistoryPoint } from './api/useProfile'
 export type {
   UserProfileResponse,
   PublicUserProfileResponse,
