@@ -168,6 +168,7 @@ export const ENDPOINTS = {
     logs: (from: string, to: string) => `/api/cycle/logs?from=${from}&to=${to}`,
     log: (date: string) => `/api/cycle/logs/${date}`,
     settings: '/api/cycle/settings',
+    dayMarkers: (from: string, to: string) => `/api/cycle/day-markers?from=${from}&to=${to}`,
     insight: (lang: 'en' | 'vi') => `/api/cycle/insight?lang=${lang}`,
     clientOverview: (clientId: string) => `/api/cycle/clients/${clientId}/overview`,
   },

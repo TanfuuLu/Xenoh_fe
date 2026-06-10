@@ -293,6 +293,9 @@ export const translations = {
       snapshotEmpty: 'No exercises logged this week yet.',
       snapshotFull: 'Full analysis',
       snapshotUnit: 'kg·reps',
+      cyclePeriod: 'Period',
+      cyclePreMenstrual: 'Pre-menstrual',
+      cycleMarkerHint: 'Cycle-aware: plan lighter loads on period days and ease off heavy lifts pre-menstrually.',
     },
 
     // ── Day workout ───────────────────────────────────────────────────────────
@@ -1630,6 +1633,9 @@ export const translations = {
       snapshotEmpty: 'Chưa có bài tập nào trong tuần này.',
       snapshotFull: 'Xem phân tích',
       snapshotUnit: 'kg·reps',
+      cyclePeriod: 'Kỳ kinh',
+      cyclePreMenstrual: 'Tiền kinh nguyệt',
+      cycleMarkerHint: 'Theo chu kỳ: giảm tải vào ngày hành kinh và hạn chế nâng nặng giai đoạn tiền kinh nguyệt.',
     },
 
     dayWorkout: {

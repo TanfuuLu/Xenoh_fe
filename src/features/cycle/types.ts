@@ -89,6 +89,21 @@ export interface CycleSettingsResponse {
   shareWithCoach: boolean
 }
 
+export type CycleDayMarker = 'Menstrual' | 'PreMenstrual'
+
+export interface CycleDayMarkerResponse {
+  date: string
+  marker: CycleDayMarker
+}
+
+export interface CycleDayMarkersResponse {
+  from: string
+  to: string
+  preMenstrualWindowDays: number
+  needsData: boolean
+  days: CycleDayMarkerResponse[]
+}
+
 export interface UpdateCycleSettingsRequest {
   averageCycleLengthOverride: number | null
   averagePeriodLengthOverride: number | null

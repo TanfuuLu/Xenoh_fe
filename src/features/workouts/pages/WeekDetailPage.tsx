@@ -12,6 +12,9 @@ import { useT, useLangStore } from '@/shared/i18n'
 import { NotFoundPage } from '@/shared/components/NotFoundPage'
 import { useDailyWorkouts, useWeeklyWorkouts } from '../index'
 import { usePlan } from '@/features/plans'
+import { useMyProfile } from '@/features/profile'
+import { useCycleDayMarkers, MARKER_STYLE } from '@/features/cycle'
+import type { CycleDayMarker } from '@/features/cycle'
 import { InlineTip } from '@/features/tips'
 import { CommentSection } from '@/features/comments/components/CommentSection'
 import { useWeekComments, useAddWeekComment, useDeleteWeekComment } from '@/features/comments/api/useWeekComments'
@@ -41,6 +44,21 @@ function getDayVisual(day: DailyWorkoutResponse, warned: boolean): DayVisual {
   if (day.status === 'Rest') return { cardBg, accent: 'var(--xn-clay-400)', Icon: BedDouble, iconColor: 'var(--xn-clay-600)' }
   if (day.status === 'Missed') return { cardBg, accent: 'var(--color-danger)', Icon: XCircle, iconColor: 'var(--color-danger)' }
   return { cardBg, accent: 'var(--color-primary)', Icon: null, iconColor: 'var(--fg-3)' }
+}
+
+/** Compact menstrual / pre-menstrual chip overlaid on a plan day. */
+function CycleMarkerPill({ marker, label }: { marker: CycleDayMarker; label: string }) {
+  const { accent, tint } = MARKER_STYLE[marker]
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none"
+      style={{ background: tint, color: accent }}
+      title={label}
+    >
+      <span className="h-1.5 w-1.5 rounded-full" style={{ background: accent }} />
+      {label}
+    </span>
+  )
 }
 
 export function WeekDetailPage() {
@@ -87,6 +105,16 @@ export function WeekDetailPage() {
     currentWeekIndex >= 0 && currentWeekIndex < (allWeeks?.length ?? 0) - 1
       ? allWeeks![currentWeekIndex + 1]
       : null
+
+  // Cycle-aware overlay: mark menstrual / pre-menstrual days for female users.
+  const { data: profile } = useMyProfile()
+  const isFemale = profile?.gender === 'Female'
+  const rangeFrom = currentWeek ? currentWeek.startDate.slice(0, 10) : ''
+  const rangeTo = currentWeek ? currentWeek.endDate.slice(0, 10) : ''
+  const { data: cycleMarkers } = useCycleDayMarkers(rangeFrom, rangeTo, isFemale)
+  const markerByDate = new Map<string, CycleDayMarker>(
+    (cycleMarkers?.days ?? []).map((d) => [d.date.slice(0, 10), d.marker]),
+  )
 
   const orderedDays = [...(days ?? [])].sort(
     (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
@@ -278,6 +306,18 @@ export function WeekDetailPage() {
         </div>
       )}
 
+      {/* Cycle legend (female users with markers in this week) */}
+      {isFemale && (cycleMarkers?.days.length ?? 0) > 0 && (
+        <div
+          className="flex flex-wrap items-center gap-3 rounded-xl border px-4 py-2.5"
+          style={{ borderColor: 'var(--border-1)', background: 'var(--bg-2)' }}
+        >
+          <CycleMarkerPill marker="Menstrual" label={tw.cyclePeriod} />
+          <CycleMarkerPill marker="PreMenstrual" label={tw.cyclePreMenstrual} />
+          <span className="text-xs text-muted">{tw.cycleMarkerHint}</span>
+        </div>
+      )}
+
       {/* Calendar list on phones */}
       <motion.div
         initial={shouldReduce ? false : 'hidden'}
@@ -290,13 +330,17 @@ export function WeekDetailPage() {
             format(new Date(day.date), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
           const dayWarned = warnedDayIds.has(day.id)
           const v = getDayVisual(day, dayWarned)
+          const marker = markerByDate.get(day.date.slice(0, 10))
 
           return (
             <motion.div
               key={day.id}
               variants={slideUp}
               className="relative overflow-hidden rounded-2xl border"
-              style={{ borderColor: 'var(--border-1)', background: v.cardBg }}
+              style={{
+                borderColor: 'var(--border-1)',
+                background: marker ? MARKER_STYLE[marker].tint : v.cardBg,
+              }}
             >
               <span className="absolute inset-y-0 left-0 w-1" style={{ background: v.accent }} />
               <Link
@@ -312,7 +356,15 @@ export function WeekDetailPage() {
                   <span className="text-[10px] uppercase">{format(new Date(day.date), 'EEE', { locale: dateLocale })}</span>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-text">{day.dayOfWeek}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="truncate text-sm font-semibold text-text">{day.dayOfWeek}</p>
+                    {marker && (
+                      <CycleMarkerPill
+                        marker={marker}
+                        label={marker === 'Menstrual' ? tw.cyclePeriod : tw.cyclePreMenstrual}
+                      />
+                    )}
+                  </div>
                   <p className="text-xs text-muted">
                     {day.totalExercises > 0 ? `${day.totalExercises} ${tc.exercises}` : 'Rest'}
                     {day.totalExercises > 0 && ` · ${day.completedExercises}/${day.totalExercises}`}
@@ -358,6 +410,7 @@ export function WeekDetailPage() {
             format(new Date(day.date), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
           const dayWarned = warnedDayIds.has(day.id)
           const v = getDayVisual(day, dayWarned)
+          const marker = markerByDate.get(day.date.slice(0, 10))
 
           return (
             <motion.div
@@ -371,7 +424,7 @@ export function WeekDetailPage() {
                 state={{ canEdit, canComplete, weeklyWorkoutId: day.weeklyWorkoutId, planId }}
                 className="relative flex h-full min-h-40 flex-col overflow-hidden rounded-2xl border p-3 transition-shadow hover:shadow-md"
                 style={{
-                  background: v.cardBg,
+                  background: marker ? MARKER_STYLE[marker].tint : v.cardBg,
                   borderColor: isToday ? 'var(--color-primary)' : 'var(--border-1)',
                   boxShadow: isToday ? '0 0 0 1px var(--color-primary)' : undefined,
                 }}
@@ -411,6 +464,16 @@ export function WeekDetailPage() {
                     {format(new Date(day.date), 'MMM', { locale: dateLocale })}
                   </span>
                 </div>
+
+                {/* Cycle marker */}
+                {marker && (
+                  <div className="mt-1.5">
+                    <CycleMarkerPill
+                      marker={marker}
+                      label={marker === 'Menstrual' ? tw.cyclePeriod : tw.cyclePreMenstrual}
+                    />
+                  </div>
+                )}
 
                 {/* Exercise count */}
                 {day.totalExercises > 0 ? (

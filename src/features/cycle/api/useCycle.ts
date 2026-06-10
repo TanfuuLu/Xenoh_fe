@@ -5,6 +5,7 @@ import { useLangStore } from '@/shared/i18n'
 import type {
   ClientCycleOverviewResponse,
   CycleDailyLogResponse,
+  CycleDayMarkersResponse,
   CycleInsightResponse,
   CycleOverviewResponse,
   CycleSettingsResponse,
@@ -17,6 +18,7 @@ export const cycleKeys = {
   overview: ['cycle', 'overview'] as const,
   logs: (from: string, to: string) => ['cycle', 'logs', from, to] as const,
   settings: ['cycle', 'settings'] as const,
+  dayMarkers: (from: string, to: string) => ['cycle', 'day-markers', from, to] as const,
   insight: (lang: 'en' | 'vi') => ['cycle', 'insight', lang] as const,
   clientOverview: (clientId: string) => ['cycle', 'client-overview', clientId] as const,
 }
@@ -60,6 +62,20 @@ export function useDeleteCycleLog() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: cycleKeys.all })
     },
+  })
+}
+
+/**
+ * Menstrual / pre-menstrual day markers for a date range, used to overlay cycle
+ * awareness onto training plans. Female-only on the backend; pass `enabled` to gate.
+ */
+export function useCycleDayMarkers(from: string, to: string, enabled = true) {
+  return useQuery({
+    queryKey: cycleKeys.dayMarkers(from, to),
+    queryFn: () =>
+      api.get<CycleDayMarkersResponse>(ENDPOINTS.cycle.dayMarkers(from, to)).then((r) => r.data),
+    enabled: enabled && !!from && !!to,
+    retry: false,
   })
 }
 

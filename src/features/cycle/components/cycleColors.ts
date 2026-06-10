@@ -1,4 +1,4 @@
-import type { CyclePhase, FlowIntensity } from '../types'
+import type { CycleDayMarker, CyclePhase, FlowIntensity } from '../types'
 
 export const PHASE_COLORS: Record<CyclePhase, string> = {
   Unknown: '#94a3b8',
@@ -21,4 +21,10 @@ export const PREDICTED_PERIOD_FILL = 'rgba(244, 63, 94, 0.3)'
 
 export function phaseColor(phase: CyclePhase): string {
   return PHASE_COLORS[phase] ?? PHASE_COLORS.Unknown
+}
+
+/** Accent + soft tint used to mark menstrual / pre-menstrual days on training plans. */
+export const MARKER_STYLE: Record<CycleDayMarker, { accent: string; tint: string }> = {
+  Menstrual: { accent: '#f43f5e', tint: 'rgba(244, 63, 94, 0.12)' },
+  PreMenstrual: { accent: '#a855f7', tint: 'rgba(168, 85, 247, 0.12)' },
 }
