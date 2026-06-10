@@ -36,7 +36,6 @@ import {
   useMyInviteCodes,
   useDeleteInviteCode,
 } from '../index'
-import { CoachChatSidebar } from '@/features/chat/components/CoachChatSidebar'
 import { RenewalModal } from '../components/RenewalModal'
 import { InviteCodeModal } from '../components/InviteCodeModal'
 import { CoachScheduleCalendar } from '../components/CoachScheduleCalendar'
@@ -736,17 +735,6 @@ export function ClientsPage() {
       )}
 
     </div>
-
-    {/* ── Always-visible chat sidebar — right edge of viewport ─────────── */}
-    <CoachChatSidebar
-      clients={sortedActiveClients
-        .filter((c) => c.status === 'Active')
-        .map((c) => ({
-          relationshipId: c.relationshipId,
-          fullName: c.fullName,
-          avatarUrl: statsMap.get(c.clientId)?.avatarUrl,
-        }))}
-    />
     </>
   )
 }

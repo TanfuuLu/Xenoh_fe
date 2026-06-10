@@ -8,6 +8,7 @@ import {
   PanelLeftClose, PanelLeftOpen, TrendingUp,
   LockKeyhole, Lock, BookOpen, CreditCard,
   Shield, Utensils, Ban, KeyRound, MessageCircle, MessagesSquare,
+  CalendarHeart,
 } from 'lucide-react'
 import { cn } from '@/shared/utils/cn'
 import { Link as RouterLink } from 'react-router'
@@ -23,7 +24,7 @@ import { useNotificationHub } from '@/features/notifications/hooks/useNotificati
 import { useChatUnreadSync } from '@/features/chat'
 import { exerciseTrackingKeys } from '@/features/exercise-tracking'
 import { useMyCoach } from '@/features/coach-client'
-import { useMyPreferences, useUpdatePreferences } from '@/features/profile'
+import { useMyPreferences, useUpdatePreferences, useMyProfile } from '@/features/profile'
 
 const MINI_WIDTH  = 56
 const FULL_WIDTH  = 220
@@ -48,6 +49,8 @@ export function AppLayout() {
   const weightUnit = usePreferenceStore((s) => s.weightUnit)
   const setWeightUnit = usePreferenceStore((s) => s.setWeightUnit)
   const { data: preferences } = useMyPreferences(!!user)
+  const { data: profile } = useMyProfile()
+  const isFemale = profile?.gender === 'Female'
   const updatePreferences = useUpdatePreferences()
   const changePasswordLabel = (tn as typeof tn & { changePassword?: string }).changePassword ?? 'Change password'
   const exerciseLibraryLabel = (tn as typeof tn & { exerciseLibrary?: string }).exerciseLibrary ?? 'Exercise Library'
@@ -82,6 +85,7 @@ export function AppLayout() {
     { to: '/exercise-library',  icon: BookOpen,          label: exerciseLibraryLabel,  color: '#06b6d4' },
     { to: '/progress',          icon: TrendingUp,        label: tn.progress,          color: '#f59e0b' },
     { to: '/nutrition',         icon: Utensils,          label: 'Nutrition',          color: '#ec4899' },
+    ...(isFemale ? [{ to: '/cycle', icon: CalendarHeart, label: tn.cycle, color: '#f43f5e' }] : []),
     ...(myCoach ? [{ to: '/coach', icon: MessageCircle, label: 'Coach', color: '#8b5cf6' }] : []),
     ...(!myCoach ? [{ to: '/enter-coach-code', icon: KeyRound, label: t.enterCoachCode.label, color: '#8b5cf6' }] : []),
     { to: '/subscription',      icon: CreditCard,        label: 'Subscription',       color: '#eab308' },
@@ -93,6 +97,7 @@ export function AppLayout() {
     { to: '/exercise-library', icon: BookOpen,         label: exerciseLibraryLabel, color: '#06b6d4' },
     { to: '/progress',        icon: TrendingUp,        label: tn.progress,         color: '#f59e0b' },
     { to: '/nutrition',       icon: Utensils,          label: 'Nutrition',         color: '#ec4899' },
+    ...(isFemale ? [{ to: '/cycle', icon: CalendarHeart, label: tn.cycle, color: '#f43f5e' }] : []),
     { to: '/coach/clients',   icon: UserCheck,         label: tn.clients,          color: '#8b5cf6' },
     { to: '/coach/chat',      icon: MessagesSquare,    label: 'Chat',              color: '#8b5cf6' },
     // A coach can also be someone else's client: show their coach, or let them connect to one.

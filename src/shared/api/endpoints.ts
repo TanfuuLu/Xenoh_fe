@@ -162,6 +162,16 @@ export const ENDPOINTS = {
     dayFoodDelete: (date: string, id: string) => `/api/nutrition/logs/${date}/foods/${id}`,
   },
 
+  // Cycle (menstrual cycle tracking)
+  cycle: {
+    overview: '/api/cycle/overview',
+    logs: (from: string, to: string) => `/api/cycle/logs?from=${from}&to=${to}`,
+    log: (date: string) => `/api/cycle/logs/${date}`,
+    settings: '/api/cycle/settings',
+    insight: (lang: 'en' | 'vi') => `/api/cycle/insight?lang=${lang}`,
+    clientOverview: (clientId: string) => `/api/cycle/clients/${clientId}/overview`,
+  },
+
   // Insights (AI-generated user analysis)
   insights: {
     me: (lang: 'en' | 'vi') => `/api/insights/me?lang=${lang}`,

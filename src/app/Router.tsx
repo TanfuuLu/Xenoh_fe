@@ -33,6 +33,9 @@ const NutritionPage = lazy(() => import('@/features/nutrition/pages/NutritionPag
 const NutritionInsightPage = lazy(() => import('@/features/nutrition/pages/NutritionInsightPage').then((m) => ({ default: m.NutritionInsightPage })))
 const InsightsPage = lazy(() => import('@/features/insights').then((m) => ({ default: m.InsightsPage })))
 const AiCoachChatPage = lazy(() => import('@/features/insights').then((m) => ({ default: m.AiCoachChatPage })))
+const CyclePage = lazy(() => import('@/features/cycle').then((m) => ({ default: m.CyclePage })))
+const CycleInsightPage = lazy(() => import('@/features/cycle').then((m) => ({ default: m.CycleInsightPage })))
+const ClientCyclePage = lazy(() => import('@/features/cycle').then((m) => ({ default: m.ClientCyclePage })))
 const LandingPage = lazy(() => import('@/features/marketing/pages/LandingPage').then((m) => ({ default: m.LandingPage })))
 const AboutPage = lazy(() => import('@/features/marketing/pages/AboutPage').then((m) => ({ default: m.AboutPage })))
 const SubscriptionPage = lazy(() => import('@/features/billing/pages/SubscriptionPage').then((m) => ({ default: m.SubscriptionPage })))
@@ -170,6 +173,14 @@ export const router = createBrowserRouter([
             element: <Suspended><InsightsPage /></Suspended>,
           },
           {
+            path: 'cycle',
+            element: <Suspended><CyclePage /></Suspended>,
+          },
+          {
+            path: 'cycle/insight',
+            element: <Suspended><CycleInsightPage /></Suspended>,
+          },
+          {
             path: 'insights/coach-chat',
             element: <Suspended><AiCoachChatPage /></Suspended>,
           },
@@ -219,6 +230,10 @@ export const router = createBrowserRouter([
               {
                 path: 'coach/clients/:clientId/nutrition/insight',
                 element: <Suspended><NutritionInsightPage /></Suspended>,
+              },
+              {
+                path: 'coach/clients/:clientId/cycle',
+                element: <Suspended><ClientCyclePage /></Suspended>,
               },
             ],
           },

@@ -4,7 +4,7 @@ import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { motion } from 'framer-motion'
-import { ChevronLeft, Activity, Flame, Scale, Dumbbell, Plus, Ruler, CalendarDays, Users, ClipboardList, Utensils, Pencil, Trash2, Sparkles, Target, Trophy } from 'lucide-react'
+import { ChevronLeft, Activity, Flame, Scale, Dumbbell, Plus, Ruler, CalendarDays, Users, ClipboardList, Utensils, Pencil, Trash2, Sparkles, Target, Trophy, CalendarHeart } from 'lucide-react'
 import { format } from 'date-fns'
 import {
   CartesianGrid,
@@ -29,6 +29,7 @@ import { useLangStore, useT } from '@/shared/i18n'
 import { useCoachPlanOverview, useCreatePlanForUser } from '@/features/plans'
 import type { CreatePlanForUserRequest } from '@/features/plans'
 import { useCoachDashboard } from '@/features/coach-client'
+import { useClientCycleOverview } from '@/features/cycle'
 import {
   useClientExerciseTemplates,
   useCreateCustomExerciseTemplateForClient,
@@ -91,6 +92,8 @@ export function ClientProfilePage() {
     useCreateCustomExerciseTemplateForClient(clientId)
   const { mutate: updateCustomTemplate, isPending: updatingCustom, error: updateError } = useUpdateCustomExerciseTemplate()
   const { mutate: deleteCustomTemplate, isPending: deletingCustom } = useDeleteCustomExerciseTemplate()
+  // Succeeds only when the client is Female and has opted in to sharing; 404 otherwise → tile hidden.
+  const { data: clientCycle } = useClientCycleOverview(clientId)
   const { confirm, ConfirmDialog } = useConfirm()
   const [exerciseModalOpen, setExerciseModalOpen] = useState(false)
   const [editingTemplate, setEditingTemplate] = useState<ExerciseTemplateResponse | null>(null)
@@ -593,6 +596,23 @@ export function ClientProfilePage() {
           </Link>
         </div>
       </Card>
+
+      {clientCycle && (
+        <Card>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <CalendarHeart size={18} className="mt-0.5" style={{ color: '#f43f5e' }} />
+              <div>
+                <h2 className="font-semibold text-text">{t.cycle.coach.title}</h2>
+                <p className="mt-1 text-sm text-muted">{t.cycle.coach.hint}</p>
+              </div>
+            </div>
+            <Link to={`/coach/clients/${clientId}/cycle`}>
+              <Button size="sm">{t.cycle.coach.viewCycle}</Button>
+            </Link>
+          </div>
+        </Card>
+      )}
 
       <Modal
         open={exerciseModalOpen}
