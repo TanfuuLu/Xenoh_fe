@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { ChevronRight, Zap, ZapOff, Trash2, BarChart2, Download, Copy } from 'lucide-react'
+import { ChevronRight, Zap, ZapOff, Trash2, BarChart2, Download, Copy, CheckCircle2 } from 'lucide-react'
 import { format } from 'date-fns'
 import { Button } from '@/shared/components/Button'
 import { Badge } from '@/shared/components/Badge'
@@ -22,6 +22,7 @@ export function PlanRow({ plan, onOpen, onOverview, onActivate, onDeactivate, on
   const t = useT()
   const tc = t.common
   const { mutate: exportCsv, isPending: exporting } = useExportPlanCsv()
+  const isCompleted = plan.totalWeeks > 0 && plan.completedWeeks === plan.totalWeeks
 
   return (
     <motion.div
@@ -37,6 +38,12 @@ export function PlanRow({ plan, onOpen, onOverview, onActivate, onDeactivate, on
           <div className="flex items-center gap-2 flex-wrap">
             <h3 className="font-semibold text-text truncate">{plan.name}</h3>
             {plan.isActive && <Badge variant="success">Active</Badge>}
+            {isCompleted && (
+              <Badge variant="success">
+                <CheckCircle2 size={11} className="mr-0.5" />
+                {tc.completed}
+              </Badge>
+            )}
             {plan.planType === 'Coach' && <Badge variant="primary">Coach</Badge>}
           </div>
           <p className="mt-1 text-sm text-muted">
@@ -69,7 +76,7 @@ export function PlanRow({ plan, onOpen, onOverview, onActivate, onDeactivate, on
               <Zap size={15} />
             </Button>
           )}
-          {plan.totalWeeks > 0 && plan.completedWeeks === plan.totalWeeks && (
+          {isCompleted && (
             <Button variant="ghost" size="sm" onClick={onDuplicate} title="Duplicate plan" className="text-primary">
               <Copy size={15} />
             </Button>

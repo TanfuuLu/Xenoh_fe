@@ -33,6 +33,7 @@ import {
 import { Button } from '@/shared/components/Button'
 import { Card } from '@/shared/components/Card'
 import { Spinner } from '@/shared/components/Spinner'
+import { CycleAwareBadge } from '@/shared/components/CycleAwareBadge'
 import { RequireTier } from '@/features/billing/components/RequireTier'
 import { useT, useLangStore } from '@/shared/i18n'
 import { useUserAnalysis } from '../api/useUserAnalysis'
@@ -157,17 +158,17 @@ export function InsightsPage() {
                 </Link>
               </Card>
 
-              <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+              <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.15fr_0.85fr]">
                 <BodyweightTrend metrics={data.metrics} labels={ti} />
                 <AdherenceVolumeChart metrics={data.metrics} labels={ti} />
               </div>
 
-              <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
+              <div className="grid grid-cols-1 gap-4 xl:grid-cols-[0.9fr_1.1fr]">
                 <MuscleBalanceChart metrics={data.metrics} labels={ti} />
                 <EffortGapPanel metrics={data.metrics} labels={ti} />
               </div>
 
-              <div className="grid gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 <RecentPrPanel metrics={data.metrics} labels={ti} />
                 <AiNarrativePanel content={data.content} labels={ti} />
               </div>
@@ -204,12 +205,15 @@ function OverviewStrip({
           <p className="text-xs font-semibold uppercase text-muted">{cached ? labels.cachedAt : labels.generatedAt}</p>
           <p className="text-sm font-medium text-text">{format(new Date(generatedAt), 'd MMM yyyy, HH:mm')}</p>
         </div>
-        <span
-          className="rounded-full px-3 py-1 text-xs font-semibold"
-          style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
-        >
-          {cached ? labels.cachedBadge : labels.freshBadge}
-        </span>
+        <div className="flex items-center gap-2">
+          <span
+            className="rounded-full px-3 py-1 text-xs font-semibold"
+            style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
+          >
+            {cached ? labels.cachedBadge : labels.freshBadge}
+          </span>
+          <CycleAwareBadge />
+        </div>
       </div>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <MetricTile icon={<Activity size={17} />} label={labels.planCompletion} value={`${metrics.adherence.planCompletionPercent}%`} />

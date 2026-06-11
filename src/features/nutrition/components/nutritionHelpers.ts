@@ -1,5 +1,12 @@
 import type { ActivityLevel, NutritionGoal, NutritionSummaryResponse } from '../types'
 
+/** Shared macro color scheme so Protein/Carbs/Fat read the same everywhere: red / green / blue. */
+export const MACRO_COLORS = {
+  protein: '#ef4444',
+  carbs: '#22c55e',
+  fat: '#3b82f6',
+} as const
+
 export interface ProfileForm {
   activityLevel: ActivityLevel
   goal: NutritionGoal
@@ -24,7 +31,7 @@ interface FoodSuggestion {
   examples: string[]
 }
 
-interface MacroStrategy {
+export interface MacroStrategy {
   title: string
   bestFor: string
   pros: string
@@ -208,6 +215,41 @@ function buildMacroStrategies(
       recommended: fatRatio != null && fatRatio < 80,
     },
   ]
+}
+
+/**
+ * Converts a percentage-based macro strategy into the per-bodyweight protein/fat values
+ * the nutrition profile stores. Carbs stay the remainder (computed server-side), so only
+ * protein and fat need persisting. Values are clamped to the API's accepted ranges.
+ */
+export function strategyToProfileMacros(
+  strategy: Pick<MacroStrategy, 'proteinPct' | 'fatPct'>,
+  calorieTarget: number,
+  bodyweightKg: number,
+): { proteinPerKg: number; fatPerKg: number } {
+  const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
+  const round2 = (value: number) => Math.round(value * 100) / 100
+  const proteinG = (calorieTarget * strategy.proteinPct / 100) / 4
+  const fatG = (calorieTarget * strategy.fatPct / 100) / 9
+  return {
+    proteinPerKg: round2(clamp(proteinG / bodyweightKg, 0.5, 4)),
+    fatPerKg: round2(clamp(fatG / bodyweightKg, 0.2, 2)),
+  }
+}
+
+/**
+ * Whether a strategy matches the user's current effective macro target. Compares the saved
+ * protein/fat percentage split (derived from target grams) against the strategy within a
+ * small tolerance, so the card reflecting the active target is highlighted as "Your target".
+ */
+export function isStrategyActive(
+  strategy: Pick<MacroStrategy, 'proteinPct' | 'fatPct'>,
+  calc: { calorieTarget: number | null; proteinG: number | null; fatG: number | null },
+): boolean {
+  if (!calc.calorieTarget || calc.proteinG == null || calc.fatG == null) return false
+  const proteinPct = (calc.proteinG * 4 / calc.calorieTarget) * 100
+  const fatPct = (calc.fatG * 9 / calc.calorieTarget) * 100
+  return Math.abs(proteinPct - strategy.proteinPct) + Math.abs(fatPct - strategy.fatPct) <= 6
 }
 
 export function buildNutritionInsight(

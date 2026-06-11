@@ -2,8 +2,10 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { ChevronLeft, Send, Sparkles } from 'lucide-react'
 import { Button } from '@/shared/components/Button'
+import { CycleAwareBadge } from '@/shared/components/CycleAwareBadge'
 import { cn } from '@/shared/utils/cn'
 import { useLangStore } from '@/shared/i18n'
+import { useMyProfile } from '@/features/profile'
 import { RequireTier } from '@/features/billing/components/RequireTier'
 import { useCoachChat } from '../api/useUserAnalysis'
 import type { CoachChatMessage } from '../types'
@@ -61,6 +63,9 @@ function Markdown({ content }: { content: string }) {
 export function AiCoachChatPage() {
   const lang = useLangStore((s) => s.lang)
   const tx = chatText(lang)
+  const { data: profile } = useMyProfile()
+  const isFemale = profile?.gender === 'Female'
+  const suggestions = isFemale ? [...tx.suggestions, ...tx.cycleSuggestions] : tx.suggestions
   const [messages, setMessages] = useState<CoachChatMessage[]>([])
   const [input, setInput] = useState('')
   const { mutate: sendChat, isPending, error } = useCoachChat()
@@ -101,6 +106,7 @@ export function AiCoachChatPage() {
           <h1 className="text-lg font-bold leading-tight text-text">{tx.title}</h1>
           <p className="text-xs text-muted">{tx.subtitle}</p>
         </div>
+        <CycleAwareBadge className="ml-1" />
       </div>
 
       {/* Messages */}
@@ -114,7 +120,7 @@ export function AiCoachChatPage() {
             <Sparkles size={30} style={{ color: 'var(--accent)' }} />
             <p className="max-w-sm text-sm text-muted">{tx.empty}</p>
             <div className="flex flex-wrap justify-center gap-2">
-              {tx.suggestions.map((s) => (
+              {suggestions.map((s) => (
                 <button
                   key={s}
                   type="button"
@@ -206,6 +212,11 @@ function chatText(lang: 'en' | 'vi') {
         'Tiến độ của tôi thế nào?',
         'Tôi có nên tăng tạ không?',
       ],
+      cycleSuggestions: [
+        'Tôi nên tập thế nào trong những ngày "đèn đỏ"?',
+        'Vì sao tuần này tôi thấy ít năng lượng?',
+        'Thời điểm nào trong chu kỳ tôi nên đẩy PR?',
+      ],
     }
     : {
       title: 'AI Coach',
@@ -217,6 +228,11 @@ function chatText(lang: 'en' | 'vi') {
         'What should I focus on this week?',
         'How is my progress?',
         'Should I add weight?',
+      ],
+      cycleSuggestions: [
+        'How should I train during my period?',
+        'Why is my energy low this week?',
+        'When in my cycle should I push for PRs?',
       ],
     }
 }

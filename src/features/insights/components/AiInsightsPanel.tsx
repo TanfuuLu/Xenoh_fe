@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { Badge } from '@/shared/components/Badge'
 import { Button } from '@/shared/components/Button'
 import { Card } from '@/shared/components/Card'
+import { CycleAwareBadge } from '@/shared/components/CycleAwareBadge'
 import { Spinner } from '@/shared/components/Spinner'
 import { useT } from '@/shared/i18n'
 import { useUserAnalysis } from '../api/useUserAnalysis'
@@ -68,6 +69,7 @@ export function AiInsightsPanel({ title, sections, compact = false }: Props) {
           <Sparkles size={18} className="text-primary" />
           <h2 className="text-base font-semibold text-text">{title ?? ti.aiCoachNotes}</h2>
           <Badge>{data.cached ? ti.cachedBadge : ti.freshBadge}</Badge>
+          <CycleAwareBadge />
         </div>
         <Button type="button" size="sm" variant="secondary" disabled={isFetching} onClick={() => refetch()}>
           <RefreshCw size={14} className={isFetching ? 'animate-spin' : ''} />

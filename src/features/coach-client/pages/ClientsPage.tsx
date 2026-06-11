@@ -5,7 +5,7 @@ import {
   CheckCircle2, XCircle, User, Users, Clock, Mail, FileText,
   Flame, Dumbbell, Ruler, Weight, AlertTriangle, TrendingUp,
   CalendarDays, Scale, UserMinus, RefreshCw,
-  ClipboardList, Plus, Trash2, KeyRound,
+  ClipboardList, KeyRound,
 } from 'lucide-react'
 import { useAuthStore } from '@/features/auth'
 import { useSubscription } from '@/features/billing/api/useSubscription'
@@ -33,11 +33,8 @@ import {
   useRejectTermination,
   useAcceptRenewal,
   useRejectRenewal,
-  useMyInviteCodes,
-  useDeleteInviteCode,
 } from '../index'
 import { RenewalModal } from '../components/RenewalModal'
-import { InviteCodeModal } from '../components/InviteCodeModal'
 import { CoachScheduleCalendar } from '../components/CoachScheduleCalendar'
 
 function formatContractDate(value: string | null): string {
@@ -446,9 +443,6 @@ export function ClientsPage() {
   const { mutate: rejectRenewal, isPending: rejectingRenewal } = useRejectRenewal()
   const { confirm, ConfirmDialog } = useConfirm()
   const [renewalTarget, setRenewalTarget] = useState<ClientResponse | null>(null)
-  const [showInviteModal, setShowInviteModal] = useState(false)
-  const { data: inviteCodes } = useMyInviteCodes()
-  const { mutate: deleteInviteCode } = useDeleteInviteCode()
   const t   = useT()
   const tcl = t.clients
 
@@ -529,6 +523,14 @@ export function ClientsPage() {
             )}
           </p>
         </div>
+        <Button
+          variant="secondary"
+          size="sm"
+          className="self-start"
+          onClick={() => navigate('/coach/key-vault')}
+        >
+          <KeyRound size={14} /> {tx.keyVault}
+        </Button>
       </div>
 
       <div className="grid gap-3 min-[390px]:grid-cols-2 lg:grid-cols-4">
@@ -650,66 +652,6 @@ export function ClientsPage() {
         </motion.div>
       </section>
 
-      {/* ─── Invite Codes section ─────────────────────────────────────── */}
-      <section>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted flex items-center gap-1.5">
-            <KeyRound size={13} />
-            Mã Coach ({(inviteCodes ?? []).length})
-          </h2>
-          <Button size="sm" variant="secondary" onClick={() => setShowInviteModal(true)}>
-            <Plus size={13} /> Tạo mã
-          </Button>
-        </div>
-
-        {(!inviteCodes || inviteCodes.length === 0) ? (
-          <Card className="py-6 text-center text-sm text-muted">
-            Chưa có mã Coach. Tạo mã để mời client kết nối.
-          </Card>
-        ) : (
-          <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--border-1)' }}>
-            {inviteCodes.map((code, idx) => {
-              const isUsed = code.isUsed
-              const isExpiredCode = !code.isUsed && new Date(code.coachingEndDate) < new Date()
-              const statusLabel = isUsed ? 'Đã dùng' : isExpiredCode ? 'Hết hạn' : 'Chưa dùng'
-              const statusColor = isUsed ? 'var(--fg-3)' : isExpiredCode ? 'var(--color-warning)' : 'var(--color-success)'
-              return (
-                <div
-                  key={code.id}
-                  className="flex items-center gap-3 px-4 py-3"
-                  style={{
-                    background: idx % 2 === 0 ? 'var(--bg-2)' : 'var(--surface)',
-                    borderTop: idx > 0 ? '1px solid var(--border-1)' : undefined,
-                  }}
-                >
-                  <span className="font-mono font-bold text-sm tracking-widest flex-1" style={{ color: 'var(--fg-1)' }}>
-                    {code.code}
-                  </span>
-                  <span className="text-xs hidden sm:block" style={{ color: 'var(--fg-3)' }}>
-                    {format(new Date(code.coachingStartDate), 'dd/MM/yy')} →{' '}
-                    {format(new Date(code.coachingEndDate), 'dd/MM/yy')}
-                  </span>
-                  <span className="text-xs font-medium" style={{ color: statusColor }}>
-                    {statusLabel}
-                  </span>
-                  {!isUsed && !isExpiredCode && (
-                    <button
-                      type="button"
-                      className="ml-1 opacity-60 hover:opacity-100 transition-opacity"
-                      style={{ color: 'var(--color-danger)' }}
-                      title="Xóa mã"
-                      onClick={() => deleteInviteCode(code.id)}
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        )}
-      </section>
-
       {previewReq && (
         <RequesterProfileModal
           req={previewReq}
@@ -730,10 +672,6 @@ export function ClientsPage() {
         />
       )}
 
-      {showInviteModal && (
-        <InviteCodeModal onClose={() => setShowInviteModal(false)} />
-      )}
-
     </div>
     </>
   )
@@ -742,6 +680,7 @@ export function ClientsPage() {
 function clientsPageText(lang: 'en' | 'vi') {
   return lang === 'vi'
     ? {
+      keyVault: 'Két mã',
       activeClientsCount: '{n} client đang hoạt động',
       inactiveCount: '{n} không hoạt động',
       statActiveClients: 'Client đang hoạt động',
@@ -765,6 +704,7 @@ function clientsPageText(lang: 'en' | 'vi') {
       lastDone: 'Tập gần nhất {time}',
     }
     : {
+      keyVault: 'Key Vault',
       activeClientsCount: '{n} active client(s)',
       inactiveCount: '{n} inactive',
       statActiveClients: 'Active clients',

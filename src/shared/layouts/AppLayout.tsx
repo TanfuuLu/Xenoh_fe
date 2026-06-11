@@ -16,9 +16,8 @@ import { useAuthStore } from '@/features/auth'
 import { useLogout } from '@/features/auth'
 import { useT } from '@/shared/i18n'
 import { useLangStore, type Lang } from '@/shared/i18n'
-import { usePreferenceStore, type WeightUnit } from '@/shared/preferences'
-import { LanguageSwitcher } from '@/shared/components/LanguageSwitcher'
 import { UserAvatar } from '@/shared/components/UserAvatar'
+import { MobileBottomNav, type BottomNavItem } from '@/shared/layouts/MobileBottomNav'
 import { NotificationBell } from '@/features/notifications/components/NotificationBell'
 import { useNotificationHub } from '@/features/notifications/hooks/useNotificationHub'
 import { useChatUnreadSync } from '@/features/chat'
@@ -26,12 +25,11 @@ import { exerciseTrackingKeys } from '@/features/exercise-tracking'
 import { useMyCoach } from '@/features/coach-client'
 import { useMyPreferences, useUpdatePreferences, useMyProfile } from '@/features/profile'
 
-const MINI_WIDTH  = 56
-const FULL_WIDTH  = 220
+const MINI_WIDTH  = 64
+const FULL_WIDTH  = 264
 
 export function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [mini, setMini] = useState(false)
   const user      = useAuthStore((s) => s.user)
   const isCoach   = useAuthStore((s) => s.user?.roles?.includes('Coach') ?? false)
@@ -46,8 +44,6 @@ export function AppLayout() {
   const tn        = t.nav
   const lang = useLangStore((s) => s.lang)
   const setLang = useLangStore((s) => s.setLang)
-  const weightUnit = usePreferenceStore((s) => s.weightUnit)
-  const setWeightUnit = usePreferenceStore((s) => s.setWeightUnit)
   const { data: preferences } = useMyPreferences(!!user)
   const { data: profile } = useMyProfile()
   const isFemale = profile?.gender === 'Female'
@@ -66,17 +62,13 @@ export function AppLayout() {
   useEffect(() => {
     if (!preferences) return
     setLang(preferences.language)
-    setWeightUnit(preferences.weightUnit)
-  }, [preferences, setLang, setWeightUnit])
+  }, [preferences, setLang])
 
-  // Theme is fixed to light; the preferences payload still carries it for the backend contract.
-  function savePreferences(next: Partial<{ language: Lang; weightUnit: WeightUnit }>) {
+  // Theme is fixed to light and weight unit to kg; the payload still carries both for the backend contract.
+  function savePreferences(next: { language?: Lang }) {
     const language = next.language ?? lang
-    const nextWeightUnit = next.weightUnit ?? weightUnit
-
     setLang(language)
-    setWeightUnit(nextWeightUnit)
-    updatePreferences.mutate({ language, theme: 'light', weightUnit: nextWeightUnit })
+    updatePreferences.mutate({ language, theme: 'light', weightUnit: 'kg' })
   }
 
   const individualNav = [
@@ -117,13 +109,35 @@ export function AppLayout() {
 
   const navItems = isAdmin ? adminNav : isCoach ? coachNav : individualNav
 
+  // Mobile bottom bar: the four primary destinations within thumb reach.
+  // Everything else (settings, subscription, secondary pages) lives behind "More".
+  const bottomNavItems: BottomNavItem[] = isAdmin
+    ? [
+        { to: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard', end: true },
+        { to: '/admin/users',     icon: Users,           label: 'Users' },
+        { to: '/admin/plans',     icon: ClipboardList,   label: 'Plans' },
+        { to: '/admin/payments',  icon: CreditCard,      label: 'Payments' },
+      ]
+    : isCoach
+      ? [
+          { to: '/dashboard',     icon: LayoutDashboard, label: tn.overview, end: true },
+          { to: '/plans',         icon: ClipboardList,   label: tn.myPlans },
+          { to: '/coach/clients', icon: UserCheck,       label: tn.clients },
+          { to: '/coach/chat',    icon: MessagesSquare,  label: 'Chat' },
+        ]
+      : [
+          { to: '/dashboard', icon: LayoutDashboard, label: tn.dashboard, end: true },
+          { to: '/plans',     icon: ClipboardList,   label: tn.myPlans },
+          { to: '/progress',  icon: TrendingUp,      label: tn.progress },
+          { to: '/nutrition', icon: Utensils,        label: 'Nutrition' },
+        ]
+
   // Individual users see Coach nav items as locked teasers — clicking navigates to the subscription page.
   const lockedCoachNavItems: LockedNavItem[] = isIndividual
     ? [{ icon: UserCheck, label: tn.clients, to: '/subscription?reason=coach-required' }]
     : []
 
   function handleLogout() {
-    setUserMenuOpen(false)
     logout(undefined, { onSettled: () => navigate('/login') })
   }
 
@@ -150,6 +164,9 @@ export function AppLayout() {
           onToggleMini={() => setMini((v) => !v)}
           onLogout={handleLogout}
           onNavClick={handleNavClick}
+          lang={lang}
+          onSavePreferences={savePreferences}
+          changePasswordLabel={changePasswordLabel}
         />
       </aside>
 
@@ -177,8 +194,9 @@ export function AppLayout() {
                 className="flex items-center justify-between"
                 style={{ height: 60, padding: '0 8px', borderBottom: '1px solid var(--border-1)', flexShrink: 0 }}
               >
-                <Link to="/" className="xn-brand-name" style={{ textDecoration: 'none' }} onClick={() => setMobileOpen(false)}>
-                  Xenoh
+                <Link to="/" className="flex items-center gap-2" style={{ textDecoration: 'none' }} onClick={() => setMobileOpen(false)}>
+                  <img src="/assets/logo-mark.svg" alt="" width={34} height={34} />
+                  <span className="xn-brand-name">Xenoh</span>
                 </Link>
                 <button
                   onClick={() => setMobileOpen(false)}
@@ -199,6 +217,9 @@ export function AppLayout() {
                   handleNavClick(to)
                   setMobileOpen(false)
                 }}
+                lang={lang}
+                onSavePreferences={savePreferences}
+                changePasswordLabel={changePasswordLabel}
                 hideBrand
               />
             </motion.aside>
@@ -221,128 +242,26 @@ export function AppLayout() {
           </button>
 
           {/* Mobile: logo */}
-          <Link to="/" className="md:hidden xn-brand-name" style={{ textDecoration: 'none', flex: 1, textAlign: 'center' }}>
-            Xenoh
+          <Link
+            to="/"
+            className="md:hidden flex items-center justify-center gap-2"
+            style={{ textDecoration: 'none', flex: 1 }}
+          >
+            <img src="/assets/logo-mark.svg" alt="" width={32} height={32} />
+            <span className="xn-brand-name">Xenoh</span>
           </Link>
 
           {/* Desktop: spacer */}
           <div className="hidden md:block" />
 
-          {/* Right: lang switcher + notification bell + user menu */}
+          {/* Right: notification bell (account settings live in the sidebar user menu) */}
           <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-            <LanguageSwitcher variant="text" onChange={(language) => savePreferences({ language })} />
             <NotificationBell />
-            <div className="relative">
-              <button
-                onClick={() => setUserMenuOpen((v) => !v)}
-                className="xn-topbar-button flex items-center gap-2 rounded-full px-2 py-1"
-                style={{ cursor: 'pointer' }}
-              >
-                <UserAvatar name={user?.fullName} email={user?.email} imageUrl={user?.avatarUrl} size={28} />
-                <span className="hidden md:block text-sm font-medium max-w-[120px] truncate" style={{ color: 'var(--button-text)' }}>
-                  {user?.fullName ?? user?.email}
-                </span>
-                <ChevronDown size={13} style={{ color: 'var(--button-text)', transform: userMenuOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
-              </button>
-
-              <AnimatePresence>
-                {userMenuOpen && (
-                  <>
-                    <div className="fixed inset-0 z-10" onClick={() => setUserMenuOpen(false)} />
-                    <motion.div
-                      initial={{ opacity: 0, y: -8, scale: 0.96 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -8, scale: 0.96 }}
-                      transition={{ duration: 0.13 }}
-                      className="xn-card absolute right-0 top-full z-20 mt-2 w-64"
-                      style={{ padding: 0, overflow: 'hidden', borderRadius: 14 }}
-                    >
-                      <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-1)' }}>
-                        <p className="text-sm font-medium truncate" style={{ color: 'var(--fg-1)', margin: 0 }}>{user?.fullName}</p>
-                        <p className="text-xs truncate" style={{ color: 'var(--fg-3)', margin: '2px 0 0' }}>{user?.email}</p>
-                      </div>
-                      <div style={{ padding: 6 }}>
-                        <NavLink
-                          to="/profile"
-                          onClick={() => setUserMenuOpen(false)}
-                          className="xn-nav-item"
-                          style={{ fontSize: 13 }}
-                        >
-                          <User size={15} />
-                          {tn.profile}
-                        </NavLink>
-                        <NavLink
-                          to="/change-password"
-                          onClick={() => setUserMenuOpen(false)}
-                          className="xn-nav-item"
-                          style={{ fontSize: 13 }}
-                        >
-                          <LockKeyhole size={15} />
-                          {changePasswordLabel}
-                        </NavLink>
-                        <NavLink
-                          to="/settings/blocklist"
-                          onClick={() => setUserMenuOpen(false)}
-                          className="xn-nav-item"
-                          style={{ fontSize: 13 }}
-                        >
-                          <Ban size={15} />
-                          Blocklist
-                        </NavLink>
-                        <div style={{ borderTop: '1px solid var(--border-1)', margin: '6px 0', padding: '10px 8px 4px' }}>
-                          <p className="text-xs font-semibold uppercase" style={{ color: 'var(--fg-3)', margin: '0 0 8px', letterSpacing: '0.08em' }}>
-                            Preferences
-                          </p>
-                          <PreferenceRow label="Language">
-                            <SegmentedPreference
-                              value={lang}
-                              options={[
-                                { value: 'en', label: 'EN' },
-                                { value: 'vi', label: 'VI' },
-                              ]}
-                              onChange={(language) => savePreferences({ language })}
-                            />
-                          </PreferenceRow>
-                          <PreferenceRow label="Weight">
-                            <SegmentedPreference
-                              value={weightUnit}
-                              options={[
-                                { value: 'kg', label: 'kg' },
-                                { value: 'lb', label: 'lb' },
-                              ]}
-                              onChange={(nextWeightUnit) => savePreferences({ weightUnit: nextWeightUnit })}
-                            />
-                          </PreferenceRow>
-                        </div>
-                        <button
-                          onClick={handleLogout}
-                          className="xn-nav-item w-full text-left"
-                          style={{ fontSize: 13, background: 'none', border: 'none', width: '100%', cursor: 'pointer' }}
-                          onMouseEnter={(e) => {
-                            const el = e.currentTarget as HTMLElement
-                            el.style.background = 'var(--xn-danger-bg)'
-                            el.style.color = 'var(--xn-danger)'
-                          }}
-                          onMouseLeave={(e) => {
-                            const el = e.currentTarget as HTMLElement
-                            el.style.background = ''
-                            el.style.color = ''
-                          }}
-                        >
-                          <LogOut size={15} />
-                          {tn.logout}
-                        </button>
-                      </div>
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
-            </div>
           </div>
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="xn-main-scroll flex-1 overflow-y-auto">
           <div className={cn('xn-page-container', isWidePage && 'wide', isInsightsPage && 'insights-page')}>
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
@@ -358,6 +277,14 @@ export function AppLayout() {
           </div>
         </main>
       </div>
+
+      {/* ── Mobile bottom tab bar ─────────────────────────────────────── */}
+      <MobileBottomNav
+        items={bottomNavItems}
+        moreLabel={tn.more}
+        onMore={() => setMobileOpen(true)}
+        moreActive={mobileOpen}
+      />
     </div>
   )
 }
@@ -468,14 +395,24 @@ interface SidebarInnerProps {
   onToggleMini?: () => void
   onLogout: () => void
   onNavClick?: (to: string) => void
+  lang: Lang
+  onSavePreferences: (next: { language?: Lang }) => void
+  changePasswordLabel: string
   hideBrand?: boolean
 }
 
 function SidebarInner({
-  navItems, lockedNavItems = [], user, isCoach, isAdmin, mini, onToggleMini, onLogout, onNavClick, hideBrand,
+  navItems, lockedNavItems = [], user, isCoach, isAdmin, mini, onToggleMini, onLogout, onNavClick,
+  lang, onSavePreferences, changePasswordLabel, hideBrand,
 }: SidebarInnerProps) {
   const t  = useT()
   const tn = t.nav
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  function handleMenuNav(to: string) {
+    setMenuOpen(false)
+    onNavClick?.(to)
+  }
 
   return (
     <>
@@ -535,7 +472,7 @@ function SidebarInner({
                     transition={{ type: 'spring', stiffness: 420, damping: 34, mass: 0.7 }}
                   />
                 )}
-                <Icon size={17} style={color ? { color } : undefined} />
+                <Icon size={19} style={color ? { color } : undefined} />
                 {!mini && <span className="xn-nav-item-label">{label}</span>}
               </>
             )}
@@ -554,7 +491,7 @@ function SidebarInner({
               ...(mini ? { justifyContent: 'center', padding: '10px 0' } : undefined),
             }}
           >
-            <Icon size={17} />
+            <Icon size={19} />
             {!mini && (
               <>
                 <span className="xn-nav-item-label" style={{ flex: 1 }}>{label}</span>
@@ -565,66 +502,116 @@ function SidebarInner({
         ))}
       </nav>
 
-      {/* User area */}
-      <div style={{ borderTop: '1px solid var(--border-1)', paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 4 }}>
+      {/* User area + account settings menu (opens upward) */}
+      <div style={{ position: 'relative', borderTop: '1px solid var(--border-1)', paddingTop: 10, flexShrink: 0 }}>
+        <AnimatePresence>
+          {menuOpen && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
+              <motion.div
+                initial={{ opacity: 0, y: 8, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 8, scale: 0.97 }}
+                transition={{ duration: 0.13 }}
+                className="xn-card"
+                style={{
+                  position: 'absolute',
+                  bottom: 'calc(100% + 8px)',
+                  left: mini ? 0 : 6,
+                  right: mini ? 'auto' : 6,
+                  width: mini ? 248 : 'auto',
+                  zIndex: 20,
+                  padding: 0,
+                  overflow: 'hidden',
+                  borderRadius: 14,
+                }}
+              >
+                <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-1)' }}>
+                  <p className="text-sm font-medium truncate" style={{ color: 'var(--fg-1)', margin: 0 }}>{user?.fullName}</p>
+                  <p className="text-xs truncate" style={{ color: 'var(--fg-3)', margin: '2px 0 0' }}>{user?.email}</p>
+                </div>
+                <div style={{ padding: 6 }}>
+                  <NavLink to="/profile" onClick={() => handleMenuNav('/profile')} className="xn-nav-item" style={{ fontSize: 13 }}>
+                    <User size={15} />
+                    {tn.profile}
+                  </NavLink>
+                  <NavLink to="/change-password" onClick={() => handleMenuNav('/change-password')} className="xn-nav-item" style={{ fontSize: 13 }}>
+                    <LockKeyhole size={15} />
+                    {changePasswordLabel}
+                  </NavLink>
+                  <NavLink to="/settings/blocklist" onClick={() => handleMenuNav('/settings/blocklist')} className="xn-nav-item" style={{ fontSize: 13 }}>
+                    <Ban size={15} />
+                    Blocklist
+                  </NavLink>
+                  <div style={{ borderTop: '1px solid var(--border-1)', margin: '6px 0', padding: '10px 8px 4px' }}>
+                    <p className="text-xs font-semibold uppercase" style={{ color: 'var(--fg-3)', margin: '0 0 8px', letterSpacing: '0.08em' }}>
+                      Preferences
+                    </p>
+                    <PreferenceRow label="Language">
+                      <SegmentedPreference
+                        value={lang}
+                        options={[
+                          { value: 'en', label: 'EN' },
+                          { value: 'vi', label: 'VI' },
+                        ]}
+                        onChange={(language) => onSavePreferences({ language })}
+                      />
+                    </PreferenceRow>
+                  </div>
+                  <button
+                    onClick={() => { setMenuOpen(false); onLogout() }}
+                    className="xn-nav-item w-full text-left"
+                    style={{ fontSize: 13, background: 'none', border: 'none', width: '100%', cursor: 'pointer' }}
+                    onMouseEnter={(e) => {
+                      const el = e.currentTarget as HTMLElement
+                      el.style.background = 'var(--xn-danger-bg)'
+                      el.style.color = 'var(--xn-danger)'
+                    }}
+                    onMouseLeave={(e) => {
+                      const el = e.currentTarget as HTMLElement
+                      el.style.background = ''
+                      el.style.color = ''
+                    }}
+                  >
+                    <LogOut size={15} />
+                    {tn.logout}
+                  </button>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+
         {mini ? (
-          <>
-            <div
-              title={user?.fullName}
-              style={{ display: 'flex', justifyContent: 'center', padding: '4px 0' }}
-            >
-              <UserAvatar name={user?.fullName} email={user?.email} imageUrl={user?.avatarUrl} size={32} />
-            </div>
-            <button
-              onClick={onLogout}
-              title={tn.logout}
-              className="xn-nav-item"
-              style={{
-                justifyContent: 'center', padding: '10px 0',
-                background: 'none', border: 'none', cursor: 'pointer', width: '100%',
-              }}
-              onMouseEnter={(e) => {
-                const el = e.currentTarget as HTMLElement
-                el.style.background = 'var(--xn-danger-bg)'
-                el.style.color = 'var(--xn-danger)'
-              }}
-              onMouseLeave={(e) => {
-                const el = e.currentTarget as HTMLElement
-                el.style.background = ''
-                el.style.color = ''
-              }}
-            >
-              <LogOut size={16} />
-            </button>
-          </>
+          <button
+            onClick={() => setMenuOpen((v) => !v)}
+            title={user?.fullName}
+            style={{
+              display: 'flex', justifyContent: 'center', width: '100%', padding: '6px 0',
+              background: menuOpen ? 'var(--bg-3)' : 'none', border: 'none', cursor: 'pointer', borderRadius: 10,
+            }}
+          >
+            <UserAvatar name={user?.fullName} email={user?.email} imageUrl={user?.avatarUrl} size={34} />
+          </button>
         ) : (
-          <>
-            <div className="flex items-center gap-2.5" style={{ padding: '6px 10px' }}>
-              <UserAvatar name={user?.fullName} email={user?.email} imageUrl={user?.avatarUrl} size={32} />
-              <div className="min-w-0">
-                <p className="text-sm font-medium truncate" style={{ color: 'var(--fg-1)', margin: 0 }}>{user?.fullName}</p>
-                <p className="text-xs truncate" style={{ color: 'var(--fg-3)', margin: 0 }}>{user?.email}</p>
-              </div>
+          <button
+            onClick={() => setMenuOpen((v) => !v)}
+            className="flex items-center gap-2.5"
+            style={{
+              width: '100%', padding: '8px 10px', textAlign: 'left', borderRadius: 10,
+              background: menuOpen ? 'var(--bg-3)' : 'none', border: 'none', cursor: 'pointer',
+            }}
+          >
+            <UserAvatar name={user?.fullName} email={user?.email} imageUrl={user?.avatarUrl} size={36} />
+            <div className="min-w-0" style={{ flex: 1 }}>
+              <p className="text-sm font-medium truncate" style={{ color: 'var(--fg-1)', margin: 0 }}>{user?.fullName}</p>
+              <p className="text-xs truncate" style={{ color: 'var(--fg-3)', margin: 0 }}>{user?.email}</p>
             </div>
-            <button
-              onClick={onLogout}
-              className="xn-nav-item"
-              style={{ background: 'none', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left' }}
-              onMouseEnter={(e) => {
-                const el = e.currentTarget as HTMLElement
-                el.style.background = 'var(--xn-danger-bg)'
-                el.style.color = 'var(--xn-danger)'
-              }}
-              onMouseLeave={(e) => {
-                const el = e.currentTarget as HTMLElement
-                el.style.background = ''
-                el.style.color = ''
-              }}
-            >
-              <LogOut size={16} />
-              {tn.logout}
-            </button>
-          </>
+            <ChevronDown
+              size={15}
+              style={{ color: 'var(--fg-3)', flexShrink: 0, transform: menuOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}
+            />
+          </button>
         )}
       </div>
     </>

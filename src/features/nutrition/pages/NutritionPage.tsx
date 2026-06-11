@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { format } from 'date-fns'
-import { Activity, ChevronLeft, Flame, Sparkles, Target, Utensils } from 'lucide-react'
+import { Activity, ChevronLeft, Flame, Settings, Sparkles, Target, Utensils } from 'lucide-react'
 import { Button } from '@/shared/components/Button'
 import { Card } from '@/shared/components/Card'
+import { Modal } from '@/shared/components/Modal'
 import { Input } from '@/shared/components/Input'
 import { Select } from '@/shared/components/Select'
 import { Spinner } from '@/shared/components/Spinner'
@@ -56,6 +57,7 @@ export function NutritionPage() {
     { value: 'Bulk', label: tn.goalBulk },
   ]
 
+  const [profileOpen, setProfileOpen] = useState(false)
   const [profileForm, setProfileForm] = useState<ProfileForm>({
     activityLevel: 'Moderate',
     goal: 'Maintain',
@@ -100,7 +102,7 @@ export function NutritionPage() {
       proteinPerKg: optionalNumber(profileForm.proteinPerKg),
       fatPerKg: optionalNumber(profileForm.fatPerKg),
     }
-    updateProfile.mutate(payload)
+    updateProfile.mutate(payload, { onSuccess: () => setProfileOpen(false) })
   }
 
   if (isLoading) {
@@ -128,15 +130,25 @@ export function NutritionPage() {
           <h1 className="text-2xl font-bold text-text">{isClientView ? tn.clientTitle : tn.title}</h1>
           <p className="mt-1 text-sm text-muted">{tn.subtitle}</p>
         </div>
-        <Link to={isClientView ? `/coach/clients/${clientId}/nutrition/insight` : '/nutrition/insight'} className="shrink-0">
+        <div className="flex shrink-0 items-center gap-2">
           <Button
             variant="secondary"
             size="sm"
             className="whitespace-nowrap"
+            onClick={() => setProfileOpen(true)}
           >
-            <Sparkles size={16} /> {tn.nutritionInsight}
+            <Settings size={16} /> {tn.profileSettings}
           </Button>
-        </Link>
+          <Link to={isClientView ? `/coach/clients/${clientId}/nutrition/insight` : '/nutrition/insight'}>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="whitespace-nowrap"
+            >
+              <Sparkles size={16} /> {tn.nutritionInsight}
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {!hasCalculation && (
@@ -196,13 +208,12 @@ export function NutritionPage() {
         />
       )}
 
-      <div className="grid items-start gap-6 xl:grid-cols-2">
-        <Card>
-          <div className="mb-5 flex items-center gap-2">
-            <Target size={17} className="text-primary" />
-            <h2 className="text-lg font-semibold text-text">{tn.profileSectionTitle}</h2>
-          </div>
-
+      <Modal
+        open={profileOpen}
+        onClose={() => setProfileOpen(false)}
+        title={tn.profileSettings}
+        className="max-w-2xl"
+      >
           {/* ── Basics row ─────────────────────────────────────────────── */}
           <section className="space-y-3">
             <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'var(--fg-3)' }}>
@@ -213,12 +224,14 @@ export function NutritionPage() {
                 label={tn.goalLabel}
                 value={profileForm.goal}
                 options={goalOptions}
+                disabled={isClientView}
                 onChange={(value) => setProfileForm((f) => ({ ...f, goal: value as NutritionGoal }))}
               />
               <Select
                 label={tn.activityLabel}
                 value={profileForm.activityLevel}
                 options={activityOptions}
+                disabled={isClientView}
                 onChange={(value) => setProfileForm((f) => ({ ...f, activityLevel: value as ActivityLevel }))}
               />
               <Input
@@ -227,6 +240,7 @@ export function NutritionPage() {
                 type="number"
                 min="20"
                 step="0.1"
+                disabled={isClientView}
                 value={profileForm.targetWeightKg}
                 onChange={(e) => setProfileForm((f) => ({ ...f, targetWeightKg: e.target.value }))}
               />
@@ -249,6 +263,7 @@ export function NutritionPage() {
                 label={tn.customCaloriesLabel}
                 type="number"
                 min="800"
+                disabled={isClientView}
                 placeholder={
                   calc.calorieTarget
                     ? `${tn.autoPrefix}${calc.calorieTarget} ${tn.kcal}`
@@ -262,6 +277,7 @@ export function NutritionPage() {
                 type="number"
                 min="0.5"
                 step="0.1"
+                disabled={isClientView}
                 placeholder={tn.autoPlaceholder}
                 value={profileForm.proteinPerKg}
                 onChange={(e) => setProfileForm((f) => ({ ...f, proteinPerKg: e.target.value }))}
@@ -272,6 +288,7 @@ export function NutritionPage() {
                 type="number"
                 min="0.2"
                 step="0.1"
+                disabled={isClientView}
                 placeholder={tn.autoPlaceholder}
                 value={profileForm.fatPerKg}
                 onChange={(e) => setProfileForm((f) => ({ ...f, fatPerKg: e.target.value }))}
@@ -279,16 +296,20 @@ export function NutritionPage() {
             </div>
           </section>
 
-          <div className="mt-6 flex justify-end">
-            <Button onClick={saveProfile} loading={updateProfile.isPending}>{tn.saveProfile}</Button>
-          </div>
-        </Card>
+          {isClientView ? (
+            <p className="mt-6 text-right text-xs text-muted">{tn.viewOnlyNote}</p>
+          ) : (
+            <div className="mt-6 flex justify-end">
+              <Button onClick={saveProfile} loading={updateProfile.isPending}>{tn.saveProfile}</Button>
+            </div>
+          )}
+      </Modal>
 
-        <Card>
-          <div className="mb-4 flex items-center gap-2">
-            <Utensils size={17} className="text-primary" />
-            <h2 className="text-lg font-semibold text-text">{tn.todayIntakeTitle}</h2>
-          </div>
+      <Card>
+        <div className="mb-4 flex items-center gap-2">
+          <Utensils size={17} className="text-primary" />
+          <h2 className="text-lg font-semibold text-text">{tn.todayIntakeTitle}</h2>
+        </div>
           {isClientView ? (
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-lg p-3" style={{ background: 'var(--bg-3)' }}>
@@ -311,8 +332,7 @@ export function NutritionPage() {
           ) : (
             <FoodLogPanel />
           )}
-        </Card>
-      </div>
+      </Card>
 
       <RequireTier feature={tn.requireFeature}>
         <NutritionHistoryPanel clientId={clientId} enabled={summary.canUseAdvancedAnalysis} calorieTarget={calc.calorieTarget} />

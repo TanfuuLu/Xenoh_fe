@@ -70,14 +70,24 @@ function buildPowerliftingAiSummary(section: PowerliftingSection, tp: Record<str
     .flatMap((lift) => lift.prTimeline.map((pr) => ({ ...pr, lift: lift.lift })))
     .sort((a, b) => (a.date < b.date ? 1 : -1))
   const latestDots = section.dots.length > 0 ? section.dots[section.dots.length - 1] : undefined
+  // DOTS needs all three lifts logged in this plan plus a bodyweight entry. When the
+  // series is empty, distinguish "a lift hasn't been logged yet" from "no bodyweight"
+  // so we don't tell the user to log bodyweight they already have.
+  const missingLifts = lifts.filter((lift) => lift.currentE1Rm == null)
+  const missingLiftNames = missingLifts.map((lift) => translateLiftName(lift.lift, tp)).join(', ')
 
   let title = tp.powerliftingAiKeepBuilding
   let detail = tp.powerliftingAiKeepBuildingDetail
   let priorityLift = tp.squat
 
   if (!latestDots) {
-    title = tp.powerliftingAiNeedBodyweight
-    detail = tp.powerliftingAiNeedBodyweightDetail
+    if (missingLifts.length > 0) {
+      title = tp.powerliftingAiNeedLifts
+      detail = tp.powerliftingAiNeedLiftsDetail.replace('{lifts}', missingLiftNames)
+    } else {
+      title = tp.powerliftingAiNeedBodyweight
+      detail = tp.powerliftingAiNeedBodyweightDetail
+    }
   } else if (plateauLift) {
     priorityLift = translateLiftName(plateauLift.lift, tp)
     title = tp.powerliftingAiPlateau.replace('{lift}', priorityLift)
@@ -93,10 +103,15 @@ function buildPowerliftingAiSummary(section: PowerliftingSection, tp: Record<str
   }
 
   const latestPr = allPrs[0]
+  const dotsAction = latestDots
+    ? tp.powerliftingAiActionPr
+    : missingLifts.length > 0
+      ? tp.powerliftingAiActionLogLifts.replace('{lifts}', missingLiftNames)
+      : tp.powerliftingAiActionBodyweight
   const actions = [
     tp.powerliftingAiActionWeakLift.replace('{lift}', priorityLift),
     tp.powerliftingAiActionTechnique,
-    latestDots ? tp.powerliftingAiActionPr : tp.powerliftingAiActionBodyweight,
+    dotsAction,
   ]
 
   return {

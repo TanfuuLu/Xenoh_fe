@@ -2,6 +2,7 @@ import { Sparkles, Target, CheckCircle2, AlertTriangle, ArrowRight, TrendingUp, 
 import { Card } from '@/shared/components/Card'
 import { Badge } from '@/shared/components/Badge'
 import { Button } from '@/shared/components/Button'
+import { CycleAwareBadge } from '@/shared/components/CycleAwareBadge'
 import { Spinner } from '@/shared/components/Spinner'
 import { usePlanProgressInsight } from '../api/usePlanProgressInsight'
 import type { PlanProgressTrajectory } from '../types'
@@ -39,6 +40,7 @@ export function PlanProgressInsightPanel({ planId, tp }: { planId: string; tp: R
           <Sparkles size={18} className="text-primary" />
           <h2 className="text-base font-semibold text-text">{tp.planInsightTitle}</h2>
           <Badge>{data.planName}</Badge>
+          <CycleAwareBadge />
         </div>
         <Button type="button" size="sm" variant="secondary" disabled={isFetching} onClick={() => refetch()}>
           <RefreshCw size={14} className={isFetching ? 'animate-spin' : ''} />

@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { format, subDays } from 'date-fns'
-import { Flame, LineChart as LineChartIcon, Scale, Sparkles, TrendingUp, Utensils } from 'lucide-react'
+import { Check, Flame, LineChart as LineChartIcon, Scale, Sparkles, TrendingUp, Utensils } from 'lucide-react'
 import {
   CartesianGrid,
   Line,
@@ -10,13 +11,21 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import { Button } from '@/shared/components/Button'
 import { Card } from '@/shared/components/Card'
 import { Spinner } from '@/shared/components/Spinner'
 import { useT } from '@/shared/i18n'
-import { useNutritionHistory } from '../api/useNutrition'
+import { useNutritionHistory, useUpdateNutritionProfile } from '../api/useNutrition'
 import { NutritionHistoryCards } from './NutritionHistoryCards'
 import type { NutritionSummaryResponse } from '../types'
-import { buildNutritionInsight, type LogForm } from './nutritionHelpers'
+import {
+  buildNutritionInsight,
+  isStrategyActive,
+  MACRO_COLORS,
+  strategyToProfileMacros,
+  type LogForm,
+  type MacroStrategy,
+} from './nutritionHelpers'
 
 export function NutritionHistoryPanel({
   clientId,
@@ -197,7 +206,7 @@ export function NutritionHistoryPanel({
                   <Line
                     type="monotone"
                     dataKey="proteinG"
-                    stroke="var(--color-primary)"
+                    stroke={MACRO_COLORS.protein}
                     strokeWidth={3}
                     dot={{ r: 3, strokeWidth: 2, fill: 'var(--bg-1)' }}
                     activeDot={{ r: 6 }}
@@ -205,7 +214,7 @@ export function NutritionHistoryPanel({
                   <Line
                     type="monotone"
                     dataKey="carbsG"
-                    stroke="var(--xn-success)"
+                    stroke={MACRO_COLORS.carbs}
                     strokeWidth={3}
                     dot={{ r: 3, strokeWidth: 2, fill: 'var(--bg-1)' }}
                     activeDot={{ r: 6 }}
@@ -213,7 +222,7 @@ export function NutritionHistoryPanel({
                   <Line
                     type="monotone"
                     dataKey="fatG"
-                    stroke="var(--xn-warning)"
+                    stroke={MACRO_COLORS.fat}
                     strokeWidth={3}
                     dot={{ r: 3, strokeWidth: 2, fill: 'var(--bg-1)' }}
                     activeDot={{ r: 6 }}
@@ -223,9 +232,9 @@ export function NutritionHistoryPanel({
             </div>
             {macroAverage && (
               <div className="grid gap-2 self-start">
-                <AverageMacroPill label={tn.proteinShort} value={macroAverage.proteinG} color="var(--color-primary)" />
-                <AverageMacroPill label={tn.carbsShort} value={macroAverage.carbsG} color="var(--xn-success)" />
-                <AverageMacroPill label={tn.fatShort} value={macroAverage.fatG} color="var(--xn-warning)" />
+                <AverageMacroPill label={tn.proteinShort} value={macroAverage.proteinG} color={MACRO_COLORS.protein} />
+                <AverageMacroPill label={tn.carbsShort} value={macroAverage.carbsG} color={MACRO_COLORS.carbs} />
+                <AverageMacroPill label={tn.fatShort} value={macroAverage.fatG} color={MACRO_COLORS.fat} />
               </div>
             )}
           </div>
@@ -266,6 +275,29 @@ export function NutritionInsightPanel({
   const from = format(subDays(new Date(), 13), 'yyyy-MM-dd')
   const { data = [], isLoading } = useNutritionHistory(from, to, enabled, clientId)
   const insight = buildNutritionInsight(summary, logForm, data, tn)
+
+  const { mutate: applyProfile, isPending: applyingStrategy } = useUpdateNutritionProfile(clientId)
+  const [pendingStrategy, setPendingStrategy] = useState<string | null>(null)
+  const calc = summary.calculation
+  const canSelectStrategy =
+    calc.bodyweightKg != null && calc.bodyweightKg > 0 && calc.calorieTarget != null && calc.calorieTarget > 0
+
+  function handleSelectStrategy(strategy: MacroStrategy) {
+    if (!canSelectStrategy || calc.bodyweightKg == null || calc.calorieTarget == null) return
+    const macros = strategyToProfileMacros(strategy, calc.calorieTarget, calc.bodyweightKg)
+    setPendingStrategy(strategy.title)
+    applyProfile(
+      {
+        activityLevel: summary.profile.activityLevel,
+        goal: summary.profile.goal,
+        targetWeightKg: summary.profile.targetWeightKg,
+        customCalorieTarget: summary.profile.customCalorieTarget,
+        proteinPerKg: macros.proteinPerKg,
+        fatPerKg: macros.fatPerKg,
+      },
+      { onSettled: () => setPendingStrategy(null) },
+    )
+  }
 
   return (
     <Card
@@ -347,7 +379,16 @@ export function NutritionInsightPanel({
             </div>
             <div className="grid gap-3 lg:grid-cols-3">
               {insight.macroStrategies.map((strategy) => (
-                <MacroStrategyCard key={strategy.title} strategy={strategy} labels={tn} />
+                <MacroStrategyCard
+                  key={strategy.title}
+                  strategy={strategy}
+                  labels={tn}
+                  selected={isStrategyActive(strategy, calc)}
+                  canSelect={canSelectStrategy}
+                  applying={pendingStrategy === strategy.title}
+                  disabled={applyingStrategy}
+                  onSelect={() => handleSelectStrategy(strategy)}
+                />
               ))}
             </div>
           </section>
@@ -405,40 +446,36 @@ function FoodSuggestionCard({
 function MacroStrategyCard({
   strategy,
   labels,
+  selected,
+  canSelect,
+  applying,
+  disabled,
+  onSelect,
 }: {
-  strategy: {
-    title: string
-    bestFor: string
-    pros: string
-    cons: string
-    whenToUse: string
-    proteinPct: number
-    carbsPct: number
-    fatPct: number
-    calories: number | null
-    proteinG: number | null
-    carbsG: number | null
-    fatG: number | null
-    mealSplit: string
-    timing: string
-    recommended: boolean
-  }
+  strategy: MacroStrategy
   labels: Record<string, string>
+  selected: boolean
+  canSelect: boolean
+  applying: boolean
+  disabled: boolean
+  onSelect: () => void
 }) {
   const macroRows = [
-    { key: 'protein', label: labels.proteinShort, pct: strategy.proteinPct, grams: strategy.proteinG, color: 'var(--color-primary)' },
-    { key: 'carbs', label: labels.carbsShort, pct: strategy.carbsPct, grams: strategy.carbsG, color: 'var(--xn-success)' },
-    { key: 'fat', label: labels.fatShort, pct: strategy.fatPct, grams: strategy.fatG, color: 'var(--xn-warning)' },
+    { key: 'protein', label: labels.proteinShort, pct: strategy.proteinPct, grams: strategy.proteinG, color: MACRO_COLORS.protein },
+    { key: 'carbs', label: labels.carbsShort, pct: strategy.carbsPct, grams: strategy.carbsG, color: MACRO_COLORS.carbs },
+    { key: 'fat', label: labels.fatShort, pct: strategy.fatPct, grams: strategy.fatG, color: MACRO_COLORS.fat },
   ]
 
   return (
     <div
-      className="rounded-lg border p-4"
+      className="flex flex-col rounded-lg border p-4"
       style={{
-        borderColor: strategy.recommended ? 'var(--color-primary)' : 'var(--border-1)',
-        background: strategy.recommended
-          ? 'color-mix(in srgb, var(--color-primary) 7%, var(--bg-1))'
-          : 'var(--bg-1)',
+        borderColor: selected ? 'var(--xn-success)' : strategy.recommended ? 'var(--color-primary)' : 'var(--border-1)',
+        background: selected
+          ? 'color-mix(in srgb, var(--xn-success) 9%, var(--bg-1))'
+          : strategy.recommended
+            ? 'color-mix(in srgb, var(--color-primary) 7%, var(--bg-1))'
+            : 'var(--bg-1)',
       }}
     >
       <div className="flex items-start justify-between gap-3">
@@ -448,11 +485,19 @@ function MacroStrategyCard({
             {strategy.calories ? `${strategy.calories} ${labels.kcal}` : labels.missing}
           </p>
         </div>
-        {strategy.recommended && (
+        {selected ? (
+          <span
+            className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold"
+            style={{ background: 'color-mix(in srgb, var(--xn-success) 18%, transparent)', color: 'var(--xn-success)' }}
+          >
+            <Check size={12} />
+            {labels.strategySelected}
+          </span>
+        ) : strategy.recommended ? (
           <span className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold" style={{ background: 'var(--bg-3)', color: 'var(--fg-2)' }}>
             {labels.recommended}
           </span>
-        )}
+        ) : null}
       </div>
 
       <div className="mt-4 overflow-hidden rounded-full border" style={{ borderColor: 'var(--border-1)', background: 'var(--bg-2)' }}>
@@ -489,6 +534,27 @@ function MacroStrategyCard({
         <p className="rounded-md px-2 py-2" style={{ background: 'var(--bg-2)' }}>
           <span className="font-semibold text-text">{labels.consLabel}:</span> <span className="text-muted">{strategy.cons}</span>
         </p>
+      </div>
+
+      <div className="mt-auto pt-4">
+        {selected ? (
+          <Button type="button" size="sm" variant="success" disabled className="w-full">
+            <Check size={15} />
+            {labels.strategySelected}
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            className="w-full"
+            disabled={!canSelect || disabled}
+            loading={applying}
+            onClick={onSelect}
+          >
+            {!canSelect ? labels.strategyNeedsData : applying ? labels.strategyApplying : labels.strategySelect}
+          </Button>
+        )}
       </div>
     </div>
   )

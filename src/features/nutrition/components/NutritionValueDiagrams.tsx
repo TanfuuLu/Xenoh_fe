@@ -2,7 +2,7 @@ import { Cell, Pie, PieChart } from 'recharts'
 import { Flame, Target } from 'lucide-react'
 import { Card } from '@/shared/components/Card'
 import type { NutritionSummaryResponse } from '../types'
-import { formatKcal } from './nutritionHelpers'
+import { formatKcal, MACRO_COLORS } from './nutritionHelpers'
 
 export function MetricCard({
   icon,
@@ -164,9 +164,9 @@ function MacroDonut({
 }) {
   const total = proteinG + carbsG + fatG
   const segments = [
-    { label: proteinLabel, value: proteinG, target: proteinTarget, color: 'var(--color-primary)' },
-    { label: carbsLabel,   value: carbsG,   target: carbsTarget,   color: 'var(--xn-sage-500)' },
-    { label: fatLabel,     value: fatG,     target: fatTarget,     color: 'var(--color-warning)' },
+    { label: proteinLabel, value: proteinG, target: proteinTarget, color: MACRO_COLORS.protein },
+    { label: carbsLabel,   value: carbsG,   target: carbsTarget,   color: MACRO_COLORS.carbs },
+    { label: fatLabel,     value: fatG,     target: fatTarget,     color: MACRO_COLORS.fat },
   ]
   const pieData = total > 0
     ? segments.map((s) => ({ ...s, pieValue: s.value }))
