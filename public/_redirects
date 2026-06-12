@@ -1,0 +1,4 @@
+# Cloudflare Pages — SPA fallback
+# Serve index.html for all routes so client-side routing (React Router) handles them.
+# Without this, deep links / refreshes on routes like /plans/:id return 404.
+/*    /index.html   200
