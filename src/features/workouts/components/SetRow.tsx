@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { CheckCircle2, Circle } from 'lucide-react'
 import { useT } from '@/shared/i18n'
 import type { ExerciseSetResponse } from '../types'
@@ -15,6 +15,12 @@ export function SetRow({ set, canComplete, isCardio = false, onComplete }: SetRo
   const [weight, setWeight] = useState(String(set.plannedWeight ?? 0))
   const [rpe, setRpe]       = useState('')
   const t = useT()
+
+  useEffect(() => {
+    setReps(String(set.actualReps ?? set.plannedReps))
+    setWeight(String(set.actualWeight ?? set.plannedWeight ?? 0))
+    setRpe(set.rpe == null ? '' : String(set.rpe))
+  }, [set.actualReps, set.actualWeight, set.id, set.plannedReps, set.plannedWeight, set.rpe])
 
   function handleComplete() {
     const parsedReps = Number(reps)

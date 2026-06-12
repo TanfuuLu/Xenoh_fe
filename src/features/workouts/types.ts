@@ -22,6 +22,7 @@ export interface DailyWorkoutResponse {
   weeklyWorkoutId: string
   totalExercises: number
   completedExercises: number
+  skippedExercises: number
   hasWarning: boolean
   status: DayStatus
 }
@@ -51,6 +52,7 @@ export interface ExerciseResponse {
   plannedWeight: number | null
   completedSetsCount: number
   isCompleted: boolean
+  isSkipped: boolean
   notes: string | null
   dailyWorkoutId: string
   sortOrder: number
@@ -110,6 +112,11 @@ export interface UpdateExerciseRequest {
   plannedReps?: number
   plannedWeight?: number
   notes?: string
+}
+
+export interface SkipExerciseRequest {
+  exerciseId: string
+  isSkipped: boolean
 }
 
 export interface CompleteSetRequest {

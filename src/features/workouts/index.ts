@@ -1,5 +1,5 @@
 export { useWeeklyWorkouts, useUpdateWeeklyWorkout } from './api/useWeeklyWorkouts'
-export { useDailyWorkouts, useCopyDay, useMarkDayStatus } from './api/useDailyWorkouts'
+export { useDailyWorkouts, useCopyDay, useMarkDayStatus, useCompleteDayWorkout } from './api/useDailyWorkouts'
 export { dayKeys, exerciseKeys, weekKeys, invalidateWorkoutQueries } from './api/workoutQueryCache'
 export {
   useExercises,
@@ -8,6 +8,7 @@ export {
   useDeleteExercise,
   useReorderExercises,
   useCompleteSet,
+  useSkipExercise,
   useStartExerciseTimer,
   useFinishExerciseTimer,
   useSetExerciseDuration,
@@ -32,6 +33,7 @@ export type {
   CustomExerciseTemplateRequest,
   CreateExerciseRequest,
   UpdateExerciseRequest,
+  SkipExerciseRequest,
   CompleteSetRequest,
   ReorderExercisesRequest,
   CopyDayRequest,

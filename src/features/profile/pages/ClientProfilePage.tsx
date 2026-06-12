@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { Link, useParams } from 'react-router'
+import { Link, useNavigate, useParams } from 'react-router'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { motion } from 'framer-motion'
-import { ChevronLeft, Activity, Flame, Scale, Dumbbell, Plus, Ruler, CalendarDays, Users, ClipboardList, Utensils, Pencil, Trash2, Sparkles, Target, Trophy, CalendarHeart } from 'lucide-react'
+import { ChevronLeft, Activity, Flame, Scale, Dumbbell, Plus, Lock, Ruler, CalendarDays, Users, ClipboardList, Utensils, Pencil, Trash2, Sparkles, Target, Trophy, CalendarHeart, ArrowRight } from 'lucide-react'
 import { format } from 'date-fns'
 import {
   CartesianGrid,
@@ -37,6 +37,9 @@ import {
   useUpdateCustomExerciseTemplate,
 } from '@/features/workouts'
 import type { CustomExerciseTemplateRequest, ExerciseTemplateResponse } from '@/features/workouts'
+import { useAuthStore } from '@/features/auth'
+import { useSubscription } from '@/features/billing/api/useSubscription'
+import { getApiErrorMessage } from '@/shared/api/errorMessage'
 import { useClientBodyweightHistory, useClientProfile } from '../index'
 import { StatCard, InfoRow, AnalysisStat } from '../components/ClientProfileCards'
 import { SecondaryMusclePicker } from '../components/SecondaryMusclePicker'
@@ -80,7 +83,15 @@ function formatProfileOption<T extends string>(
 export function ClientProfilePage() {
   const lang = useLangStore((s) => s.lang)
   const vx = clientProfileText(lang)
+  const navigate = useNavigate()
   const { clientId = '' } = useParams()
+  const isAdmin = useAuthStore((s) => s.user?.roles?.includes('Admin') ?? false)
+  const { data: subscription } = useSubscription()
+  // Creating exercises for a client hits the RequireProCoach policy on the API.
+  // Gate the button on the same condition so coaches without an active ProCoach
+  // plan aren't shown a modal whose submit is guaranteed to 403.
+  const isProCoach =
+    isAdmin || (subscription?.isActive === true && subscription?.tier === 'ProCoach')
   const { data: profile, isLoading } = useClientProfile(clientId)
   const { data: bodyweightHistory = [] } = useClientBodyweightHistory(clientId)
   const { data: coachPlans = [], isLoading: plansLoading } = useCoachPlanOverview()
@@ -203,8 +214,10 @@ export function ClientProfilePage() {
     deleteCustomTemplate(template.id)
   }
 
-  const createForClientApiError = ((createForClientError || updateError) as { response?: { data?: { message?: string } } } | null)
-    ?.response?.data?.message
+  const exerciseError = createForClientError || updateError
+  const createForClientApiError = exerciseError
+    ? getApiErrorMessage(exerciseError, vx.exerciseSaveError, vx.proCoachRequired)
+    : undefined
   const createPlanApiError = (createClientPlanError as { response?: { data?: { message?: string } } } | null)
     ?.response?.data?.message
 
@@ -268,23 +281,23 @@ export function ClientProfilePage() {
         className="grid gap-3 min-[390px]:grid-cols-2 md:grid-cols-4"
       >
         <StatCard
-          icon={<Flame size={18} style={{ color: 'var(--color-warning)' }} />}
+          icon={<Flame size={18} style={{ color: 'var(--ic-orange)' }} />}
           label={tp.streakStat}
           value={`${profile.currentStreak} ${tc.days}`}
           highlight={profile.currentStreak > 0}
         />
         <StatCard
-          icon={<Scale size={18} style={{ color: 'var(--color-primary)' }} />}
+          icon={<Scale size={18} style={{ color: 'var(--ic-blue)' }} />}
           label={vx.weight}
           value={profile.latestBodyweight ? `${profile.latestBodyweight} ${tcp.kg}` : tcp.noData}
         />
         <StatCard
-          icon={<Activity size={18} style={{ color: 'var(--color-success)' }} />}
+          icon={<Activity size={18} style={{ color: 'var(--ic-green)' }} />}
           label={tp.bmiStat}
           value={profile.bmi ? `${profile.bmi.toFixed(1)} (${profile.bmiCategory ?? ''})` : tcp.noData}
         />
         <StatCard
-          icon={<Dumbbell size={18} style={{ color: 'var(--xn-clay-600)' }} />}
+          icon={<Dumbbell size={18} style={{ color: 'var(--ic-purple)' }} />}
           label={tp.dotsStat}
           value={profile.dotsScore ? profile.dotsScore.toFixed(1) : tcp.noData}
         />
@@ -363,33 +376,29 @@ export function ClientProfilePage() {
             </Button>
           </div>
         </div>
-        <div className="mb-4 rounded-xl border border-border p-4" style={{ background: 'var(--bg-2)' }}>
-          <div className="flex items-center justify-between gap-3">
-            <div>
+        {/* Standalone progress summary only when no active plan carries it inline */}
+        {!activePlan && planProgress !== null && (
+          <div className="mb-4 rounded-xl border border-border p-4" style={{ background: 'var(--bg-2)' }}>
+            <div className="flex items-center justify-between gap-3">
               <p className="text-sm font-semibold text-text">{vx.clientPlanProgress}</p>
-              <p className="mt-0.5 text-xs text-muted">
-                {activePlan ? activePlan.name : vx.noActivePlanInRange}
-              </p>
+              <p className="text-2xl font-bold text-text">{planProgress}%</p>
             </div>
-            <p className="text-2xl font-bold text-text">
-              {planProgress !== null ? `${planProgress}%` : '-'}
-            </p>
-          </div>
-          {planProgress !== null && (
-            <div className="mt-3 h-2 overflow-hidden rounded-full" style={{ background: 'var(--xn-clay-200)' }}>
+            <p className="mt-0.5 text-xs text-muted">{vx.noActivePlanInRange}</p>
+            <div className="mt-3 h-2 overflow-hidden rounded-full" style={{ background: 'color-mix(in srgb, var(--ic-blue) 18%, transparent)' }}>
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${Math.max(0, Math.min(100, planProgress))}%` }}
                 className="h-full rounded-full"
-                style={{ background: 'var(--xn-clay-700)' }}
+                style={{ background: 'var(--ic-blue)' }}
               />
             </div>
-          )}
-        </div>
+          </div>
+        )}
         {plansLoading ? (
           <Spinner size="sm" />
         ) : clientPlans.length === 0 ? (
-          <div className="rounded-xl border border-border p-4" style={{ background: 'var(--bg-2)' }}>
+          <div className="rounded-xl border border-border p-6 text-center" style={{ background: 'var(--bg-2)' }}>
+            <ClipboardList size={24} className="mx-auto mb-2 text-muted" />
             <p className="text-sm text-muted">{vx.noPlanAssigned}</p>
             <Button size="sm" className="mt-3" onClick={openPlanModal}>
               <Plus size={14} /> {vx.createFirstPlan}
@@ -406,24 +415,49 @@ export function ClientProfilePage() {
               <Link to={`/plans/${activePlan.id}`} state={{ canEdit: true }}>
                 <motion.div
                   variants={slideUp}
-                  className="rounded-xl border p-4 transition-opacity hover:opacity-80"
-                  style={{ borderColor: 'var(--color-primary)', background: 'color-mix(in srgb, var(--color-primary) 8%, transparent)' }}
+                  className="rounded-xl border p-4 transition-shadow hover:shadow-md"
+                  style={{ borderColor: 'var(--ic-blue)', background: 'color-mix(in srgb, var(--ic-blue) 9%, transparent)' }}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 space-y-0.5">
                       <p className="break-words font-semibold text-text">{activePlan.name}</p>
-                      <p className="text-xs text-muted">
+                      <p className="flex items-center gap-1.5 text-xs text-muted">
+                        <CalendarDays size={12} className="shrink-0" />
                         {format(new Date(activePlan.startDate), 'dd/MM/yyyy')} – {format(new Date(activePlan.endDate), 'dd/MM/yyyy')}
+                        <span className="text-fg-3">· {activePlan.totalWeeks} {vx.weeks}</span>
                       </p>
-                      <p className="text-xs text-muted">{activePlan.totalWeeks} {vx.weeks}</p>
                     </div>
                     <span
-                      className="shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold"
-                      style={{ background: 'color-mix(in srgb, var(--color-primary) 15%, transparent)', color: 'var(--color-primary)' }}
+                      className="flex shrink-0 items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold text-white"
+                      style={{ background: 'var(--ic-blue)' }}
                     >
+                      <span className="h-1.5 w-1.5 rounded-full bg-white" />
                       {vx.active}
                     </span>
                   </div>
+                  {planProgress !== null && (
+                    <div className="mt-4">
+                      <div className="mb-1.5 flex items-center justify-between text-xs">
+                        <span className="text-muted">{vx.clientPlanProgress}</span>
+                        <span className="font-semibold text-text">{planProgress}%</span>
+                      </div>
+                      <div className="h-2 overflow-hidden rounded-full" style={{ background: 'color-mix(in srgb, var(--ic-blue) 18%, transparent)' }}>
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${Math.max(0, Math.min(100, planProgress))}%` }}
+                          transition={{ duration: 0.6, ease: 'easeOut' }}
+                          className="h-full rounded-full"
+                          style={{
+                            background: planProgress >= 80
+                              ? 'var(--ic-green)'
+                              : planProgress >= 40
+                              ? 'var(--ic-blue)'
+                              : 'var(--ic-amber)',
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </motion.div>
               </Link>
             )}
@@ -431,14 +465,18 @@ export function ClientProfilePage() {
               <Link key={plan.id} to={`/plans/${plan.id}`} state={{ canEdit: true }}>
                 <motion.div
                   variants={slideUp}
-                  className="rounded-xl border border-border p-4 transition-opacity hover:opacity-80"
+                  className="group flex items-center justify-between gap-3 rounded-xl border border-border p-4 transition-shadow hover:shadow-md"
                   style={{ background: 'var(--bg-2)' }}
                 >
-                  <p className="break-words font-medium text-text">{plan.name}</p>
-                  <p className="mt-0.5 text-xs text-muted">
-                    {format(new Date(plan.startDate), 'dd/MM/yyyy')} – {format(new Date(plan.endDate), 'dd/MM/yyyy')}
-                  </p>
-                  <p className="mt-0.5 text-xs text-muted">{plan.totalWeeks} {vx.weeks}</p>
+                  <div className="min-w-0">
+                    <p className="break-words font-medium text-text">{plan.name}</p>
+                    <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted">
+                      <CalendarDays size={12} className="shrink-0" />
+                      {format(new Date(plan.startDate), 'dd/MM/yyyy')} – {format(new Date(plan.endDate), 'dd/MM/yyyy')}
+                      <span className="text-fg-3">· {plan.totalWeeks} {vx.weeks}</span>
+                    </p>
+                  </div>
+                  <ArrowRight size={16} className="shrink-0 text-muted transition-transform group-hover:translate-x-0.5" />
                 </motion.div>
               </Link>
             ))}
@@ -504,9 +542,15 @@ export function ClientProfilePage() {
             <Dumbbell size={14} />
             <h2 className="text-sm font-semibold uppercase tracking-wide">{vx.customExercisesForClient}</h2>
           </div>
-          <Button size="sm" onClick={openExerciseModal}>
-            <Plus size={14} /> {vx.addExercise}
-          </Button>
+          {isProCoach ? (
+            <Button size="sm" onClick={openExerciseModal}>
+              <Plus size={14} /> {vx.addExercise}
+            </Button>
+          ) : (
+            <Button size="sm" variant="secondary" onClick={() => navigate('/subscription')}>
+              <Lock size={14} /> {vx.addExercise}
+            </Button>
+          )}
         </div>
         <p className="text-sm text-muted">
           {vx.customExerciseHint}
@@ -582,37 +626,42 @@ export function ClientProfilePage() {
         </div>
       </Card>
 
-      <Card>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-start gap-3">
-            <Utensils size={18} className="mt-0.5 text-primary" />
-            <div>
+      {/* Quick-access tiles */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Link to={`/coach/clients/${clientId}/nutrition`} className="group">
+          <Card hover className="flex h-full items-center gap-3">
+            <span
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
+              style={{ background: 'color-mix(in srgb, var(--ic-green) 15%, transparent)' }}
+            >
+              <Utensils size={20} style={{ color: 'var(--ic-green)' }} />
+            </span>
+            <div className="min-w-0 flex-1">
               <h2 className="font-semibold text-text">{vx.nutrition}</h2>
-              <p className="mt-1 text-sm text-muted">{vx.nutritionHint}</p>
+              <p className="mt-0.5 text-xs text-muted">{vx.nutritionHint}</p>
             </div>
-          </div>
-          <Link to={`/coach/clients/${clientId}/nutrition`}>
-            <Button size="sm">{vx.openNutrition}</Button>
-          </Link>
-        </div>
-      </Card>
+            <ArrowRight size={16} className="shrink-0 text-muted transition-transform group-hover:translate-x-0.5" />
+          </Card>
+        </Link>
 
-      {clientCycle && (
-        <Card>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-start gap-3">
-              <CalendarHeart size={18} className="mt-0.5" style={{ color: '#f43f5e' }} />
-              <div>
+        {clientCycle && (
+          <Link to={`/coach/clients/${clientId}/cycle`} className="group">
+            <Card hover className="flex h-full items-center gap-3">
+              <span
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
+                style={{ background: 'color-mix(in srgb, var(--ic-pink) 15%, transparent)' }}
+              >
+                <CalendarHeart size={20} style={{ color: 'var(--ic-pink)' }} />
+              </span>
+              <div className="min-w-0 flex-1">
                 <h2 className="font-semibold text-text">{t.cycle.coach.title}</h2>
-                <p className="mt-1 text-sm text-muted">{t.cycle.coach.hint}</p>
+                <p className="mt-0.5 text-xs text-muted">{t.cycle.coach.hint}</p>
               </div>
-            </div>
-            <Link to={`/coach/clients/${clientId}/cycle`}>
-              <Button size="sm">{t.cycle.coach.viewCycle}</Button>
-            </Link>
-          </div>
-        </Card>
-      )}
+              <ArrowRight size={16} className="shrink-0 text-muted transition-transform group-hover:translate-x-0.5" />
+            </Card>
+          </Link>
+        )}
+      </div>
 
       <Modal
         open={exerciseModalOpen}

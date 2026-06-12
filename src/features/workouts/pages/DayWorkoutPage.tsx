@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams, Link, useLocation } from 'react-router'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
-import { ChevronLeft, Plus, Dumbbell, Copy, AlertTriangle, BedDouble, XCircle } from 'lucide-react'
+import { CheckCheck, ChevronLeft, Plus, Dumbbell, Copy, AlertTriangle, BedDouble, XCircle } from 'lucide-react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -21,9 +21,11 @@ import { useConfirm } from '@/shared/components/ConfirmModal'
 import {
   useExercises,
   useCreateExercise,
+  useUpdateExercise,
   useDeleteExercise,
   useReorderExercises,
   useCompleteSet,
+  useSkipExercise,
   useStartExerciseTimer,
   useFinishExerciseTimer,
   useSetExerciseDuration,
@@ -32,6 +34,7 @@ import {
   useDailyWorkouts,
   useCopyDay,
   useMarkDayStatus,
+  useCompleteDayWorkout,
 } from '../index'
 import type { ExerciseResponse } from '../types'
 import { InlineTip } from '@/features/tips'
@@ -53,6 +56,7 @@ export function DayWorkoutPage() {
   const planId = locationState?.planId
   const shouldReduce = useReducedMotion()
   const [showAdd, setShowAdd] = useState(false)
+  const [editingExercise, setEditingExercise] = useState<ExerciseResponse | null>(null)
   const [showCopy, setShowCopy] = useState(false)
   const [showMarkDay, setShowMarkDay] = useState(false)
   const [copyTarget, setCopyTarget] = useState('')
@@ -89,8 +93,10 @@ export function DayWorkoutPage() {
   })
 
   const { mutate: createExercise, isPending: adding } = useCreateExercise(dailyWorkoutId, weeklyWorkoutId, planId)
+  const { mutate: updateExercise, isPending: updatingExercise } = useUpdateExercise(dailyWorkoutId)
   const { mutate: deleteExercise } = useDeleteExercise(dailyWorkoutId, weeklyWorkoutId, planId)
   const { mutate: completeSet } = useCompleteSet(dailyWorkoutId, weeklyWorkoutId, planId)
+  const { mutate: skipExercise, isPending: skippingExercise } = useSkipExercise(dailyWorkoutId, weeklyWorkoutId, planId)
   const { mutate: startTimer, isPending: startingTimer } = useStartExerciseTimer(dailyWorkoutId)
   const { mutate: finishTimer, isPending: finishingTimer } = useFinishExerciseTimer(dailyWorkoutId, weeklyWorkoutId, planId)
   const { mutate: setDuration } = useSetExerciseDuration(dailyWorkoutId, weeklyWorkoutId, planId)
@@ -99,6 +105,7 @@ export function DayWorkoutPage() {
   const { data: siblingDays } = useDailyWorkouts(weeklyWorkoutId)
   const { mutate: copyDay, isPending: copying } = useCopyDay(weeklyWorkoutId, planId)
   const { mutate: markDayStatus, isPending: markingStatus } = useMarkDayStatus(weeklyWorkoutId, planId)
+  const { mutate: completeDayWorkout, isPending: completingDay } = useCompleteDayWorkout(dailyWorkoutId, weeklyWorkoutId, planId)
 
   const { confirm, ConfirmDialog } = useConfirm()
 
@@ -137,6 +144,19 @@ export function DayWorkoutPage() {
     defaultValues: { plannedSets: 3, plannedReps: 8 },
   })
 
+  const editSchema = z.object({
+    plannedSets: z.coerce.number().int().min(1).max(100).optional(),
+    plannedReps: z.coerce.number().int().min(1).max(1000).optional(),
+    plannedWeight: z.coerce.number().min(0).max(10000).optional(),
+    plannedDuration: z.coerce.number().int().min(1).max(600).optional(),
+    notes: z.string().optional(),
+  })
+  type EditForm = z.output<typeof editSchema>
+
+  const editForm = useForm<z.input<typeof editSchema>, unknown, EditForm>({
+    resolver: zodResolver(editSchema),
+  })
+
   const selectedTemplateId = addForm.watch('exerciseTemplateId')
   const selectedTemplate = templates.find((t) => t.id === selectedTemplateId)
   const isCardio = selectedTemplate?.exerciseKind === 'Cardio'
@@ -159,6 +179,18 @@ export function DayWorkoutPage() {
       shouldValidate: true,
     })
   }, [addForm, isCardio, lastPerformance?.lastActualWeight, plannedWeightEdited, showAdd])
+
+  useEffect(() => {
+    if (!editingExercise) return
+
+    editForm.reset({
+      plannedSets: editingExercise.plannedSets,
+      plannedReps: editingExercise.exerciseKind === 'Cardio' ? undefined : editingExercise.plannedReps,
+      plannedWeight: editingExercise.plannedWeight ?? undefined,
+      plannedDuration: editingExercise.exerciseKind === 'Cardio' ? editingExercise.plannedReps : undefined,
+      notes: editingExercise.notes ?? '',
+    })
+  }, [editForm, editingExercise])
 
   function onAdd(data: AddForm) {
     const payload = isCardio
@@ -185,6 +217,30 @@ export function DayWorkoutPage() {
         setShowAdd(false)
       },
     })
+  }
+
+  function onEdit(data: EditForm) {
+    if (!editingExercise) return
+
+    const payload = editingExercise.exerciseKind === 'Cardio'
+      ? {
+          plannedSets: 1,
+          plannedReps: data.plannedDuration ?? editingExercise.plannedReps,
+          notes: data.notes,
+        }
+      : {
+          plannedSets: data.plannedSets ?? editingExercise.plannedSets,
+          plannedReps: data.plannedReps ?? editingExercise.plannedReps,
+          plannedWeight: data.plannedWeight,
+          notes: data.notes,
+        }
+
+    updateExercise(
+      { id: editingExercise.id, data: payload },
+      {
+        onSuccess: () => setEditingExercise(null),
+      },
+    )
   }
 
   function handleCompleteSet(setId: string, actualReps: number, actualWeight: number, rpe?: number) {
@@ -309,12 +365,15 @@ export function DayWorkoutPage() {
   const doneSets  = exercises?.reduce((s, e) => s + e.completedSetsCount, 0) ?? 0
   const pct = totalSets > 0 ? Math.round((doneSets / totalSets) * 100) : 0
   const completedExercises = exercises?.filter((e) => e.isCompleted).length ?? 0
-  const isDayCompleted = (exercises?.length ?? 0) > 0 && completedExercises === exercises?.length
-  const warningExercises = exercises?.filter(hasWarningExercise) ?? []
-  const dayVolume = exercises?.reduce((sum, exercise) => sum + getExerciseVolume(exercise), 0) ?? 0
-  const estimatedCalories = exercises?.reduce((sum, exercise) => sum + (exercise.estimatedCalories ?? 0), 0) ?? 0
-  const totalDurationSeconds = exercises?.reduce((sum, e) => sum + (e.durationSeconds ?? 0), 0) ?? 0
-  const rpeValues = exercises?.flatMap((e) => e.sets).filter((s) => s.isCompleted && s.rpe != null).map((s) => s.rpe as number) ?? []
+  const skippedExercises = exercises?.filter((e) => e.isSkipped).length ?? 0
+  const resolvedExercises = exercises?.filter((e) => e.isCompleted || e.isSkipped).length ?? 0
+  const isDayCompleted = (exercises?.length ?? 0) > 0 && resolvedExercises === exercises?.length
+  const performedExercises = exercises?.filter((e) => !e.isSkipped) ?? []
+  const warningExercises = performedExercises.filter(hasWarningExercise)
+  const dayVolume = performedExercises.reduce((sum, exercise) => sum + getExerciseVolume(exercise), 0)
+  const estimatedCalories = performedExercises.reduce((sum, exercise) => sum + (exercise.estimatedCalories ?? 0), 0)
+  const totalDurationSeconds = performedExercises.reduce((sum, e) => sum + (e.durationSeconds ?? 0), 0)
+  const rpeValues = performedExercises.flatMap((e) => e.sets).filter((s) => s.isCompleted && s.rpe != null).map((s) => s.rpe as number)
   const averageRpe = rpeValues.length > 0 ? rpeValues.reduce((a, b) => a + b, 0) / rpeValues.length : null
   const lastPerformanceText = lastPerformance?.lastActualWeight != null
     ? [
@@ -349,6 +408,17 @@ export function DayWorkoutPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:justify-end">
 
+          {canComplete && !isDayCompleted && (exercises?.length ?? 0) > 0 && (
+            <Button
+              variant="success"
+              size="sm"
+              className="flex-1 min-[390px]:flex-none"
+              loading={completingDay}
+              onClick={() => completeDayWorkout()}
+            >
+              <CheckCheck size={15} /> {tdw.completeAll}
+            </Button>
+          )}
           {canComplete && !isDayCompleted && (
             <Button
               variant="secondary"
@@ -385,6 +455,7 @@ export function DayWorkoutPage() {
       <SessionSummaryBar
         exerciseCount={exercises?.length ?? 0}
         completedExercises={completedExercises}
+        skippedExercises={skippedExercises}
         doneSets={doneSets}
         totalSets={totalSets}
         pct={pct}
@@ -443,6 +514,9 @@ export function DayWorkoutPage() {
               onFinishTimer={() => finishTimer(exercise.id)}
               onSetDuration={(durationSeconds) => setDuration({ exerciseId: exercise.id, durationSeconds })}
               timerPending={startingTimer || finishingTimer}
+              onEdit={() => setEditingExercise(exercise)}
+              onSkip={(isSkipped) => skipExercise({ exerciseId: exercise.id, isSkipped })}
+              actionPending={skippingExercise}
               onDelete={async () => {
                 if (await confirm(tdw.deleteExerciseConfirm.replace('{name}', exercise.name), { confirmLabel: tc.delete, danger: true })) {
                   deleteExercise(exercise.id)
@@ -557,6 +631,66 @@ export function DayWorkoutPage() {
             <Button type="submit" className="w-full sm:w-auto" loading={adding}>{tdw.addBtn}</Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Modal: Edit exercise */}
+      <Modal
+        open={canEdit && editingExercise != null}
+        onClose={() => setEditingExercise(null)}
+        title={tdw.editExercise}
+        className="max-w-lg"
+      >
+        {editingExercise && (
+          <form onSubmit={editForm.handleSubmit(onEdit)} className="space-y-4">
+            {editingExercise.exerciseKind === 'Cardio' ? (
+              <Input
+                label={tdw.howLong}
+                type="number"
+                min={1}
+                error={editForm.formState.errors.plannedDuration?.message}
+                {...editForm.register('plannedDuration')}
+              />
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-3">
+                <Input
+                  label={tdw.setsLabel}
+                  type="number"
+                  error={editForm.formState.errors.plannedSets?.message}
+                  {...editForm.register('plannedSets')}
+                />
+                <Input
+                  label={tdw.repsLabel}
+                  type="number"
+                  error={editForm.formState.errors.plannedReps?.message}
+                  {...editForm.register('plannedReps')}
+                />
+                <Input
+                  label={tdw.weightKg}
+                  type="number"
+                  step="0.5"
+                  error={editForm.formState.errors.plannedWeight?.message}
+                  {...editForm.register('plannedWeight')}
+                />
+              </div>
+            )}
+
+            <Input label={tdw.notesLabel} {...editForm.register('notes')} />
+
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button
+                variant="secondary"
+                type="button"
+                className="w-full sm:w-auto"
+                onClick={() => setEditingExercise(null)}
+              >
+                {tc.cancel}
+              </Button>
+              <Button type="submit" className="w-full sm:w-auto" loading={updatingExercise}>
+                {tdw.saveExercise}
+              </Button>
+            </div>
+          </form>
+        )}
       </Modal>
 
       {/* Modal: Copy Day */}

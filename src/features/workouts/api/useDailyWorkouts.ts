@@ -5,7 +5,7 @@ import { ENDPOINTS } from '@/shared/api/endpoints'
 import { dayKeys, invalidateWorkoutQueries } from './workoutQueryCache'
 import type { DayStatus } from '@/shared/types/api'
 import type { PagedResponse } from '@/shared/types/api'
-import type { CopyDayRequest, CopyDayResponse, DailyWorkoutResponse } from '../types'
+import type { CopyDayRequest, CopyDayResponse, DailyWorkoutResponse, ExerciseResponse } from '../types'
 
 const DAY_PAGE_SIZE = 7
 
@@ -66,5 +66,24 @@ export function useCopyDay(weeklyWorkoutId: string, planId?: string) {
         weeklyWorkoutId,
         planId,
       }),
+  })
+}
+
+export function useCompleteDayWorkout(dailyWorkoutId: string, weeklyWorkoutId?: string, planId?: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () =>
+      api
+        .patch<ExerciseResponse[]>(ENDPOINTS.days.completeAll(dailyWorkoutId))
+        .then((r) => r.data),
+    onSuccess: () => {
+      invalidateWorkoutQueries(qc, {
+        dailyWorkoutId,
+        weeklyWorkoutId,
+        planId,
+        includeUserProgress: true,
+        includeExerciseTracking: true,
+      })
+    },
   })
 }

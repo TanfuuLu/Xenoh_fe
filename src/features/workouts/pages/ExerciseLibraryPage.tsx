@@ -11,6 +11,7 @@ import { Input } from '@/shared/components/Input'
 import { Modal } from '@/shared/components/Modal'
 import { Select } from '@/shared/components/Select'
 import { API_BASE_URL } from '@/shared/api/baseUrl'
+import { getApiErrorMessage } from '@/shared/api/errorMessage'
 import { Spinner } from '@/shared/components/Spinner'
 import { useConfirm } from '@/shared/components/ConfirmModal'
 import { MuscleGroup, type MuscleGroup as MuscleGroupValue } from '@/shared/types/api'
@@ -56,13 +57,7 @@ export function ExerciseLibraryPage() {
   const [editingTemplate, setEditingTemplate] = useState<ExerciseTemplateResponse | null>(null)
   const [prTemplate, setPrTemplate] = useState<ExerciseTemplateResponse | null>(null)
 
-  const {
-    data: templates = [],
-    isLoading,
-    hasNextPage: hasMoreTemplates,
-    fetchNextPage: fetchMoreTemplates,
-    isFetchingNextPage: loadingMoreTemplates,
-  } = useExerciseTemplates({
+  const { data: templates = [], isLoading } = useExerciseTemplates({
     muscleGroup: selectedMuscleGroup || undefined,
   })
   const { data: allTemplates = [] } = useExerciseTemplates()
@@ -167,8 +162,8 @@ export function ExerciseLibraryPage() {
     deleteCustomTemplate(template.id)
   }
 
-  const apiError = ((createError || updateError) as { response?: { data?: { message?: string } } } | null)
-    ?.response?.data?.message
+  const submitError = createError || updateError
+  const apiError = submitError ? getApiErrorMessage(submitError, tx.saveError) : undefined
 
   return (
     <div className="space-y-6">
@@ -273,34 +268,20 @@ export function ExerciseLibraryPage() {
           <p className="text-center text-sm text-muted">{tx.noMatches}</p>
         </Card>
       ) : (
-        <>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {filteredTemplates.map((template) => (
-              <ExerciseLibraryCard
-                key={template.id}
-                template={template}
-                onEdit={openEditModal}
-                onDelete={onDelete}
-                onSelect={setPrTemplate}
-                deleting={deletingCustom}
-                isActivePro={isActivePro}
-                lang={lang}
-              />
-            ))}
-          </div>
-          {hasMoreTemplates && (
-            <div className="flex justify-center">
-              <Button
-                type="button"
-                variant="secondary"
-                loading={loadingMoreTemplates}
-                onClick={() => void fetchMoreTemplates()}
-              >
-                Load more exercises
-              </Button>
-            </div>
-          )}
-        </>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {filteredTemplates.map((template) => (
+            <ExerciseLibraryCard
+              key={template.id}
+              template={template}
+              onEdit={openEditModal}
+              onDelete={onDelete}
+              onSelect={setPrTemplate}
+              deleting={deletingCustom}
+              isActivePro={isActivePro}
+              lang={lang}
+            />
+          ))}
+        </div>
       )}
 
       <Modal
@@ -596,6 +577,7 @@ function exerciseLibraryText(lang: 'en' | 'vi') {
       strength: 'Sức mạnh',
       cardio: 'Cardio',
       noMatches: 'Không có bài tập phù hợp với bộ lọc.',
+      saveError: 'Không thể lưu bài tập. Vui lòng thử lại.',
       editCustomExercise: 'Sửa bài custom',
       createCustomExercise: 'Tạo bài custom',
       exerciseName: 'Tên bài tập',
@@ -627,6 +609,7 @@ function exerciseLibraryText(lang: 'en' | 'vi') {
       strength: 'Strength',
       cardio: 'Cardio',
       noMatches: 'No exercises match your filters.',
+      saveError: 'Could not save the exercise. Please try again.',
       editCustomExercise: 'Edit custom exercise',
       createCustomExercise: 'Create custom exercise',
       exerciseName: 'Exercise name',

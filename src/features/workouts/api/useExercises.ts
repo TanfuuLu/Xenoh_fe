@@ -10,6 +10,7 @@ import type {
   CreateExerciseRequest,
   ExerciseResponse,
   ReorderExercisesRequest,
+  SkipExerciseRequest,
   UpdateExerciseRequest,
 } from '../types'
 
@@ -107,6 +108,31 @@ export function useUpdateExercise(dailyWorkoutId: string) {
     mutationFn: ({ id, data }: { id: string; data: UpdateExerciseRequest }) =>
       api.put<ExerciseResponse>(ENDPOINTS.exercises.update(id), { exerciseId: id, ...data }).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: exerciseKeys.byDay(dailyWorkoutId) }),
+  })
+}
+
+export function useSkipExercise(dailyWorkoutId: string, weeklyWorkoutId?: string, planId?: string) {
+  const qc = useQueryClient()
+  const key = exerciseKeys.byDay(dailyWorkoutId)
+
+  return useMutation({
+    mutationFn: (data: SkipExerciseRequest) =>
+      api
+        .patch<ExerciseResponse>(ENDPOINTS.exercises.skip(data.exerciseId), data)
+        .then((r) => r.data),
+    onSuccess: (updated) => {
+      qc.setQueryData<ExercisePages>(key, (old) =>
+        mapExercisePages(old, (exercise) => (exercise.id === updated.id ? updated : exercise)),
+      )
+      invalidateWorkoutQueries(qc, {
+        dailyWorkoutId,
+        weeklyWorkoutId,
+        planId,
+        includeExerciseTracking: true,
+        skipExerciseList: true,
+      })
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: key }),
   })
 }
 

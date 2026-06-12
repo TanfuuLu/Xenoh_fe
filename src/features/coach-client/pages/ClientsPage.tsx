@@ -196,11 +196,11 @@ function ClientCard({ client, stats, currentUserId, onView, onDisconnect, onCanc
   const progress = stats?.activePlanProgressPercent ?? stats?.planProgressPercent ?? null
   const big3 = stats?.bigThreePRs
   const attentionLevel = stats?.attentionLevel ?? 'None'
-  const attentionVariant =
-    attentionLevel === 'High' ? 'danger' :
-    attentionLevel === 'Medium' ? 'warning' :
-    attentionLevel === 'Low' ? 'primary' :
-    'default'
+  const accentColor =
+    attentionLevel === 'High' ? 'var(--color-danger)' :
+    attentionLevel === 'Medium' ? 'var(--color-warning)' :
+    attentionLevel === 'Low' ? 'var(--color-primary)' :
+    null
   const latestCompletedWorkoutDate = stats?.latestCompletedWorkoutDate ?? null
   const completedWorkoutToday = stats?.completedWorkoutToday ?? false
   const completionLabel = completedWorkoutToday
@@ -211,24 +211,35 @@ function ClientCard({ client, stats, currentUserId, onView, onDisconnect, onCanc
   const completionCount = stats && stats.activePlanTotalWorkoutCount > 0
     ? `${stats.activePlanCompletedWorkoutCount}/${stats.activePlanTotalWorkoutCount}`
     : null
+  const daysLeft = client.endDate ? differenceInDays(new Date(client.endDate), new Date()) : null
+  const hasWorkoutData = Boolean(
+    stats?.lastWorkoutDate || stats?.latestBodyweightKg || big3?.squat || big3?.bench || big3?.deadlift,
+  )
 
   return (
     <motion.div
       variants={slideUp}
       className="rounded-2xl overflow-hidden cursor-pointer transition-shadow hover:shadow-md"
-      style={{
-        background: 'var(--bg-2)',
-        border: `1px solid ${isInactive ? 'rgba(245,158,11,0.4)' : 'var(--border-1)'}`,
-        borderLeft: isInactive ? '3px solid var(--color-warning)' : undefined,
-      }}
+      style={{ background: 'var(--bg-2)', border: '1px solid var(--border-1)' }}
       onClick={onView}
     >
       {/* Top row: avatar + identity + actions */}
       <div className="flex items-start justify-between gap-3 px-4 pt-4 pb-3">
         <div className="flex items-center gap-3 min-w-0">
-          <UserAvatar name={client.fullName} email={client.email} imageUrl={stats?.avatarUrl} size={44} variant="primary" />
+          <UserAvatar name={client.fullName} email={client.email} imageUrl={stats?.avatarUrl} size={48} variant="primary" />
           <div className="min-w-0">
-            <p className="font-semibold text-text truncate">{client.fullName}</p>
+            <div className="flex items-center gap-2 min-w-0">
+              <p className="font-semibold text-text truncate">{client.fullName}</p>
+              {accentColor && !isPendingTermination && (
+                <span
+                  className="inline-flex flex-shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
+                  style={{ color: accentColor }}
+                >
+                  <AlertTriangle size={10} />
+                  {translateAttentionLevel(attentionLevel, lang)}
+                </span>
+              )}
+            </div>
             <p className="text-xs text-muted truncate">{client.email}</p>
             <p className="text-xs mt-0.5" style={{ color: 'var(--fg-3)' }}>
               {tx.since} {format(new Date(client.connectedAt), 'dd/MM/yyyy')}
@@ -237,12 +248,6 @@ function ClientCard({ client, stats, currentUserId, onView, onDisconnect, onCanc
         </div>
 
         <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-          {attentionLevel !== 'None' && !isPendingTermination && (
-            <Badge variant={attentionVariant}>
-              <AlertTriangle size={11} className="mr-0.5" />
-              {translateAttentionLevel(attentionLevel, lang)}
-            </Badge>
-          )}
           {isPendingTermination && (
             <Badge variant="warning">
               <UserMinus size={11} className="mr-0.5" />
@@ -302,22 +307,37 @@ function ClientCard({ client, stats, currentUserId, onView, onDisconnect, onCanc
         </div>
       </div>
 
-      <div className="px-4 pb-2 text-xs text-muted">
-        {tx.contract}: {formatContractDate(client.startDate)} → {formatContractDate(client.endDate)}
+      {/* Contract line */}
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 px-4 pb-3 text-xs text-muted">
+        <CalendarDays size={11} className="flex-shrink-0" />
+        <span>{formatContractDate(client.startDate)} → {formatContractDate(client.endDate)}</span>
         {isPendingRenewal && client.proposedEndDate && (
-          <span className="ml-1 text-warning">({tx.proposed} {formatContractDate(client.proposedEndDate)})</span>
+          <span className="text-warning">({tx.proposed} {formatContractDate(client.proposedEndDate)})</span>
+        )}
+        {daysLeft !== null && daysLeft >= 0 && !isExpired && (
+          <span
+            className="ml-auto rounded-full px-2 py-0.5 font-medium"
+            style={
+              daysLeft <= 7
+                ? { background: 'rgba(245,158,11,0.12)', color: 'var(--color-warning)' }
+                : { background: 'var(--bg-3)', color: 'var(--fg-2)' }
+            }
+          >
+            {daysLeft === 0 ? tx.endsToday : tx.daysLeft.replace('{n}', String(daysLeft))}
+          </span>
         )}
       </div>
 
-      {/* Progress bar */}
+      {/* Plan progress */}
       <div className="px-4 pb-3 space-y-1.5">
         <div className="flex items-center justify-between text-xs">
-          <span className="flex items-center gap-1 text-muted">
-            <TrendingUp size={11} />
-            {stats?.activePlanName ?? tx.planProgress}
+          <span className="flex items-center gap-1 text-muted min-w-0">
+            <TrendingUp size={11} className="flex-shrink-0" />
+            <span className="truncate">{stats?.activePlanName ?? tx.planProgress}</span>
           </span>
-          <span className="font-semibold text-text">
+          <span className="flex-shrink-0 font-semibold text-text">
             {progress !== null ? `${progress}%` : '—'}
+            {completionCount && <span className="ml-1.5 font-normal text-muted">{completionCount}</span>}
           </span>
         </div>
         <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ background: 'var(--bg-3)' }}>
@@ -348,74 +368,60 @@ function ClientCard({ client, stats, currentUserId, onView, onDisconnect, onCanc
         )}
         {completionLabel && (
           <div
-            className="flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs"
-            style={{ background: completedWorkoutToday ? 'rgba(34,197,94,0.12)' : 'var(--bg-3)' }}
+            className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium"
+            style={{
+              background: completedWorkoutToday ? 'rgba(34,197,94,0.12)' : 'var(--bg-3)',
+              color: completedWorkoutToday ? 'var(--color-success)' : 'var(--fg-2)',
+            }}
           >
-            <span
-              className="flex items-center gap-1 font-medium"
-              style={{ color: completedWorkoutToday ? 'var(--color-success)' : 'var(--fg-2)' }}
-            >
-              <CheckCircle2 size={12} />
-              {completionLabel}
-            </span>
-            {completionCount && (
-              <span style={{ color: 'var(--fg-3)' }}>
-                {completionCount}
-              </span>
-            )}
+            <CheckCircle2 size={12} />
+            {completionLabel}
           </div>
         )}
       </div>
 
-      {/* Stats row */}
-      <div
-        className="grid grid-cols-3 divide-x text-center"
-        style={{ borderTop: '1px solid var(--border-1)' }}
-      >
-        {/* Last workout */}
-        <div className="px-3 py-2.5">
-          <div className="flex items-center justify-center gap-1 text-xs text-muted mb-0.5">
-            <CalendarDays size={11} />
-            {tx.lastWorkout}
-          </div>
-          {stats?.lastWorkoutDate ? (
-            <>
-              <p className="text-xs font-semibold text-text">
-                {format(new Date(stats.lastWorkoutDate), 'dd/MM')}
-              </p>
-              <p className="text-xs" style={{ color: isInactive ? 'var(--color-warning)' : 'var(--fg-3)' }}>
+      {/* Stats footer */}
+      {hasWorkoutData ? (
+        <div
+          className="flex flex-wrap items-center gap-x-4 gap-y-1.5 px-4 py-2.5 text-xs"
+          style={{ borderTop: '1px solid var(--border-1)' }}
+        >
+          <span className="flex items-center gap-1.5">
+            <CalendarDays size={12} className="text-muted" />
+            {stats?.lastWorkoutDate ? (
+              <span
+                className="font-medium"
+                style={{ color: isInactive ? 'var(--color-warning)' : 'var(--fg-2)' }}
+              >
                 {formatDistanceToNow(new Date(stats.lastWorkoutDate), { addSuffix: true })}
-              </p>
-            </>
-          ) : (
-            <p className="text-xs text-muted mt-1">{tx.noData}</p>
-          )}
+              </span>
+            ) : (
+              <span className="text-muted">{tx.noData}</span>
+            )}
+          </span>
+          <span className="flex items-center gap-1.5">
+            <Scale size={12} className="text-muted" />
+            <span className="font-medium text-text">
+              {stats?.latestBodyweightKg ? `${stats.latestBodyweightKg} kg` : '—'}
+            </span>
+          </span>
+          <span className="flex items-center gap-1.5">
+            <Dumbbell size={12} className="text-muted" />
+            <span className="text-muted">S/B/D</span>
+            <span className="font-medium text-text">
+              {big3?.squat ?? '—'} / {big3?.bench ?? '—'} / {big3?.deadlift ?? '—'}
+            </span>
+          </span>
         </div>
-
-        {/* Bodyweight */}
-        <div className="px-3 py-2.5">
-          <div className="flex items-center justify-center gap-1 text-xs text-muted mb-0.5">
-            <Scale size={11} />
-            {tx.weight}
-          </div>
-          <p className="text-xs font-semibold text-text mt-1">
-            {stats?.latestBodyweightKg ? `${stats.latestBodyweightKg} kg` : '—'}
-          </p>
+      ) : (
+        <div
+          className="flex items-center gap-1.5 px-4 py-2.5 text-xs text-muted"
+          style={{ borderTop: '1px solid var(--border-1)' }}
+        >
+          <Dumbbell size={12} />
+          {tx.noWorkoutData}
         </div>
-
-        {/* Big 3 */}
-        <div className="px-3 py-2.5">
-          <div className="flex items-center justify-center gap-1 text-xs text-muted mb-0.5">
-            <Dumbbell size={11} />
-            {tx.bigThreePr}
-          </div>
-          <div className="text-xs space-y-0.5">
-            <p><span className="text-muted">S</span> <span className="font-semibold text-text">{big3?.squat ?? '—'}{big3?.squat ? ' kg' : ''}</span></p>
-            <p><span className="text-muted">B</span> <span className="font-semibold text-text">{big3?.bench ?? '—'}{big3?.bench ? ' kg' : ''}</span></p>
-            <p><span className="text-muted">D</span> <span className="font-semibold text-text">{big3?.deadlift ?? '—'}{big3?.deadlift ? ' kg' : ''}</span></p>
-          </div>
-        </div>
-      </div>
+      )}
     </motion.div>
   )
 }
@@ -619,7 +625,7 @@ export function ClientsPage() {
           initial={shouldReduce ? false : 'hidden'}
           animate="visible"
           variants={staggerContainer}
-          className="grid gap-3 md:grid-cols-2"
+          className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3"
         >
           <AnimatePresence>
             {sortedActiveClients.map((client) => (
@@ -702,6 +708,9 @@ function clientsPageText(lang: 'en' | 'vi') {
       bigThreePr: 'PR Big 3',
       doneToday: 'Đã tập hôm nay',
       lastDone: 'Tập gần nhất {time}',
+      daysLeft: 'Còn {n} ngày',
+      endsToday: 'Kết thúc hôm nay',
+      noWorkoutData: 'Chưa có dữ liệu tập luyện',
     }
     : {
       keyVault: 'Key Vault',
@@ -726,6 +735,9 @@ function clientsPageText(lang: 'en' | 'vi') {
       bigThreePr: 'Big 3 PR',
       doneToday: 'Done today',
       lastDone: 'Last done {time}',
+      daysLeft: '{n} days left',
+      endsToday: 'Ends today',
+      noWorkoutData: 'No workout data yet',
     }
 }
 

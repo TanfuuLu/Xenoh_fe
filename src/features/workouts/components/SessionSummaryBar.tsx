@@ -9,6 +9,7 @@ import { formatDuration } from './dayWorkoutHelpers'
 interface SessionSummaryBarProps {
   exerciseCount: number
   completedExercises: number
+  skippedExercises: number
   doneSets: number
   totalSets: number
   pct: number
@@ -24,6 +25,7 @@ interface SessionSummaryBarProps {
 export function SessionSummaryBar({
   exerciseCount,
   completedExercises,
+  skippedExercises,
   doneSets,
   totalSets,
   pct,
@@ -64,6 +66,11 @@ export function SessionSummaryBar({
             <span className="text-sm text-muted">
               {completedExercises}/{exerciseCount || 0} {td.exercisesUnit}
             </span>
+            {skippedExercises > 0 && (
+              <span className="text-sm text-muted">
+                {skippedExercises} {td.skippedUnit}
+              </span>
+            )}
           </div>
           <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full" style={{ background: 'var(--border-1)' }}>
             <div

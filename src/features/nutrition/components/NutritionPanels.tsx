@@ -388,6 +388,7 @@ export function NutritionInsightPanel({
                   applying={pendingStrategy === strategy.title}
                   disabled={applyingStrategy}
                   onSelect={() => handleSelectStrategy(strategy)}
+                  showActions={!clientId}
                 />
               ))}
             </div>
@@ -451,6 +452,7 @@ function MacroStrategyCard({
   applying,
   disabled,
   onSelect,
+  showActions = true,
 }: {
   strategy: MacroStrategy
   labels: Record<string, string>
@@ -459,6 +461,7 @@ function MacroStrategyCard({
   applying: boolean
   disabled: boolean
   onSelect: () => void
+  showActions?: boolean
 }) {
   const macroRows = [
     { key: 'protein', label: labels.proteinShort, pct: strategy.proteinPct, grams: strategy.proteinG, color: MACRO_COLORS.protein },
@@ -536,26 +539,28 @@ function MacroStrategyCard({
         </p>
       </div>
 
-      <div className="mt-auto pt-4">
-        {selected ? (
-          <Button type="button" size="sm" variant="success" disabled className="w-full">
-            <Check size={15} />
-            {labels.strategySelected}
-          </Button>
-        ) : (
-          <Button
-            type="button"
-            size="sm"
-            variant="secondary"
-            className="w-full"
-            disabled={!canSelect || disabled}
-            loading={applying}
-            onClick={onSelect}
-          >
-            {!canSelect ? labels.strategyNeedsData : applying ? labels.strategyApplying : labels.strategySelect}
-          </Button>
-        )}
-      </div>
+      {showActions && (
+        <div className="mt-auto pt-4">
+          {selected ? (
+            <Button type="button" size="sm" variant="success" disabled className="w-full">
+              <Check size={15} />
+              {labels.strategySelected}
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              className="w-full"
+              disabled={!canSelect || disabled}
+              loading={applying}
+              onClick={onSelect}
+            >
+              {!canSelect ? labels.strategyNeedsData : applying ? labels.strategyApplying : labels.strategySelect}
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   )
 }

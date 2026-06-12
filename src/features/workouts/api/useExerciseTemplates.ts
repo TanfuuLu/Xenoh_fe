@@ -1,7 +1,7 @@
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/shared/api/axios'
 import { ENDPOINTS } from '@/shared/api/endpoints'
-import type { MuscleGroup, PagedResponse } from '@/shared/types/api'
+import type { MuscleGroup } from '@/shared/types/api'
 import type {
   CustomExerciseTemplateRequest,
   ExerciseTemplateResponse,
@@ -13,57 +13,36 @@ interface Filters {
 }
 
 const EXERCISE_TEMPLATE_STALE_TIME = 5 * 60 * 1000
-const EXERCISE_TEMPLATE_PAGE_SIZE = 24
 
+// The exercise library is a bounded set, so templates are loaded eagerly: the API
+// returns the full list (custom exercises first) in one request and the UI filters
+// client-side. No pagination / lazy loading, so a freshly created custom exercise
+// is always present, not stranded on an unfetched page.
 export function useExerciseTemplates(filters?: Filters) {
-  const query = useInfiniteQuery({
+  return useQuery({
     queryKey: ['exercise-templates', filters?.muscleGroup ?? ''],
-    initialPageParam: 1,
-    queryFn: ({ pageParam }) =>
+    queryFn: () =>
       api
-        .get<PagedResponse<ExerciseTemplateResponse>>(ENDPOINTS.exerciseTemplates.list, {
-          params: {
-            muscleGroup: filters?.muscleGroup,
-            pageNumber: pageParam,
-            pageSize: EXERCISE_TEMPLATE_PAGE_SIZE,
-          },
+        .get<ExerciseTemplateResponse[]>(ENDPOINTS.exerciseTemplates.list, {
+          params: { muscleGroup: filters?.muscleGroup },
         })
         .then((r) => r.data),
-    getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.pageNumber + 1 : undefined),
     staleTime: EXERCISE_TEMPLATE_STALE_TIME,
   })
-
-  return {
-    ...query,
-    data: query.data?.pages.flatMap((page) => page.items),
-    totalCount: query.data?.pages[0]?.totalCount ?? 0,
-  }
 }
 
 export function useClientExerciseTemplates(clientId: string, filters?: Filters) {
-  const query = useInfiniteQuery({
+  return useQuery({
     queryKey: ['exercise-templates', 'client', clientId, filters?.muscleGroup ?? ''],
     enabled: Boolean(clientId),
-    initialPageParam: 1,
-    queryFn: ({ pageParam }) =>
+    queryFn: () =>
       api
-        .get<PagedResponse<ExerciseTemplateResponse>>(ENDPOINTS.exerciseTemplates.forClient(clientId), {
-          params: {
-            muscleGroup: filters?.muscleGroup,
-            pageNumber: pageParam,
-            pageSize: EXERCISE_TEMPLATE_PAGE_SIZE,
-          },
+        .get<ExerciseTemplateResponse[]>(ENDPOINTS.exerciseTemplates.forClient(clientId), {
+          params: { muscleGroup: filters?.muscleGroup },
         })
         .then((r) => r.data),
-    getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.pageNumber + 1 : undefined),
     staleTime: EXERCISE_TEMPLATE_STALE_TIME,
   })
-
-  return {
-    ...query,
-    data: query.data?.pages.flatMap((page) => page.items),
-    totalCount: query.data?.pages[0]?.totalCount ?? 0,
-  }
 }
 
 export function useLastExercisePerformance(

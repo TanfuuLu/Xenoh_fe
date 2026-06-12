@@ -95,6 +95,7 @@ export const ENDPOINTS = {
     byWeek: (weeklyWorkoutId: string) => `/api/weeks/${weeklyWorkoutId}/days`,
     copy: (sourceDailyWorkoutId: string) => `/api/days/${sourceDailyWorkoutId}/copy`,
     markStatus: (dailyWorkoutId: string) => `/api/days/${dailyWorkoutId}/status`,
+    completeAll: (dailyWorkoutId: string) => `/api/days/${dailyWorkoutId}/complete-all`,
   },
 
   // Exercises
@@ -104,6 +105,7 @@ export const ENDPOINTS = {
     create: '/api/exercises',
     update: (id: string) => `/api/exercises/${id}`,
     delete: (id: string) => `/api/exercises/${id}`,
+    skip: (id: string) => `/api/exercises/${id}/skip`,
     completeSet: (setId: string) => `/api/exercises/sets/${setId}/complete`,
     startTimer: (id: string) => `/api/exercises/${id}/timer/start`,
     finishTimer: (id: string) => `/api/exercises/${id}/timer/finish`,
