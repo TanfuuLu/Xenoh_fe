@@ -1,4 +1,10 @@
-# Cloudflare Pages — SPA fallback
-# Serve index.html for all routes so client-side routing (React Router) handles them.
-# Without this, deep links / refreshes on routes like /plans/:id return 404.
-/*    /index.html   200
+# Cloudflare Pages redirects
+#
+# NOTE: Do NOT add a SPA fallback like `/*  /index.html  200` here.
+# Cloudflare rejects it (code 100324 "Infinite loop detected") because it
+# strips `.html`/`/index` and the rule re-matches itself.
+# SPA routing is handled by Cloudflare's native single-page-application
+# fallback instead (see notes below / wrangler config).
+#
+# Add real redirects above this line, e.g.:
+# /old-path   /new-path   301
