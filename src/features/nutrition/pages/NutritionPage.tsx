@@ -120,30 +120,33 @@ export function NutritionPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0 sm:flex-1">
           {isClientView && (
             <Link to={`/coach/clients/${clientId}`} className="mb-2 inline-flex">
               <Button variant="ghost" size="sm"><ChevronLeft size={16} /> {tn.backToClient}</Button>
             </Link>
           )}
-          <h1 className="text-2xl font-bold text-text">{isClientView ? tn.clientTitle : tn.title}</h1>
+          <h1 className="break-words text-2xl font-bold text-text">{isClientView ? tn.clientTitle : tn.title}</h1>
           <p className="mt-1 text-sm text-muted">{tn.subtitle}</p>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="grid w-full grid-cols-1 gap-2 min-[430px]:grid-cols-2 sm:flex sm:w-auto sm:shrink-0 sm:items-center">
           <Button
             variant="secondary"
             size="sm"
-            className="whitespace-nowrap"
+            className="w-full justify-center sm:w-auto"
             onClick={() => setProfileOpen(true)}
           >
             <Settings size={16} /> {tn.profileSettings}
           </Button>
-          <Link to={isClientView ? `/coach/clients/${clientId}/nutrition/insight` : '/nutrition/insight'}>
+          <Link
+            to={isClientView ? `/coach/clients/${clientId}/nutrition/insight` : '/nutrition/insight'}
+            className="min-w-0"
+          >
             <Button
               variant="secondary"
               size="sm"
-              className="whitespace-nowrap"
+              className="w-full justify-center sm:w-auto"
             >
               <Sparkles size={16} /> {tn.nutritionInsight}
             </Button>

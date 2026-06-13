@@ -13,7 +13,7 @@ import {
 import { Badge } from '@/shared/components/Badge'
 import { slideUp } from '@/shared/utils/motion'
 import { cn } from '@/shared/utils/cn'
-import { API_BASE_URL } from '@/shared/api/baseUrl'
+import { resolveStaticAssetUrl } from '@/shared/api/staticAssets'
 import { useT } from '@/shared/i18n'
 import { useLocalizedExerciseName } from '../exerciseNames'
 import type { ExerciseResponse } from '../types'
@@ -73,6 +73,7 @@ export function ExerciseCard({
   const hasUnderperformed = !exercise.isSkipped && hasWarningExercise(exercise)
   const isCardio = exercise.exerciseKind === 'Cardio'
   const canCompleteSets = canComplete && !exercise.isSkipped
+  const exerciseImageUrl = resolveStaticAssetUrl(exercise.imageUrl)
 
   return (
     <motion.div
@@ -101,9 +102,9 @@ export function ExerciseCard({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-2">
-          {exercise.imageUrl && (
+          {exerciseImageUrl && (
             <img
-              src={`${API_BASE_URL}${exercise.imageUrl}`}
+              src={exerciseImageUrl}
               alt={exercise.name}
               className="mt-0.5 h-10 w-10 shrink-0 rounded-lg object-cover"
             />

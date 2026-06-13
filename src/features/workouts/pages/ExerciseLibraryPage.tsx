@@ -10,7 +10,7 @@ import { Card } from '@/shared/components/Card'
 import { Input } from '@/shared/components/Input'
 import { Modal } from '@/shared/components/Modal'
 import { Select } from '@/shared/components/Select'
-import { API_BASE_URL } from '@/shared/api/baseUrl'
+import { resolveStaticAssetUrl } from '@/shared/api/staticAssets'
 import { getApiErrorMessage } from '@/shared/api/errorMessage'
 import { Spinner } from '@/shared/components/Spinner'
 import { useConfirm } from '@/shared/components/ConfirmModal'
@@ -413,6 +413,7 @@ function ExerciseLibraryCard({
   const navigate = useNavigate()
   const localizeName = useLocalizedExerciseName()
   const tx = exerciseLibraryText(lang)
+  const exerciseImageUrl = resolveStaticAssetUrl(template.imageUrl)
   return (
     <Card
       className="flex min-h-48 flex-col"
@@ -421,9 +422,9 @@ function ExerciseLibraryCard({
     >
       <div className="mb-4 flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
-          {template.imageUrl ? (
+          {exerciseImageUrl ? (
             <img
-              src={`${API_BASE_URL}${template.imageUrl}`}
+              src={exerciseImageUrl}
               alt={template.name}
               className="h-11 w-11 shrink-0 rounded-2xl object-cover"
             />

@@ -4,7 +4,7 @@ import { Search, X, CheckCircle2 } from 'lucide-react'
 import { Badge } from '@/shared/components/Badge'
 import { Spinner } from '@/shared/components/Spinner'
 import { Select } from '@/shared/components/Select'
-import { API_BASE_URL } from '@/shared/api/baseUrl'
+import { resolveStaticAssetUrl } from '@/shared/api/staticAssets'
 import { cn } from '@/shared/utils/cn'
 import { useT } from '@/shared/i18n'
 import { MuscleGroup, type MuscleGroup as MuscleGroupValue } from '@/shared/types/api'
@@ -179,6 +179,7 @@ const ExerciseTemplateOption = memo(function ExerciseTemplateOption({
   onPick: (id: string) => void
 }) {
   const localizeName = useLocalizedExerciseName()
+  const exerciseImageUrl = resolveStaticAssetUrl(template.imageUrl)
   return (
     <div
       onClick={() => onPick(template.id)}
@@ -189,9 +190,9 @@ const ExerciseTemplateOption = memo(function ExerciseTemplateOption({
       style={isSelected ? { background: 'var(--xn-clay-200)', color: 'var(--xn-clay-800)' } : undefined}
     >
       <span className="flex min-w-0 items-center gap-2">
-        {template.imageUrl && (
+        {exerciseImageUrl && (
           <img
-            src={`${API_BASE_URL}${template.imageUrl}`}
+            src={exerciseImageUrl}
             alt={template.name}
             className="h-7 w-7 shrink-0 rounded-md object-cover"
           />
